@@ -1,18 +1,30 @@
 # 阿里云盘离线版
 
-20210516冒个泡，我在认真编码哦：
+20210524冒个泡，我在认真编码哦：
 
-![demo16](https://user-images.githubusercontent.com/67817756/118390596-8cc98780-b662-11eb-846c-7a67aa6f1341.png)
+![ui](https://user-images.githubusercontent.com/67817756/119268032-9e42fe80-bc23-11eb-9b5d-d1da98a3d950.png)
+
 
 编码时间
 
-![无标题time](https://user-images.githubusercontent.com/67817756/118390683-f77ac300-b662-11eb-827c-cc7aeabf1e0c.png)
+![time](https://user-images.githubusercontent.com/67817756/119268038-a7cc6680-bc23-11eb-8cac-319c7e20da16.png)
+
   
  ! 
 >进度比我预计的慢，flutter桌面版很不成熟，一些UI上的细节实现起来很麻烦，最近一周基本是全天编码了，但结果不理想，我需要更多时间
 
  !
-  
+ 
+ 
+ 
+``````
+0524 已完成功能：
+扫码登录/Cookie登录/
+创建文件夹/文件排序/重命名/收藏/取消收藏/
+移到回收站/恢复文件/彻底删除/
+快捷路径导航/
+文件树/Ctrl多选/Shift多选
+``````
   
 ``````
 功能规划：
