@@ -2,20 +2,9 @@
 
 20210527冒个泡，我在认真编码哦：
 
-![ui](https://files.xiami.com/musician-avatar/07d8ec1a38a5462c3afbfac41413b8af/a7a5f9bd75333768990a48931fd4f6d3-846x558.gif)
+蓝奏下载地址：[https://wwe.lanzoui.com/b01npsg8h](https://wwe.lanzoui.com/b01npsg8h)
 
-截图看不了的自己点：[截图视频](https://files.xiami.com/musician-avatar/07d8ec1a38a5462c3afbfac41413b8af/a7a5f9bd75333768990a48931fd4f6d3-846x558.gif)
-编码时间
 
-![time](https://user-images.githubusercontent.com/67817756/119268038-a7cc6680-bc23-11eb-8cac-319c7e20da16.png)
-
-  
- ! 
->进度比我预计的慢，flutter桌面版很不成熟，一些UI上的细节实现起来很麻烦，最近一周基本是全天编码了，但结果不理想，我需要更多时间
-
- !
- 
- 
  
 ``````
 0527 已完成功能：
@@ -29,6 +18,16 @@
 2.批量上传
 3.搜索、移动复制文件、批量重命名
 ``````
+
+![ui](https://files.xiami.com/musician-avatar/07d8ec1a38a5462c3afbfac41413b8af/a7a5f9bd75333768990a48931fd4f6d3-846x558.gif)
+
+截图看不了的话自己点：[截图视频](https://files.xiami.com/musician-avatar/07d8ec1a38a5462c3afbfac41413b8af/a7a5f9bd75333768990a48931fd4f6d3-846x558.gif)
+
+编码时间
+
+![time](https://user-images.githubusercontent.com/67817756/119268038-a7cc6680-bc23-11eb-8cac-319c7e20da16.png)
+
+ 
   
 ``````
 功能规划：
