@@ -5,6 +5,8 @@
 蓝奏下载地址：[https://wwe.lanzoui.com/b01npsg8h](https://wwe.lanzoui.com/b01npsg8h)
 
 
+:o:定个小目标：下次满 `150` Star就更新:o:
+
  
 ``````
 0527 已完成功能：
