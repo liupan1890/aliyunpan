@@ -4,7 +4,7 @@
 
 ![ui](https://files.xiami.com/musician-avatar/07d8ec1a38a5462c3afbfac41413b8af/a7a5f9bd75333768990a48931fd4f6d3-846x558.gif)
 
-
+截图看不了的自己点：[截图视频](https://files.xiami.com/musician-avatar/07d8ec1a38a5462c3afbfac41413b8af/a7a5f9bd75333768990a48931fd4f6d3-846x558.gif)
 编码时间
 
 ![time](https://user-images.githubusercontent.com/67817756/119268038-a7cc6680-bc23-11eb-8cac-319c7e20da16.png)
