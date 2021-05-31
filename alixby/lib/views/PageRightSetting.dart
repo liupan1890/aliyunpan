@@ -260,7 +260,7 @@ class _PageRightSettingState extends State<PageRightSetting> with AutomaticKeepA
                       .map<DropdownMenuItem<String>>((String value) {
                     return DropdownMenuItem<String>(
                       value: value,
-                      child: Text('同时下载' + value + '个文件', style: TextStyle(fontSize: 14, color: MColors.textColor)),
+                      child: Text('同时上传/下载' + value + '个文件', style: TextStyle(fontSize: 14, color: MColors.textColor)),
                     );
                   }).toList(),
                 ))));

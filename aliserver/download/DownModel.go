@@ -66,3 +66,66 @@ type DownFileOrder []*DownFileModel
 func (a DownFileOrder) Len() int           { return len(a) }
 func (a DownFileOrder) Less(i, j int) bool { return a[i].DownTime > a[j].DownTime }
 func (a DownFileOrder) Swap(i, j int)      { a[i], a[j] = a[j], a[i] }
+
+//UpdateStateInit 初始化下载状态(点击start按钮)
+func UpdateStateInit(item *DownFileModel) {
+	item.IsCompleted = false
+	item.FailedMessage = ""
+	item.DownSpeedStr = ""
+	item.IsFailed = false
+	item.IsDowning = false
+	item.IsStop = false
+	item.AutoGID = 0
+	item.AutoTry = 0
+	//item.FailedCode = 0 这里不能更新0,因为需要永久的识别是否需要单线程下载
+}
+
+//UpdateStateError 更新下载状态(失败时也设置暂停)
+func UpdateStateError(item *DownFileModel, FailedMessage string) {
+	item.IsCompleted = false
+	item.FailedMessage = FailedMessage
+	item.DownSpeedStr = ""
+	item.IsFailed = true
+	item.IsDowning = false
+	item.IsStop = true
+	item.AutoTry = time.Now().Add(1 * time.Minute).Unix() //1分钟后自动重试
+}
+
+//UpdateStateDowning 更新下载状态(失败时也设置暂停)
+func UpdateStateDowning(item *DownFileModel) {
+	item.IsCompleted = false
+	item.FailedMessage = ""
+	item.DownSpeedStr = ""
+	item.IsFailed = false
+	item.IsDowning = true
+	item.IsStop = false
+	item.AutoGID = 0
+	//item.AutoTry = 0 这里不能更新0
+	//item.FailedCode = 0
+}
+
+//UpdateStateDowned 更新下载状态(失败时也设置暂停)
+func UpdateStateDowned(item *DownFileModel) {
+	item.IsCompleted = true
+	item.FailedMessage = ""
+	item.DownSpeedStr = ""
+	item.IsFailed = false
+	item.IsDowning = false
+	item.IsStop = false
+	item.AutoGID = 0
+	item.AutoTry = 0
+	item.FailedCode = 0
+}
+
+//UpdateStateStop 更新下载状态(失败时也设置暂停)
+func UpdateStateStop(item *DownFileModel) {
+	item.IsCompleted = false
+	item.FailedMessage = ""
+	item.DownSpeedStr = ""
+	item.IsFailed = false
+	item.IsDowning = false
+	item.IsStop = true
+	item.AutoGID = 0
+	item.AutoTry = 0
+	//item.FailedCode = 0 这里不能更新0,因为需要永久的识别是否需要单线程下载
+}

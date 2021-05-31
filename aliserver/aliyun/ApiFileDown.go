@@ -16,18 +16,50 @@ type FileUrlModel struct {
 	//文件名
 	P_file_name string `json:"name"`
 	//文件相对路径
-	P_file_path  string `json:"path"`
-	P_url        string `json:"url"`
-	P_domain_id  string `json:"domain_id"`
-	P_crc64_hash string `json:"crc64_hash"`
-	P_sha1       string `json:"sha1"`
-	P_size       int64  `json:"size"`
-	IsUrl        bool
-	IsDir        bool
+	P_file_path string `json:"path"`
+	//P_url        string `json:"url"`
+	//P_domain_id  string `json:"domain_id"`
+	//P_crc64_hash string `json:"crc64_hash"`
+	P_sha1 string `json:"sha1"`
+	P_size int64  `json:"size"`
+	IsUrl  bool
+	IsDir  bool
 }
 
-func DownloadAddress(userid string, fileid string) (string, int64, error) {
-	return "downurl", 0, nil
+func ApiFileDownloadUrl(file_id string, expire_sec int) (downurl string, size int64, err error) {
+	defer func() {
+		if errr := recover(); errr != nil {
+			log.Println("ApiFileDownloadUrlError ", " error=", errr)
+			err = errors.New("error")
+		}
+	}()
+	var apiurl = "https://api.aliyundrive.com/v2/file/get_download_url"
+
+	var postjson = map[string]interface{}{"drive_id": _user.UserToken.P_default_drive_id,
+		"file_id":    file_id,
+		"expire_sec": expire_sec,
+	}
+
+	b, _ := json.Marshal(postjson)
+	postdata := string(b)
+
+	code, _, body := utils.PostHTTPString(apiurl, GetAuthorization(), postdata)
+	if code == 401 {
+		//UserAccessToken 失效了，尝试刷新一次
+		ApiTokenRefresh("")
+		//刷新完了，重新尝试一遍
+		code, _, body = utils.PostHTTPString(apiurl, GetAuthorization(), postdata)
+		if code == 401 {
+			return "", 0, errors.New("401")
+		}
+	}
+	if code != 200 || !gjson.Valid(body) {
+		return "", 0, errors.New("error")
+	}
+	info := gjson.Parse(body)
+	url := info.Get("url").String()
+	size = info.Get("size").Int()
+	return url, size, nil
 }
 
 func ApiFileGetUrl(file_id string, parentpath string) (urlinfo FileUrlModel, err error) {
@@ -40,6 +72,7 @@ func ApiFileGetUrl(file_id string, parentpath string) (urlinfo FileUrlModel, err
 			err = errors.New("error")
 		}
 	}()
+
 	var apiurl = "https://api.aliyundrive.com/v2/file/get"
 
 	var postjson = map[string]interface{}{"drive_id": _user.UserToken.P_default_drive_id,
@@ -69,16 +102,16 @@ func ApiFileGetUrl(file_id string, parentpath string) (urlinfo FileUrlModel, err
 	}
 	if filetype == "file" {
 		//url := info.Get("url").String()
-		url := info.Get("download_url").String()
-		domain_id := info.Get("domain_id").String()
+		//url := info.Get("download_url").String()
+		//domain_id := info.Get("domain_id").String()
 		size := info.Get("size").Int()
-		crc64_hash := info.Get("crc64_hash").String()               //3837432253803654719
+		//crc64_hash := info.Get("crc64_hash").String()               //3837432253803654719
 		content_hash := info.Get("content_hash").String()           //E27EB7D983E212CDDF9149094E31E40CC47417D6
 		content_hash_name := info.Get("content_hash_name").String() //sha1
 		if content_hash_name != "sha1" {
 			content_hash = ""
 		}
-		return FileUrlModel{P_file_id: file_id, P_file_path: parentpath, P_file_name: name, P_url: url, P_domain_id: domain_id, P_crc64_hash: crc64_hash, P_sha1: content_hash, P_size: size, IsUrl: true, IsDir: false}, nil
+		return FileUrlModel{P_file_id: file_id, P_file_path: parentpath, P_file_name: name, P_sha1: content_hash, P_size: size, IsUrl: true, IsDir: false}, nil
 	} else {
 		return FileUrlModel{P_file_id: file_id, P_file_path: parentpath, P_file_name: name, IsUrl: false, IsDir: true}, nil
 	}
@@ -178,16 +211,16 @@ func ApiFileListUrl(parentid string, parentpath string, marker string) (list []*
 		}
 		if filetype == "file" {
 			//url := info.Get("url").String()
-			url := info.Get("download_url").String()
-			domain_id := info.Get("domain_id").String()
+			//url := info.Get("download_url").String()
+			//domain_id := info.Get("domain_id").String()
 			size := info.Get("size").Int()
-			crc64_hash := info.Get("crc64_hash").String()               //3837432253803654719
+			//crc64_hash := info.Get("crc64_hash").String()               //3837432253803654719
 			content_hash := info.Get("content_hash").String()           //E27EB7D983E212CDDF9149094E31E40CC47417D6
 			content_hash_name := info.Get("content_hash_name").String() //sha1
 			if content_hash_name != "sha1" {
 				content_hash = ""
 			}
-			list = append(list, &FileUrlModel{P_file_id: file_id, P_file_path: parentpath, P_file_name: name, P_url: url, P_domain_id: domain_id, P_crc64_hash: crc64_hash, P_sha1: content_hash, P_size: size, IsUrl: true, IsDir: false})
+			list = append(list, &FileUrlModel{P_file_id: file_id, P_file_path: parentpath, P_file_name: name, P_sha1: content_hash, P_size: size, IsUrl: true, IsDir: false})
 		} else {
 			list = append(list, &FileUrlModel{P_file_id: file_id, P_file_path: parentpath, P_file_name: name, IsUrl: false, IsDir: true})
 		}
@@ -214,15 +247,54 @@ func ApiPlay(file_id string) string {
 		mpvpath = "mpv"
 	}
 
-	urlinfo, err := ApiFileGetUrl(file_id, "")
+	downurl, _, err := ApiFileDownloadUrl(file_id, 60*60*4)
 	if err != nil {
 		return utils.ToErrorMessageJSON("获取视频链接失败")
 	}
-	err = utils.RunPlayer(mpvpath, urlinfo.P_url, data.Config.AliDownAgent)
+	err = utils.RunPlayer(mpvpath, downurl, data.Config.AliDownAgent)
 	if err == nil {
 		return utils.ToSuccessJSON("playerpath", mpvpath)
 	}
 	log.Println("player", err)
 	return utils.ToErrorJSON(err)
 
+}
+func ApiImage(file_id string) string {
+	defer func() {
+		if errr := recover(); errr != nil {
+			log.Println("ApiFileGetUrlError ", " error=", errr)
+		}
+	}()
+
+	var apiurl = "https://api.aliyundrive.com/v2/file/get"
+
+	var postjson = map[string]interface{}{"drive_id": _user.UserToken.P_default_drive_id,
+		"file_id": file_id}
+
+	b, _ := json.Marshal(postjson)
+	postdata := string(b)
+
+	code, _, body := utils.PostHTTPString(apiurl, GetAuthorization(), postdata)
+	if code == 401 {
+		//UserAccessToken 失效了，尝试刷新一次
+		ApiTokenRefresh("")
+		//刷新完了，重新尝试一遍
+		code, _, body = utils.PostHTTPString(apiurl, GetAuthorization(), postdata)
+		if code == 401 {
+			return utils.ToErrorMessageJSON("获取图片链接失败")
+		}
+	}
+	if code != 200 || !gjson.Valid(body) {
+		return utils.ToErrorMessageJSON("获取图片链接失败")
+	}
+	info := gjson.Parse(body)
+	url := info.Get("url").String()
+	/*
+		code, _, bodybs := utils.GetHTTPBytes(thumbnail, GetAuthorization())
+		if code != 200 {
+			return utils.ToErrorMessageJSON("获取图片链接失败")
+		}
+		b64str := base64.StdEncoding.EncodeToString(*bodybs)
+	*/
+	return utils.ToSuccessJSON("url", url)
 }

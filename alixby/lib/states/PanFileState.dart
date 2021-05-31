@@ -182,6 +182,43 @@ class PanFileState extends ChangeNotifier {
     notifyListeners();
   }
 
+  double pageRefreshTime = 0;
+  //开始定时刷新下载列表
+  runTimer() {
+    Future.delayed(Duration(milliseconds: 1000), () {
+      refreshPanByTimer(true).then((v) {
+        runTimer(); //循环调用
+      });
+    });
+  }
+
+  //触发拉取数据
+  Future<bool> refreshPanByTimer(bool isTimer) async {
+    try {
+      if (isTimer) {
+        if (Global.userState.userNavPageIndex != 1) return false;
+        if (!Global.userState.isLogin) return false;
+        double subtime = DateTime.now().millisecondsSinceEpoch / 1000 - pageRefreshTime; //相差几秒
+        if (getPageName == 'file' && (pageRightFileList0.length > 1000 || subtime < 60)) {
+          return false; //文件列表，60秒刷新一次
+        } else if (getPageName == 'trash' && subtime < 60) {
+          return false; //回收站60秒刷新一次
+        } else if (getPageName == 'favorite' && subtime < 60) {
+          return false; //收藏，60秒刷新一次
+        } else if (getPageName == "safebox" || getPageName == "calendar") {
+          return false; //不刷新
+        }
+      }
+      var dt1 = DateTime.now().millisecondsSinceEpoch;
+      print('refreshPanByTimer ' + dt1.toString());
+      Global.panTreeState.pageRefreshNode();
+      pageRefreshTime = DateTime.now().millisecondsSinceEpoch / 1000;
+      return true;
+    } catch (e) {
+      return false;
+    }
+  }
+
   //返回所有选中的文件的keylist
   List<String> getSelectedFileKeys() {
     List<String> selectKeys = [];
@@ -314,6 +351,13 @@ class PanFileState extends ChangeNotifier {
       list.add(model);
     }
     pageRightFileList0 = list;
+    pageRightFileSelectedCount = 0;
+    for (int g = 0; g < pageRightFileList0.length; g++) {
+      if (pageRightFileList0[g].selected) {
+        pageRightFileSelectedCount++;
+      }
+    }
+
     _updateFileOrder();
   }
 

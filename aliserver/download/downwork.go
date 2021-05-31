@@ -63,14 +63,14 @@ func LoadDownedList() {
 	WeekAgo := time.Now().Add(-10 * 24 * time.Hour).UnixNano()
 	List := make([]*DownFileModel, 0, 100)
 	for DownID := range list {
-		DownItem := &DownFileModel{}
-		err := json.Unmarshal([]byte(list[DownID]), &DownItem)
+		Item := &DownFileModel{}
+		err := json.Unmarshal([]byte(list[DownID]), &Item)
 		if err == nil {
-			if DownItem.DownTime < WeekAgo { //10天前的记录删除掉
+			if Item.DownTime < WeekAgo { //10天前的记录删除掉
 				data.DeleteDown(DownID)
 			} else {
-				UpdateStateDowned(DownItem)
-				List = append(List, DownItem)
+				UpdateStateDowned(Item)
+				List = append(List, Item)
 			}
 		}
 	}
@@ -88,12 +88,12 @@ func LoadDowningList() {
 	}
 	List := make([]*DownFileModel, 0, 100)
 	for DownID := range list {
-		DownItem := &DownFileModel{}
-		err := json.Unmarshal([]byte(list[DownID]), &DownItem)
+		Item := &DownFileModel{}
+		err := json.Unmarshal([]byte(list[DownID]), &Item)
 		if err == nil {
-			DownItem.FailedCode = 0
-			UpdateStateStop(DownItem) //初始化列表时，全部停止下载
-			List = append(List, DownItem)
+			Item.FailedCode = 0
+			UpdateStateStop(Item) //初始化列表时，全部停止下载
+			List = append(List, Item)
 		}
 	}
 	sort.Sort(DownFileOrder(List))
@@ -103,16 +103,16 @@ func LoadDowningList() {
 }
 
 //DownedAdd 保存已下载
-func DownedAdd(downitem *DownFileModel) error {
+func DownedAdd(Item *DownFileModel) error {
 	timenow := time.Now().UnixNano()
-	DowningID := downitem.DownID
-	DownedID := strings.Replace(downitem.DownID, "Downing:", "Downed:", -1) + ":" + strconv.FormatInt(timenow, 10)
-	downitem.DownID = DownedID
-	downitem.DownTime = timenow
+	DowningID := Item.DownID
+	DownedID := strings.Replace(Item.DownID, "Downing:", "Downed:", -1) + ":" + strconv.FormatInt(timenow, 10)
+	Item.DownID = DownedID
+	Item.DownTime = timenow
 	//DataDowned.List是从大到小，add的dtime肯定是最大的，所以插入在最前面
-	DataDowned.List = append([]*DownFileModel{downitem}, DataDowned.List...)
+	DataDowned.List = append([]*DownFileModel{Item}, DataDowned.List...)
 
-	b, _ := json.Marshal(downitem)
+	b, _ := json.Marshal(Item)
 	data.SetDown(DownedID, string(b)) //保存Downed
 	data.DeleteDown(DowningID)        //删除Downing
 	return nil
@@ -172,69 +172,6 @@ func DowningAdd(userid, savepath, identity, name, path, hash string, size int64,
 	return downing, nil
 }
 
-//UpdateStateInit 初始化下载状态(点击start按钮)
-func UpdateStateInit(item *DownFileModel) {
-	item.IsCompleted = false
-	item.FailedMessage = ""
-	item.DownSpeedStr = ""
-	item.IsFailed = false
-	item.IsDowning = false
-	item.IsStop = false
-	item.AutoGID = 0
-	item.AutoTry = 0
-	//item.FailedCode = 0 这里不能更新0,因为需要永久的识别是否需要单线程下载
-}
-
-//UpdateStateError 更新下载状态(失败时也设置暂停)
-func UpdateStateError(item *DownFileModel, FailedMessage string) {
-	item.IsCompleted = false
-	item.FailedMessage = FailedMessage
-	item.DownSpeedStr = ""
-	item.IsFailed = true
-	item.IsDowning = false
-	item.IsStop = true
-	item.AutoTry = time.Now().Add(1 * time.Minute).Unix() //1分钟后自动重试
-}
-
-//UpdateStateDowning 更新下载状态(失败时也设置暂停)
-func UpdateStateDowning(item *DownFileModel) {
-	item.IsCompleted = false
-	item.FailedMessage = ""
-	item.DownSpeedStr = ""
-	item.IsFailed = false
-	item.IsDowning = true
-	item.IsStop = false
-	item.AutoGID = 0
-	//item.AutoTry = 0 这里不能更新0
-	//item.FailedCode = 0
-}
-
-//UpdateStateDowned 更新下载状态(失败时也设置暂停)
-func UpdateStateDowned(item *DownFileModel) {
-	item.IsCompleted = true
-	item.FailedMessage = ""
-	item.DownSpeedStr = ""
-	item.IsFailed = false
-	item.IsDowning = false
-	item.IsStop = false
-	item.AutoGID = 0
-	item.AutoTry = 0
-	item.FailedCode = 0
-}
-
-//UpdateStateStop 更新下载状态(失败时也设置暂停)
-func UpdateStateStop(item *DownFileModel) {
-	item.IsCompleted = false
-	item.FailedMessage = ""
-	item.DownSpeedStr = ""
-	item.IsFailed = false
-	item.IsDowning = false
-	item.IsStop = true
-	item.AutoGID = 0
-	item.AutoTry = 0
-	//item.FailedCode = 0 这里不能更新0,因为需要永久的识别是否需要单线程下载
-}
-
 //FailedMessage 格式化一下错误信息
 func FailedMessage(FailedMessage string) string {
 	if strings.Index(FailedMessage, "unexpected EOF") > 0 {
@@ -255,7 +192,6 @@ func FailedMessage(FailedMessage string) string {
 	return FailedMessage
 }
 
-//定时器
 var tDown bool = false
 
 //当前下载中任务
@@ -402,15 +338,13 @@ func downingUpdateProgress() {
 				item.DownSpeedStr = ""
 				item.FailedMessage = "connecting"
 				if item.AutoGID > 10 {
+					//尝试下载10次还失败的,更新错误信息，停止下载，会在所有任务都下载完以后，自动重置错误状态的任务重新尝试下载
 					item.AutoGID = 0
 					UpdateStateError(item, "下载失败，稍后自动重试")
 				}
 			}
 		}
 	}
-	//3. 对于失败的,更新错误信息，停止状态。。。
-	//4. 对于成功的，校验hash，可能需要重命名td
-
 }
 
 //UpdateStateTellStatus UpdateStateTellStatus

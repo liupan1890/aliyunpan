@@ -7,8 +7,8 @@ import 'PanFileState.dart';
 class Global {
   // 是否为release版
   static bool get isRelease => bool.fromEnvironment("dart.vm.product");
-  static String get appTitle => "阿里云盘小白羊版 v1.5.25";
-  static String get appVer => "v1.5.25";
+  static String get appTitle => "阿里云盘小白羊版 v1.5.31";
+  static String get appVer => "v1.5.31";
 
   static UserState userState = UserState();
   static SettingState settingState = SettingState();

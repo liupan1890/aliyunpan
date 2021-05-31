@@ -1,4 +1,5 @@
 import 'package:alixby/api/Downloader.dart';
+import 'package:alixby/api/Uploader.dart';
 import 'package:alixby/states/Global.dart';
 import 'package:alixby/states/pageDownState.dart';
 import 'package:bot_toast/bot_toast.dart';
@@ -124,10 +125,22 @@ class _DownFileListState extends State<DownFileList> {
         Global.pageDownState.refreshDownByTimer(false); //触发刷新
       }
     } else if (downPage == "uploading") {
-      //if (button == "start") Downloader.goUploadingStart(key);
-      //if (button == "stop") Downloader.goUploadingStop(key);
-      //if (button == "delete") Downloader.goUploadingDelete(key);
-    } else if (downPage == "uploaded") {}
+      if (button == "forder") {
+        result = await Uploader.goUploadingForder(key);
+      } else {
+        if (button == "start") result = await Uploader.goUploadingStart(key);
+        if (button == "stop") result = await Uploader.goUploadingStop(key);
+        if (button == "delete") result = await Uploader.goUploadingDelete(key);
+        Global.pageDownState.refreshDownByTimer(false); //触发刷新
+      }
+    } else if (downPage == "upload") {
+      if (button == "forder") {
+        result = await Uploader.goUploadForder(key);
+      } else {
+        if (button == "delete") result = await Uploader.goUploadDelete(key);
+        Global.pageDownState.refreshDownByTimer(false); //触发刷新
+      }
+    }
 
     if (result != "success") {
       BotToast.showText(text: "操作失败：" + result);

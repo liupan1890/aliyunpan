@@ -9,6 +9,7 @@ import (
 	"aliserver/data"
 	"aliserver/download"
 	"aliserver/localhost"
+	"aliserver/upload"
 	"aliserver/utils"
 )
 
@@ -41,8 +42,8 @@ func main() {
 	aliyun.LoadUserFromDB()
 	download.LoadDownedList()
 	download.LoadDowningList()
-	//download.LoadUploadList()
-	//download.LoadUploadingList()
+	upload.LoadUploadList()
+	upload.LoadUploadingList()
 	log.Println("all userdata loaded")
 	// 启动监听
 	go localhost.ListenServer()
@@ -52,7 +53,7 @@ func main() {
 	//开始下载主线程
 	go download.StartDowning()
 	//开始上传主线程
-	//go localhost.StartUploading()
+	go upload.StartUploading()
 	//一直阻塞,等待结束
 	localhost.WaitingUntilStopServer()
 

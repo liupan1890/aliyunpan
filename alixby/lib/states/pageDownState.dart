@@ -1,11 +1,12 @@
 import 'package:alixby/api/Downloader.dart';
+import 'package:alixby/api/Uploader.dart';
 import 'package:alixby/models/PageRightDownItem.dart';
 import 'package:alixby/states/Global.dart';
 import 'package:flutter/material.dart';
 
 class PageDownState extends ChangeNotifier {
   PageDownState();
-  //右侧页面当前导航位置 downing downed uploading uploaded
+  //右侧页面当前导航位置 downing downed uploading upload
   String getPageName = "downing";
   List<PageRightDownItem> pageRightDownList = [];
   int pageRightDownListCount = 0;
@@ -72,9 +73,9 @@ class PageDownState extends ChangeNotifier {
       } else if (getPageName == 'downed') {
         downdata = await Downloader.goDownedList();
       } else if (getPageName == 'uploading') {
-        //downdata = await Downloader.goDowningList();
+        downdata = await Uploader.goUploadingList();
       } else if (getPageName == 'upload') {
-        //downdata = await Downloader.goDownedList();
+        downdata = await Uploader.goUploadList();
       }
       if (downdata.isError == false) {
         pageRightDownListCount = downdata.filecount;

@@ -20,7 +20,6 @@ class PageLeftPan extends StatefulWidget {
 
 class _PageLeftPanState extends State<PageLeftPan> with AutomaticKeepAliveClientMixin {
   final data = <PageLeftRowItem>[
-    PageLeftRowItem.newPageLeftRowItem("calendar", "calendar", "最近访问"),
     PageLeftRowItem.newPageLeftRowItem("trash", "rest", "回收站"),
     PageLeftRowItem.newPageLeftRowItem("favorite", "crown", "收藏夹"),
     PageLeftRowItem.newPageLeftRowItem("safebox", "rpasswoed", "保险箱"),
@@ -28,10 +27,6 @@ class _PageLeftPanState extends State<PageLeftPan> with AutomaticKeepAliveClient
 
   void onPageLeftRowItemChanged(String key) {
     if (key == "safebox") {
-      BotToast.showText(text: "此功能还在开发中");
-      return;
-    }
-    if (key == "calendar") {
       BotToast.showText(text: "此功能还在开发中");
       return;
     }
@@ -62,14 +57,9 @@ class _PageLeftPanState extends State<PageLeftPan> with AutomaticKeepAliveClient
               height: 32,
               padding: EdgeInsets.only(left: 12, right: 8),
               child: Row(
-                children: [_buildItem(context, 1), _buildItem(context, 2), _buildItem(context, 3)],
+                children: [_buildItem(context, 0), _buildItem(context, 1), _buildItem(context, 2)],
               ),
             ),
-            Container(
-                alignment: Alignment.centerLeft,
-                height: 32,
-                padding: EdgeInsets.only(left: 12, right: 8),
-                child: _buildItem(context, 0)),
             Container(height: 3),
             Expanded(child: _buildTree(context)),
           ],

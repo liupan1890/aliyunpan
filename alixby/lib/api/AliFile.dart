@@ -52,10 +52,56 @@ class AliFile {
         }
         model.list = list;
         return model;
+      } else {
+        BotToast.showText(text: "拉取 " + name + " 失败");
+      }
+    } catch (e) {
+      print('apiFileList ' + e.toString());
+      model.next_marker = "error";
+      BotToast.showText(text: "拉取 " + name + " 失败");
+    } finally {
+      fcHide();
+    }
+    return model;
+  }
+
+  //name updated_at  created_at  size
+  static Future<FileListModel> apiDirList(String parentid, String name) async {
+    var fcHide = BotToast.showCustomLoading(
+        toastBuilder: (cancelFunc) {
+          return APILoadingWidget(cancelFunc: cancelFunc, title: '列文件夹：' + name);
+        },
+        allowClick: true,
+        clickClose: false,
+        crossPage: true,
+        duration: Duration(seconds: 15),
+        align: Alignment.topRight,
+        backButtonBehavior: BackButtonBehavior.ignore,
+        ignoreContentClick: true,
+        backgroundColor: Colors.transparent);
+
+    if (parentid == "") parentid = "root";
+    var model = FileListModel(0, parentid, name);
+
+    try {
+      var result = await HttpHelper.postToServer("ApiDirList", jsonEncode({'parentid': parentid}));
+      if (result["code"] == 0) {
+        var items = result["items"];
+        List<FileItem> list = [];
+        for (int i = 0; i < items.length; i++) {
+          if (items[i]["key"] == "break") continue;
+          var m = new FileItem.fromJson(items[i]);
+          list.add(m);
+        }
+        model.list = list;
+        return model;
+      } else {
+        BotToast.showText(text: "拉取 " + name + " 失败");
       }
     } catch (e) {
       print('apiFileList ' + e.toString());
       model.key = "error";
+      BotToast.showText(text: "拉取 " + name + " 失败");
     } finally {
       fcHide();
     }
@@ -98,6 +144,20 @@ class AliFile {
       }
     } catch (e) {
       print('apiTrashBatch ' + e.toString());
+    }
+    return 0;
+  }
+
+  static Future<int> apiMoveBatch(List<String> filelist, String movetoid) async {
+    try {
+      print('apiMoveBatch');
+      var result =
+          await HttpHelper.postToServer("ApiMoveBatch", jsonEncode({'filelist': filelist, "movetoid": movetoid}));
+      if (result["code"] == 0) {
+        return result["count"];
+      }
+    } catch (e) {
+      print('apiMoveBatch ' + e.toString());
     }
     return 0;
   }

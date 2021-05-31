@@ -43,10 +43,16 @@ class PanData {
     return _found;
   }
 
+  //最后一次触发加载文件夹的文件列表的dirkey--用来避免多次重复加载同一个文件夹的文件列表
+  static Map<String, bool> loading = {};
+
   static Map<String, int> loadDataTime = {}; //用来抛弃无效的续增
   //网络回调附加子文件列表
   static apiFileListCallBack(FileListModel loadData) {
-    if (loadData.key == "error") return;
+    if (loadData.next_marker == "error") {
+      loading[loadData.key] = false;
+      return;
+    }
     if (loadData.isMarker && loadDataTime[loadData.key] != loadData.time) return; //无效的续增
 
     FileItem? file = getFileItem(loadData.key);
@@ -72,17 +78,22 @@ class PanData {
         print('load next_marker  for network ok ' + loadData.key);
         apiFileListCallBack(data);
       });
+    } else {
+      loading[loadData.key] = false;
     }
   }
 
   //点击文件树时会触发这里加载文件列表
   //点击--PanTreeState.expandedNode--PanData.loadFileList--PanData.apiFileListCallBack--panFileState.notifyFileListChanged+PanTreeState.notifyFileListChanged
   static loadFileList(String parentkey, String name) {
-    print('load  for network ' + name + " " + parentkey);
-    AliFile.apiFileList(DateTime.now().millisecondsSinceEpoch, parentkey, name).then((data) {
-      print('load  for network ok ' + name + " " + parentkey);
-      apiFileListCallBack(data);
-    });
+    if (!loading.containsKey(parentkey) || loading[parentkey] == false) {
+      loading[parentkey] = true;
+      print('load  for network ' + name + " " + parentkey);
+      AliFile.apiFileList(DateTime.now().millisecondsSinceEpoch, parentkey, name).then((data) {
+        print('load  for network ok ' + name + " " + parentkey);
+        apiFileListCallBack(data);
+      });
+    }
   }
 
   //删除文件时，要调用这里，刷新

@@ -21,7 +21,7 @@ class Setting {
   String regKey = "";
   String ver = "";
   String serverVer = "";
-  static String UIVER = "1.5.25.0";
+  static String UIVER = "1.5.31.0";
 
   factory Setting.fromJson(Map<String, dynamic> json) {
     return Setting()

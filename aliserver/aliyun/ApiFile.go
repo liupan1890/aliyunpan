@@ -131,6 +131,91 @@ func ApiFileList(parentid string, marker string) (retjsonstr string) {
 	return builder.String()
 }
 
+func ApiDirList(parentid string) (retjsonstr string) {
+	defer func() {
+		if errr := recover(); errr != nil {
+			log.Println("ApiDirListError ", " error=", errr)
+			retjsonstr = utils.ToSuccessJSON2("next_marker", "", "items", "[]")
+		}
+	}()
+
+	var apiurl = "https://api.aliyundrive.com/v2/file/list"
+
+	var postjson = map[string]interface{}{"drive_id": _user.UserToken.P_default_drive_id,
+		"parent_file_id":  parentid,
+		"limit":           100,
+		"all":             false,
+		"fields":          "thumbnail",
+		"order_by":        "name",
+		"order_direction": "ASC"}
+	b, _ := json.Marshal(postjson)
+	postdata := string(b)
+
+	//"image_thumbnail_process":"image/resize,w_160/format,jpeg",
+	//"image_url_process":"image/resize,w_1920/format,jpeg",
+	//"video_thumbnail_process":"video/snapshot,t_0,f_jpg,ar_auto,w_300",
+
+	code, _, body := utils.PostHTTPString(apiurl, GetAuthorization(), postdata)
+	if code == 401 {
+		//UserAccessToken 失效了，尝试刷新一次
+		ApiTokenRefresh("")
+		//刷新完了，重新尝试一遍
+		code, _, body = utils.PostHTTPString(apiurl, GetAuthorization(), postdata)
+	}
+	if code != 200 || !gjson.Valid(body) {
+		return utils.ToSuccessJSON2("next_marker", "", "items", "[]")
+	}
+	info := gjson.Parse(body)
+	next_marker := info.Get("next_marker").String()
+	items := info.Get("items").Array()
+	var builder strings.Builder
+	builder.Grow(300 * (len(items) + 1))
+	builder.WriteString(`{"code":0,"message":"success","next_marker":"`)
+	builder.WriteString(next_marker)
+	builder.WriteString(`","items":[`)
+	var max = len(items)
+	var value = gjson.Result{}
+
+	var file_time = time.Now()
+	var file_size = int64(0)
+	var file_icon = "folder"
+	for i := 0; i < max; i++ {
+		value = items[i]
+		if value.Get("type").String() == "folder" {
+			file_time = value.Get("updated_at").Time()
+			file_size = value.Get("size").Int()
+
+			builder.WriteString(`{"key":"`)
+			builder.WriteString(value.Get("file_id").String())
+			builder.WriteString(`","name":"`)
+			builder.WriteString(utils.ToJSONString(value.Get("name").String()))
+			builder.WriteString(`","pid":"`)
+			builder.WriteString(value.Get("parent_file_id").String())
+			builder.WriteString(`","size":`)
+			builder.WriteString(strconv.FormatInt(file_size, 10))
+			builder.WriteString(`,"time":`)
+			builder.WriteString(strconv.FormatInt(file_time.Unix(), 10))
+			builder.WriteString(`,"type":"`)
+			builder.WriteString(value.Get("type").String())
+			builder.WriteString(`","sizestr":"`)
+			builder.WriteString(utils.FormateSizeString(file_size))
+			builder.WriteString(`","timestr":"`)
+			builder.WriteString(file_time.Format("2006 01-02"))
+			builder.WriteString(`","icon":"`)
+			builder.WriteString(file_icon)
+			builder.WriteString(`","starred":`)
+			builder.WriteString(strconv.FormatBool(value.Get("starred").Bool()))
+			builder.WriteString(`,"status":"`)
+			builder.WriteString(value.Get("status").String())
+
+			builder.WriteString(`"},`)
+		}
+	}
+
+	builder.WriteString(`{"key":"break"}`)
+	builder.WriteString(`]}`)
+	return builder.String()
+}
 func ApiFavorFileList(marker string) (retjsonstr string) {
 	defer func() {
 		if errr := recover(); errr != nil {
@@ -502,7 +587,7 @@ func ApiTrashBatch(filelist []string) (retjsonstr string) {
 	count := 0
 	info.Get("responses").ForEach(func(key, value gjson.Result) bool {
 		var status = value.Get("status").Int()
-		if status == 202 || status == 203 {
+		if status == 202 || status == 204 {
 			count++
 		}
 		return true

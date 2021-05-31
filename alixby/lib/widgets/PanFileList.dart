@@ -1,6 +1,7 @@
 import 'package:alixby/api/Downloader.dart';
 import 'package:alixby/states/Global.dart';
 import 'package:alixby/states/PanFileState.dart';
+import 'package:alixby/widgets/ImageDialog.dart';
 import 'package:bot_toast/bot_toast.dart';
 import 'package:flutter/rendering.dart';
 import 'package:hovering/hovering.dart';
@@ -92,12 +93,12 @@ class _PanFileListState extends State<PanFileList> {
       color: MColors.pageRightFileBGSelect,
       border: Border(bottom: BorderSide(width: 1, color: MColors.pageRightBorderColor)));
 
-  static onTapFileName(String key, String filetype) {
+  static onTapFileName(String key, String filetype, BuildContext context) {
     print('点击文件名');
     onTapFile(key);
     var page = Global.panFileState.getPageName;
-    if (page == "trash") return;
-    //todo::收藏夹、最近访问，页面，向上遍历父文件夹路径
+    //if (page == "trash") return;//回收站内文件同样可以预览
+    //todo::收藏夹，向上遍历父文件夹路径
     if (filetype == "folder") {
       Global.panTreeState.pageSelectNode(key, true);
       return;
@@ -108,7 +109,22 @@ class _PanFileListState extends State<PanFileList> {
       Downloader.goPlay(key);
       return;
     } else if (filetype == "image") {
-      BotToast.showText(text: "图片预览功能还在开发中");
+      var fcHide = BotToast.showLoading(duration: Duration(seconds: 20), backButtonBehavior: BackButtonBehavior.ignore);
+      Downloader.goImage(key).then((value) {
+        fcHide();
+        if (value == "error" || value == "") {
+          BotToast.showText(text: "预览图片失败,请重试");
+        } else {
+          showDialog(
+              barrierDismissible: true, //表示点击灰色背景的时候是否消失弹出框
+              context: context,
+              builder: (context) {
+                return WillPopScope(
+                    onWillPop: () async => false, //关键代码
+                    child: ImageDialog(imageUrl: value));
+              });
+        }
+      });
       return;
     } else if (filetype == "txt") {
       BotToast.showText(text: "文本预览功能还在开发中");
@@ -154,7 +170,7 @@ class _PanFileListState extends State<PanFileList> {
                               child: InkWell(
                                   mouseCursor:
                                       item.filetype != "file" ? SystemMouseCursors.click : SystemMouseCursors.basic,
-                                  onTap: () => onTapFileName(item.key, item.filetype),
+                                  onTap: () => onTapFileName(item.key, item.filetype, context),
                                   child:
                                       Text(item.title, softWrap: false, overflow: TextOverflow.ellipsis, maxLines: 2))))
                     ])),

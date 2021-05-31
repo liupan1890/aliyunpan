@@ -19,7 +19,7 @@ class _PageLeftDownState extends State<PageLeftDown> with AutomaticKeepAliveClie
     PageLeftRowItem.newPageLeftRowItem("downing", "download", "下载中"),
     PageLeftRowItem.newPageLeftRowItem("downed", "desktop", "已下载完"),
     PageLeftRowItem.newPageLeftRowItem("uploading", "upload", "上传中"),
-    PageLeftRowItem.newPageLeftRowItem("uploaded", "cloud_success", "已上传完"),
+    PageLeftRowItem.newPageLeftRowItem("upload", "cloud_success", "已上传完"),
   ];
 
   void onPageLeftRowItemChanged(String key) {

@@ -58,7 +58,6 @@ class FileItem {
     if (cdlist != null) {
       model.children = cdlist.map((m) => new FileItem.fromJson(m)).toList();
     }
-
     return model;
   }
 }

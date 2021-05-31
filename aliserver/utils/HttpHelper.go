@@ -111,6 +111,9 @@ func GetHTTPString(url string, header string) (code int, head string, body strin
 		if code == 200 || code == 206 {
 			return 200, head, body
 		}
+		if code >= 200 && code <= 400 {
+			return code, head, body
+		}
 	}
 	return code, head, body
 }
@@ -122,6 +125,9 @@ func GetHTTPBytes(url string, header string) (code int, head string, body *[]byt
 		code, head, body = Raw("GET", url, header, bytes.NewReader(nil))
 		if code == 200 || code == 206 {
 			return 200, head, body
+		}
+		if code >= 200 && code <= 400 {
+			return code, head, body
 		}
 	}
 	return code, head, body
@@ -179,6 +185,9 @@ func PostHTTPString(url string, header string, postdata string) (code int, head 
 		}
 		if code == 200 || code == 206 {
 			return 200, head, body
+		}
+		if code >= 200 && code <= 400 {
+			return code, head, body
 		}
 	}
 	return code, head, body

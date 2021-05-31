@@ -85,7 +85,7 @@ class RenameDialog extends StatelessWidget {
                           dirname = dirname.replaceAll('"', '').trim();
 
                           var fcHide = BotToast.showLoading(
-                              duration: Duration(seconds: 15), backButtonBehavior: BackButtonBehavior.ignore);
+                              duration: Duration(seconds: 35), backButtonBehavior: BackButtonBehavior.ignore);
 
                           AliFile.apiRename(file_id, dirname).then((value) {
                             fcHide();

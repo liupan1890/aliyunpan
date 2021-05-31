@@ -3,6 +3,7 @@ package localhost
 import (
 	"aliserver/aliyun"
 	"aliserver/download"
+	"aliserver/upload"
 	"aliserver/utils"
 	"encoding/base64"
 	"io/ioutil"
@@ -112,6 +113,9 @@ func HookAction(url string, postdata string) (bool, string) {
 		parentid := gjson.Get(postdata, "parentid").String()
 		marker := gjson.Get(postdata, "marker").String()
 		return true, HookActionFileList(parentid, marker)
+	case "ApiDirList":
+		parentid := gjson.Get(postdata, "parentid").String()
+		return true, aliyun.ApiDirList(parentid)
 	case "ApiCreatForder":
 		parentid := gjson.Get(postdata, "parentid").String()
 		name := gjson.Get(postdata, "name").String()
@@ -170,6 +174,9 @@ func HookAction(url string, postdata string) (bool, string) {
 	case "GoPlay":
 		file_id := gjson.Get(postdata, "file_id").String()
 		return true, aliyun.ApiPlay(file_id)
+	case "GoImage":
+		file_id := gjson.Get(postdata, "file_id").String()
+		return true, aliyun.ApiImage(file_id)
 	case "GoDownFile":
 		filelist := gjson.Get(postdata, "filelist").Array()
 		list := make([]string, len(filelist))
@@ -214,6 +221,54 @@ func HookAction(url string, postdata string) (bool, string) {
 	case "GoDownedForder":
 		downid := gjson.Get(postdata, "downid").String()
 		return true, download.DownedForder(downid)
+
+	case "GoUploadFile":
+		filelist := gjson.Get(postdata, "filelist").Array()
+		list := make([]string, len(filelist))
+		for i := 0; i < len(filelist); i++ {
+			list[i] = filelist[i].String()
+		}
+		parentid := gjson.Get(postdata, "parentid").String()
+		return true, upload.UploadFile(parentid, list)
+	case "GoUploadDir":
+		parentid := gjson.Get(postdata, "parentid").String()
+		dirpath := gjson.Get(postdata, "dirpath").String()
+		return true, upload.UploadDir(parentid, dirpath)
+	case "GoUploadingList":
+		return true, upload.UploadingList()
+	case "GoUploadList":
+		return true, upload.UploadList()
+
+	case "GoUploadingStart":
+		uploadid := gjson.Get(postdata, "uploadid").String()
+		if uploadid == "all" {
+			return true, upload.UploadingStartAll()
+		}
+		return true, upload.UploadingStart(uploadid)
+	case "GoUploadingStop":
+		uploadid := gjson.Get(postdata, "uploadid").String()
+		if uploadid == "all" {
+			return true, upload.UploadingStopAll()
+		}
+		return true, upload.UploadingStop(uploadid)
+	case "GoUploadingDelete":
+		uploadid := gjson.Get(postdata, "uploadid").String()
+		if uploadid == "all" {
+			return true, upload.UploadingDeleteAll()
+		}
+		return true, upload.UploadingDelete(uploadid)
+	case "GoUploadDelete":
+		uploadid := gjson.Get(postdata, "uploadid").String()
+		if uploadid == "all" {
+			return true, upload.UploadDeleteAll()
+		}
+		return true, upload.UploadDelete(uploadid)
+	case "GoUploadingForder":
+		uploadid := gjson.Get(postdata, "uploadid").String()
+		return true, upload.UploadingForder(uploadid)
+	case "GoUploadForder":
+		uploadid := gjson.Get(postdata, "uploadid").String()
+		return true, upload.UploadForder(uploadid)
 
 	case "GoSetting":
 		key := gjson.Get(postdata, "key").String()

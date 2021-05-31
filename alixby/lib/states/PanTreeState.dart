@@ -24,8 +24,6 @@ class PanTreeState extends ChangeNotifier {
   double height = 300;
   //当前选中的文件夹
   String selectKey = "root";
-  //最后一次触发加载文件夹的文件列表的dirkey--用来避免多次重复加载同一个文件夹的文件列表
-  String lastLoading = "";
 
   pageInitByTheme() {
     Node node = _makeNode("", "root", "网盘目录树", 0, []);
@@ -57,10 +55,7 @@ class PanTreeState extends ChangeNotifier {
       if (file != null) {
         Global.panFileState.pageSelectNode(key); //显示右侧文件列表
         if (file.children.length == 0) {
-          if (lastLoading != key) {
-            lastLoading = key;
-            PanData.loadFileList(key, key); //触发联网加载
-          }
+          PanData.loadFileList(key, key); //触发联网加载
         }
       }
     }
@@ -104,12 +99,9 @@ class PanTreeState extends ChangeNotifier {
       Global.panFileState.pageSelectNode(key); //显示右侧文件列表
 
       if (node.parent && node.children.length == 0 && expanded == true) {
-        if (lastLoading != key) {
-          //是文件夹&&children子文件数==0&&要展开显示了
-          //注意node.parent,当联网后发现是空文件夹，node.parent会变成false
-          lastLoading = key;
-          PanData.loadFileList(key, node.label); //触发联网加载
-        }
+        //是文件夹&&children子文件数==0&&要展开显示了
+        //注意node.parent,当联网后发现是空文件夹，node.parent会变成false
+        PanData.loadFileList(key, node.label); //触发联网加载
       }
     }
   }
@@ -120,11 +112,8 @@ class PanTreeState extends ChangeNotifier {
     var key = selectKey;
     Node? node = treeController.getNode(key);
     if (node != null) {
-      //联网加载
-      lastLoading = key;
       PanData.loadFileList(key, node.label); //触发联网加载
     } else if (key == "trash" || key == "favorite" || key == "safebox" || key == "calendar") {
-      lastLoading = key;
       PanData.loadFileList(key, key); //触发联网加载
     }
   }
@@ -133,7 +122,6 @@ class PanTreeState extends ChangeNotifier {
   userLogoff() {
     treeController = TreeViewController(children: [_makeNode("", "root", "网盘目录树", 0, [])]);
     selectKey = "root";
-    lastLoading = "";
     width = _updateWidth(treeController.children) * double.parse(Global.settingState.setting.textScale);
     height = _updateHeight(treeController.children);
     notifyListeners();

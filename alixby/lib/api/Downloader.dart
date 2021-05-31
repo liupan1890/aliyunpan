@@ -154,4 +154,17 @@ class Downloader {
     }
     return "error";
   }
+
+  static Future<String> goImage(String key) async {
+    try {
+      print('goImage');
+      var result = await HttpHelper.postToServer("GoImage", jsonEncode({"file_id": key}));
+      if (result["code"] == 0) {
+        return result["url"];
+      }
+    } catch (e) {
+      print('goImage ' + e.toString());
+    }
+    return "error";
+  }
 }

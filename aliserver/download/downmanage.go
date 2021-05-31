@@ -156,6 +156,7 @@ func DownFileMutil(ParentID string, SavePath string, keylist []string) string {
 			}
 		}
 	}
+
 	lmax := len(list)
 	for m := 0; m < lmax; m++ {
 		if list[m].IsDir {
@@ -169,11 +170,16 @@ func DownFileMutil(ParentID string, SavePath string, keylist []string) string {
 			}
 		}
 	}
+
+	LEN := len(list)
+	if LEN == 0 {
+		return utils.ToSuccessJSON("filecount", 0)
+	}
+	//下载文件
 	filecount := 0
-	lmax = len(list)
 	dtime := time.Now().UnixNano()
-	downinglist := make([]*DownFileModel, 0, lmax)
-	for i := 0; i < lmax; i++ {
+	downinglist := make([]*DownFileModel, 0, LEN)
+	for i := 0; i < LEN; i++ {
 		info := list[i]
 		path := utils.ClearFileName(info.P_file_path, false)
 		name := utils.ClearFileName(info.P_file_name, true)

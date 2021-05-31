@@ -75,13 +75,13 @@ func StartDownAsync(item *DownFileModel, threadcount int) {
 	url := ""
 	//无法访问资源，可能需要登录
 	for i := 0; i < 3; i++ {
-		urlinfo, err := aliyun.ApiFileGetUrl(item.Identity, "")
+		downurl, _, err := aliyun.ApiFileDownloadUrl(item.Identity, 60*60*2)
 		if err != nil {
 			fmt.Println("DownloadAddress", err)
 			time.Sleep(time.Duration(1) * time.Second)
 			continue
 		}
-		url = urlinfo.P_url
+		url = downurl
 		break
 	}
 	item.FailedMessage = ""
@@ -113,7 +113,7 @@ func StartDownAsync(item *DownFileModel, threadcount int) {
 	optionData["split"] = strconv.FormatInt(int64(threadcount), 10)
 	optionData["min-split-size"] = "4M"
 	optionData["referer"] = data.Config.AliDownReferer
-	optionData["user-agent"] = "Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) ????/2.1.3 Chrome/89.0.4389.128 Electron/12.0.5 Safari/537.36" //data.Config.AliDownAgent
+	optionData["user-agent"] = data.Config.AliDownAgent
 	optionData["check-certificate"] = "false"
 	if data.Setting.DownSha1Check && item.Hash != "" {
 		optionData["checksum"] = "sha-1=" + item.Hash
