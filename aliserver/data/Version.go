@@ -3,7 +3,6 @@ package data
 import (
 	"aliserver/utils"
 	"encoding/json"
-	"fmt"
 	"log"
 	"net/http"
 	"time"
@@ -77,14 +76,4 @@ func UpdateVerAsyncByStart() {
 			st++
 		}
 	}
-}
-
-func CrearAPI() {
-
-	fmt.Println("SIP", utils.B64encode("http://139.224.129.138:5282/"))
-	fmt.Println("ExeVerUrl", utils.B64encode("https://wwe.lanzoui.com/b01npsg8h"))
-	fmt.Println("DownReferer", utils.B64encode("https://www.aliyundrive.com/"))
-	fmt.Println("DownAgent", utils.B64encode("Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) ????/2.1.3 Chrome/89.0.4389.128 Electron/12.0.5 Safari/537.36"))
-	fmt.Println("ApiAgent", utils.B64encode("Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) ????/2.1.3 Chrome/89.0.4389.128 Electron/12.0.5 Safari/537.36"))
-
 }
