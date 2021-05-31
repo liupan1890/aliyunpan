@@ -2,7 +2,9 @@
 
 20210531冒个泡，我在认真编码哦：
 
-蓝奏下载地址：[https://wwe.lanzoui.com/b01npsg8h](https://wwe.lanzoui.com/b01npsg8h)
+最新版下载：[v1.5.31 https://wwe.lanzoui.com/b01npsg8h](https://wwe.lanzoui.com/b01npsg8h)
+
+旧版下载：[v1.5.25 https://wwe.lanzoui.com/b01nqc4gd](https://wwe.lanzoui.com/b01nqc4gd)
 
 <br />
 :o:定个小目标：下次满 `150` Star就更新:o:
