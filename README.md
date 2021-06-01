@@ -6,6 +6,8 @@
 
 旧版下载：[v1.5.25 https://wwe.lanzoui.com/b01nqc4gd](https://wwe.lanzoui.com/b01nqc4gd)
 
+已经发布在小众软件发现频道，大爱小众，几个项目都是发在小众宣传的。。。。[meta.appinn.net](meta.appinn.net)
+
 <br />
 :o:定个小目标：下次满 `150` Star就更新:o:
 <br />
