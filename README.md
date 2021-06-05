@@ -4,15 +4,16 @@
 
 这是我个人基于阿里云盘网页版开发的PC客户端，已经实现了阿里云盘官方客户端的基本功能，为的是学习flutter
 
+>抱歉我在6月5日晚上10点又更新了v1.6.6  修正了扫码登陆失败，修正了文件较多时操作要等很久的BUG，是我太着急发布了，十分抱歉，请在6月4-5日更新了v1.6.5的用户重新更新为v1.6.6 再次致歉
 <br />
 
-最新版下载：[v1.6.5 https://wwe.lanzoui.com/b01npsg8h](https://wwe.lanzoui.com/b01npsg8h)
+最新版下载：[v1.6.6 https://wwe.lanzoui.com/b01npsg8h](https://wwe.lanzoui.com/b01npsg8h)
 
-旧版下载：[v1.5.31 https://wwe.lanzoui.com/b01nqc4gd](https://wwe.lanzoui.com/b01nqc4gd)
+旧版下载：[v1.6.6 https://wwe.lanzoui.com/b01nqc4gd](https://wwe.lanzoui.com/b01nqc4gd)
 
 <br />
 
-已经发布在小众软件发现频道，大爱小众，几个项目都是发在小众宣传的。。。。[meta.appinn.net](meta.appinn.net)
+已经发布在小众软件发现频道，大爱小众[meta.appinn.net](meta.appinn.net)
 
 <br />
 
