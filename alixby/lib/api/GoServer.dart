@@ -4,9 +4,8 @@ import 'dart:io';
 import 'package:alixby/api/HttpHelper.dart';
 import 'package:alixby/models/Setting.dart';
 import 'package:alixby/states/Global.dart';
-import 'package:alixby/utils/LoadingWidget.dart';
+import 'package:alixby/utils/Loading.dart';
 import 'package:bot_toast/bot_toast.dart';
-import 'package:flutter/material.dart';
 import 'package:path/path.dart' as Path;
 
 class GoServer {
@@ -20,18 +19,7 @@ class GoServer {
 
   static Future<bool> connServer() async {
     try {
-      CancelFunc hidecb = BotToast.showCustomLoading(
-          toastBuilder: (cancelFunc) {
-            return LoadingWidget(cancelFunc: cancelFunc, title: "正在启动服务，可能需要40秒");
-          },
-          allowClick: true,
-          clickClose: false,
-          crossPage: true,
-          duration: Duration(seconds: 15),
-          align: Alignment.center,
-          backButtonBehavior: BackButtonBehavior.ignore,
-          ignoreContentClick: true,
-          backgroundColor: Color(0x99000000));
+      CancelFunc hidecb = Loading.showServer();
       var response = await HttpHelper.postToServer("Ping", "");
       if (response["code"] != 0) {
         for (int i = 0; i < 60; i++) {
@@ -42,15 +30,13 @@ class GoServer {
       }
       hidecb();
       if (response["code"] != 0) {
-        BotToast.showSimpleNotification(
-            title: "严重错误::无法连接到后台进程!!请退出程序后重新打开", hideCloseButton: true, duration: Duration(hours: 5));
+        BotToast.showSimpleNotification(title: "严重错误::无法连接到后台进程!!请退出程序后重新打开", hideCloseButton: true, duration: null);
         return false;
       }
       //成功连接
       await Global.settingState.loadSetting();
       if (Global.settingState.setting.ver == "") {
-        BotToast.showSimpleNotification(
-            title: "严重错误::无法连接到后台进程!!请退出程序后重新打开", hideCloseButton: true, duration: Duration(hours: 5));
+        BotToast.showSimpleNotification(title: "严重错误::无法连接到后台进程!!请退出程序后重新打开", hideCloseButton: true, duration: null);
         return false;
       }
 
@@ -59,11 +45,12 @@ class GoServer {
             title:
                 "严重错误::后台进程版本(" + Global.settingState.setting.ver + ")和主界面版本(" + Setting.UIVER + ") 不一致！！请重新下载完整的安装包",
             hideCloseButton: true,
-            duration: Duration(hours: 5));
+            duration: null);
       } else {
         Global.userState.loadUser();
         Global.pageDownState.runTimer();
         Global.panFileState.runTimer();
+        Global.pageRssMiaoChuanState.refreshLink();
       }
       return true;
     } catch (e) {

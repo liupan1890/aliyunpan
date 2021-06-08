@@ -45,9 +45,9 @@ class _LoadingWidgetState extends State<LoadingWidget> with SingleTickerProvider
     if (show == false) return Container(width: 0, height: 0);
     return Card(
       child: Padding(
-          padding: const EdgeInsets.all(8.0),
+          padding: const EdgeInsets.all(16.0),
           child: Container(
-              constraints: BoxConstraints(maxWidth: 290),
+              constraints: BoxConstraints(maxWidth: 310),
               child: Row(children: [
                 Container(
                     width: 22,
@@ -57,14 +57,15 @@ class _LoadingWidgetState extends State<LoadingWidget> with SingleTickerProvider
                       circleColor: Colors.blue.withOpacity(0.3),
                     )),
                 Container(
-                    padding: EdgeInsets.only(left: 8, right: 12),
-                    width: 260,
-                    height: 22,
+                  width: 12,
+                  height: 22,
+                ),
+                Expanded(
                     child: Text(widget.title,
                         style: TextStyle(fontSize: 15, color: MColors.textColor),
                         textAlign: TextAlign.left,
                         softWrap: false,
-                        maxLines: 1,
+                        maxLines: 10,
                         overflow: TextOverflow.ellipsis)),
               ]))),
     );

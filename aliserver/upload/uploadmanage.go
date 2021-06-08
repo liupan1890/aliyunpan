@@ -11,6 +11,7 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 )
 
@@ -41,7 +42,11 @@ func UploadingList() string {
 		b.WriteString(`","name":"`)
 		b.WriteString(utils.ToJSONString(item.Name))
 		b.WriteString(`","sp":"`)
-		b.WriteString(utils.ToJSONString(item.LocalPath))
+		if strings.HasPrefix(item.LocalPath, "miaochuan|") {
+			b.WriteString("秒传")
+		} else {
+			b.WriteString(utils.ToJSONString(item.LocalPath))
+		}
 		b.WriteString(`","spd":"`)
 		b.WriteString(item.DownSpeedStr)
 		b.WriteString(`","fm":"`)
@@ -89,7 +94,11 @@ func UploadList() string {
 		b.WriteString(`","name":"`)
 		b.WriteString(utils.ToJSONString(item.Name))
 		b.WriteString(`","sp":"`)
-		b.WriteString(utils.ToJSONString(item.LocalPath))
+		if strings.HasPrefix(item.LocalPath, "miaochuan|") {
+			b.WriteString("秒传")
+		} else {
+			b.WriteString(utils.ToJSONString(item.LocalPath))
+		}
 		b.WriteString(`","spd":"`)
 		b.WriteString(item.DownSpeedStr)
 		b.WriteString(`","fm":"`)
@@ -126,7 +135,7 @@ func UploadFile(ParentID string, fileList []string) string {
 		return utils.ToErrorMessageJSON("还没有登录阿里云盘账号")
 	}
 
-	var SlelectFileList = make([]*UploadSelectModel, 0, len(fileList))
+	var SelectFileList = make([]*UploadSelectModel, 0, len(fileList))
 
 	LEN := len(fileList)
 	for m := 0; m < LEN; m++ {
@@ -138,48 +147,10 @@ func UploadFile(ParentID string, fileList []string) string {
 				Name:     fi.Name(),
 				ParentID: ParentID,
 			}
-			SlelectFileList = append(SlelectFileList, &m)
+			SelectFileList = append(SelectFileList, &m)
 		}
 	}
-
-	LEN = len(SlelectFileList)
-	if LEN == 0 {
-		return utils.ToSuccessJSON("filecount", 0)
-	}
-	//上传文件
-	filecount := 0
-	dtime := time.Now().UnixNano()
-	uploadinglist := make([]*UploadFileModel, 0, LEN)
-	for i := 0; i < LEN; i++ {
-		item := SlelectFileList[i]
-		uploading, err := UploadingAdd(UserID, item.Path, item.Name, item.ParentID, item.Size, dtime)
-		if err == nil {
-			uploadinglist = append(uploadinglist, uploading)
-			filecount++
-		}
-		dtime++
-	}
-
-	DataUploading.Lock() //c8
-	for n := 0; n < len(uploadinglist); n++ {
-		isSame := false
-		LEN := len(DataUploading.List)
-		UploadID := uploadinglist[n].UploadID
-		for x := 0; x < LEN; x++ {
-			if DataUploading.List[x].UploadID == UploadID {
-				isSame = true
-				break
-			}
-		}
-		if !isSame {
-			//DataDowning.List是从大到小，add的dtime肯定是最大的，所以插入在最前面
-			DataUploading.List = append([]*UploadFileModel{uploadinglist[n]}, DataUploading.List...)
-			b, _ := json.Marshal(uploadinglist[n])
-			data.SetUpload(UploadID, string(b))
-		}
-	}
-	DataUploading.Unlock() //c8
-	return utils.ToSuccessJSON("filecount", filecount)
+	return UploadSelectFile(UserID, ParentID, SelectFileList)
 }
 
 //UploadDir 上传一个文件夹（只有一个）
@@ -193,7 +164,7 @@ func UploadDir(ParentID string, DirPath string) string {
 		return utils.ToErrorMessageJSON("还没有登录阿里云盘账号")
 	}
 
-	var SlelectFileList = make([]*UploadSelectModel, 0, 100)
+	var SelectFileList = make([]*UploadSelectModel, 0, 100)
 	fi, err := os.Stat(DirPath)
 	if err == nil && fi != nil && fi.IsDir() == true {
 		DirID, err3 := aliyun.UploadCreatForder(ParentID, fi.Name())
@@ -201,7 +172,7 @@ func UploadDir(ParentID string, DirPath string) string {
 			return utils.ToErrorMessageJSON("网盘创建路径失败：" + fi.Name())
 		}
 		//遍历文件夹，获取文件树，并在网盘里创建对应的文件夹
-		SlelectFileList, err = GetFilesWithDir(DirID, DirPath)
+		SelectFileList, err = GetFilesWithDir(DirID, DirPath)
 		if err != nil {
 			return utils.ToErrorMessageJSON(err.Error())
 		}
@@ -209,7 +180,10 @@ func UploadDir(ParentID string, DirPath string) string {
 		return utils.ToErrorMessageJSON("无法访问路径：" + DirPath)
 	}
 
-	LEN := len(SlelectFileList)
+	return UploadSelectFile(UserID, ParentID, SelectFileList)
+}
+func UploadSelectFile(UserID string, ParentID string, SelectFileList []*UploadSelectModel) string {
+	LEN := len(SelectFileList)
 	if LEN == 0 {
 		return utils.ToSuccessJSON("filecount", 0)
 	}
@@ -218,7 +192,7 @@ func UploadDir(ParentID string, DirPath string) string {
 	dtime := time.Now().UnixNano()
 	uploadinglist := make([]*UploadFileModel, 0, LEN)
 	for i := 0; i < LEN; i++ {
-		item := SlelectFileList[i]
+		item := SelectFileList[i]
 		uploading, err := UploadingAdd(UserID, item.Path, item.Name, item.ParentID, item.Size, dtime)
 		if err == nil {
 			uploadinglist = append(uploadinglist, uploading)
@@ -255,6 +229,9 @@ func GetFilesWithDir(ParentID, DirPath string) (files []*UploadSelectModel, err 
 	if err != nil {
 		return nil, err
 	}
+	var wg sync.WaitGroup
+	var lock sync.Mutex
+	errnum := 0
 	files = make([]*UploadSelectModel, 0, len(dir))
 	for _, fi := range dir {
 		if fi.IsDir() == false {
@@ -264,25 +241,34 @@ func GetFilesWithDir(ParentID, DirPath string) (files []*UploadSelectModel, err 
 				Name:     fi.Name(),
 				ParentID: ParentID,
 			}
+			lock.Lock()
 			files = append(files, &m)
+			lock.Unlock()
 		} else {
 			//先在网盘里创建对应的文件夹,获得文件夹ID
-			DirID, err3 := aliyun.UploadCreatForder(ParentID, fi.Name())
-			if err3 != nil {
-				return nil, err3
-			}
-			// 然后递归遍历
-			childfiles, err2 := GetFilesWithDir(DirID, filepath.Join(DirPath, fi.Name()))
-			if err2 != nil {
-				return nil, err2
-			}
-			if childfiles != nil {
-				files = append(files, childfiles...)
-			}
+			wg.Add(1)
+			go func(dirname string) {
+				DirID, err3 := aliyun.UploadCreatForder(ParentID, dirname)
+				if err3 != nil {
+					errnum++
+				} else {
+					// 然后递归遍历
+					childfiles, err2 := GetFilesWithDir(DirID, filepath.Join(DirPath, dirname))
+					if err2 != nil {
+						errnum++
+					} else if len(childfiles) > 0 {
+						lock.Lock()
+						files = append(files, childfiles...)
+						lock.Unlock()
+					}
+				}
+				wg.Done()
+			}(fi.Name())
 		}
-		if len(files) >= 10000 {
-			return nil, errors.New("文件夹内文件总数不能超过 10000")
-		}
+	}
+	wg.Wait()
+	if errnum > 0 {
+		return nil, errors.New("向网盘内创建路径时出错")
 	}
 	return files, nil
 }

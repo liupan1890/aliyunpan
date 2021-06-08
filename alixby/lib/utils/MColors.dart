@@ -143,7 +143,7 @@ class MColorsLight {
   Color thumbColor = Colors.grey.shade400;
   Color trackColor = Colors.grey.shade200;
   Color trackBorderColor = Colors.grey.shade300;
-  Color textColor = Colors.black;
+  Color textColor = Color(0xee000000);
 }
 
 class MColorsDark extends MColorsLight {

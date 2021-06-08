@@ -1,5 +1,6 @@
 import 'package:alixby/api/Downloader.dart';
 import 'package:alixby/states/Global.dart';
+import 'package:alixby/utils/Loading.dart';
 import 'package:alixby/utils/MColors.dart';
 import 'package:alixby/utils/MIcons.dart';
 import 'package:bot_toast/bot_toast.dart';
@@ -123,16 +124,15 @@ class _DownSaveDialogState extends State<DownSaveDialog> {
                   onPressed: () {
                     String savepath = widget.controller.text;
                     savepath = savepath.replaceAll('"', '').trim();
-                    var fcHide = BotToast.showLoading(
-                        duration: Duration(seconds: 120), backButtonBehavior: BackButtonBehavior.ignore);
+                    var fcHide = Loading.showLoading();
                     var parentid = Global.panFileState.pageRightDirKey;
                     Downloader.goDownFile(parentid, savepath, widget.filelist).then((value) {
                       fcHide();
                       if (value > 0) {
-                        BotToast.showText(text: "成功创建" + value.toString() + "个文件的下载任务", align: Alignment(0, 0));
+                        BotToast.showText(text: "成功创建" + value.toString() + "个文件的下载任务");
                         Navigator.of(context).pop('ok');
                       } else {
-                        BotToast.showText(text: "创建下载任务失败请重试", align: Alignment(0, 0));
+                        BotToast.showText(text: "创建下载任务失败请重试");
                       }
                     });
                   },

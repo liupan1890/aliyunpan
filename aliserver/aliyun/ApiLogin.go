@@ -58,12 +58,29 @@ func apiMiniLogin() {
 	var checktime = time.Now().Unix() - 3600                             //秒 - 1小时
 	if parame.M_client_id == "" || parame.M_client_id_time < checktime { //client_id第一次先读取
 		_, _, body := utils.GetHTTPString("https://www.aliyundrive.com/sign/in", "User-Agent: "+UA+"\nReferer: "+minilogin)
-		index := strings.Index(body, "client_id:\"")
+		index := strings.Index(body, "client_id")
 		if index > 0 {
-			client_id := body[index+len("client_id:\""):]
-			client_id = client_id[0:strings.Index(client_id, "\"")]
-			parame.M_client_id = client_id
-			parame.M_client_id_time = time.Now().Unix()
+			client_id := body[index+len("client_id"):]
+			var s1 = strings.Index(client_id, "\"")
+			var s2 = strings.Index(client_id, "'")
+			if s1 == -1 && s2 >= 0 || s2 >= 0 && s2 < s1 {
+				//'
+				client_id = client_id[s2+1:]
+				client_id = client_id[0:strings.Index(client_id, "'")]
+				if len(client_id) > 12 && len(client_id) < 20 { //应该是16位
+					parame.M_client_id = client_id
+					parame.M_client_id_time = time.Now().Unix()
+				}
+			} else if s2 == -1 && s1 >= 0 || s1 >= 0 && s1 < s2 {
+				//"
+				client_id = client_id[s1+1:]
+				client_id = client_id[0:strings.Index(client_id, "\"")]
+				if len(client_id) > 12 && len(client_id) < 20 { //应该是16位
+					parame.M_client_id = client_id
+					parame.M_client_id_time = time.Now().Unix()
+				}
+			}
+
 			utils.GetHTTPString(authurl(), "User-Agent: "+UA+"\nReferer: "+minilogin)
 		}
 	}

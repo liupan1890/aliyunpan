@@ -33,11 +33,6 @@ class _DownFileListState extends State<DownFileList> {
   final GlobalKey fileConKey = GlobalKey();
   @override
   Widget build(BuildContext context) {
-    if (verticalScroll.hasClients) {
-      Future.delayed(Duration(milliseconds: 200), () {
-        verticalScroll.position.didUpdateScrollPositionBy(0);
-      });
-    }
     return Container(
         key: fileConKey,
         width: double.infinity,

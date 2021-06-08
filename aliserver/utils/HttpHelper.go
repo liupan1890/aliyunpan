@@ -28,8 +28,8 @@ func BodyString(body Body) string {
 	return string(b)
 }
 
-var proxyurl, _ = url.Parse("http://192.168.31.75:8888")
 var jar, _ = NewJar(nil)
+var proxyurl, _ = url.Parse("http://192.168.31.75:8888")
 
 // Raw 原始http请求
 func Raw(metho string, url string, header string, postdata *bytes.Reader) (code int, head string, body *[]byte) {
@@ -179,6 +179,26 @@ func PostHTTPString(url string, header string, postdata string) (code int, head 
 		body = ""
 		bodybytes = nil
 		code, head, bodybytes = Raw("POST", url, header, bytes.NewReader([]byte(postdata)))
+		if bodybytes != nil {
+			body = string(*bodybytes)
+			bodybytes = nil
+		}
+		if code == 200 || code == 206 {
+			return 200, head, body
+		}
+		if code >= 200 && code <= 400 {
+			return code, head, body
+		}
+	}
+	return code, head, body
+}
+func PostHTTPBytes(url string, header string, postdata *[]byte) (code int, head string, body string) {
+
+	var bodybytes *[]byte
+	for i := 0; i < 2; i++ {
+		body = ""
+		bodybytes = nil
+		code, head, bodybytes = Raw("POST", url, header, bytes.NewReader(*postdata))
 		if bodybytes != nil {
 			body = string(*bodybytes)
 			bodybytes = nil

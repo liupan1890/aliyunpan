@@ -7,7 +7,11 @@ import (
 	"errors"
 	"log"
 	"path/filepath"
+	"strconv"
+	"strings"
+	"sync"
 
+	"github.com/chennqqi/chardet"
 	"github.com/tidwall/gjson"
 )
 
@@ -62,6 +66,7 @@ func ApiFileDownloadUrl(file_id string, expire_sec int) (downurl string, size in
 	return url, size, nil
 }
 
+//ApiFileGetUrl 读取一个文件的信息
 func ApiFileGetUrl(file_id string, parentpath string) (urlinfo FileUrlModel, err error) {
 	//https://api.aliyundrive.com/v2/file/get
 	//{"drive_id":"8699982","file_id":"60a521893abc43ae8386480788b1016a214724ac"}
@@ -116,6 +121,8 @@ func ApiFileGetUrl(file_id string, parentpath string) (urlinfo FileUrlModel, err
 		return FileUrlModel{P_file_id: file_id, P_file_path: parentpath, P_file_name: name, IsUrl: false, IsDir: true}, nil
 	}
 }
+
+//ApiFileListAllForDown 读取一个文件夹包含的文件列表 isfull==true时遍历所有子文件夹
 func ApiFileListAllForDown(parentid string, parentpath string, isfull bool) (list []*FileUrlModel, err error) {
 	for i := 0; i < 3; i++ {
 		var list []*FileUrlModel
@@ -126,6 +133,8 @@ func ApiFileListAllForDown(parentid string, parentpath string, isfull bool) (lis
 	}
 	return nil, errors.New("error")
 }
+
+//_ApiFileListAllForDown 读取一个文件夹包含的文件列表 isfull==true时遍历所有子文件夹
 func _ApiFileListAllForDown(parentid string, parentpath string, isfull bool) (list []*FileUrlModel, err error) {
 	defer func() {
 		if errr := recover(); errr != nil {
@@ -148,24 +157,36 @@ func _ApiFileListAllForDown(parentid string, parentpath string, isfull bool) (li
 		}
 	}
 	if isfull {
+		var wg sync.WaitGroup
+		var lock sync.Mutex
+		errnum := 0
 		var max = len(list)
 		for i := 0; i < max; i++ {
 			if list[i].IsDir {
-				rlist, rerr := ApiFileListAllForDown(list[i].P_file_id, list[i].P_file_path+"/"+list[i].P_file_name, true)
-				//注意这里，如果子文件夹遍历时出错了，直接退出，确保要么全部成功，要么全部失败，不丢失
-				if rerr != nil {
-					return nil, errors.New("error")
-				}
-				if len(rlist) > 0 {
-					list = append(list, rlist...)
-				}
+				wg.Add(1)
+				go func(i int) {
+					rlist, rerr := ApiFileListAllForDown(list[i].P_file_id, list[i].P_file_path+"/"+list[i].P_file_name, true)
+					//注意这里，如果子文件夹遍历时出错了，直接退出，确保要么全部成功，要么全部失败，不丢失
+					if rerr != nil {
+						errnum++
+					} else if len(rlist) > 0 {
+						lock.Lock()
+						list = append(list, rlist...)
+						lock.Unlock()
+					}
+					wg.Done()
+				}(i)
 			}
+		}
+		wg.Wait()
+		if errnum > 0 {
+			return nil, errors.New("列出文件信息时出错")
 		}
 	}
 	return list, nil
 }
 
-//真的读取子文件列表，不能有catch，出错要直接崩溃，上级调用会catch
+//ApiFileListUrl 真的读取子文件列表，不能有catch，出错要直接崩溃，上级调用会catch
 func ApiFileListUrl(parentid string, parentpath string, marker string) (list []*FileUrlModel, next_marker string, err error) {
 	var apiurl = "https://api.aliyundrive.com/v2/file/list"
 
@@ -229,7 +250,13 @@ func ApiFileListUrl(parentid string, parentpath string, marker string) (list []*
 	return list, next_marker, nil
 }
 
+//ApiPlay 调用本地播放器
 func ApiPlay(file_id string) string {
+	defer func() {
+		if errr := recover(); errr != nil {
+			log.Println("ApiPlayError ", " error=", errr)
+		}
+	}()
 	mpvpath := ""
 	if utils.IsWindows() {
 		//检测是否有MPV\\mpv.exe文件
@@ -259,10 +286,12 @@ func ApiPlay(file_id string) string {
 	return utils.ToErrorJSON(err)
 
 }
+
+//ApiImage 在线预览图片
 func ApiImage(file_id string) string {
 	defer func() {
 		if errr := recover(); errr != nil {
-			log.Println("ApiFileGetUrlError ", " error=", errr)
+			log.Println("ApiImageError ", " error=", errr)
 		}
 	}()
 
@@ -297,4 +326,84 @@ func ApiImage(file_id string) string {
 		b64str := base64.StdEncoding.EncodeToString(*bodybs)
 	*/
 	return utils.ToSuccessJSON("url", url)
+}
+
+//ApiText 在线预览文本
+func ApiText(file_id string) string {
+	defer func() {
+		if errr := recover(); errr != nil {
+			log.Println("ApiTextError ", " error=", errr)
+		}
+	}()
+
+	var apiurl = "https://api.aliyundrive.com/v2/file/get"
+
+	var postjson = map[string]interface{}{"drive_id": _user.UserToken.P_default_drive_id,
+		"file_id": file_id}
+
+	b, _ := json.Marshal(postjson)
+	postdata := string(b)
+
+	code, _, body := utils.PostHTTPString(apiurl, GetAuthorization(), postdata)
+	if code == 401 {
+		//UserAccessToken 失效了，尝试刷新一次
+		ApiTokenRefresh("")
+		//刷新完了，重新尝试一遍
+		code, _, body = utils.PostHTTPString(apiurl, GetAuthorization(), postdata)
+		if code == 401 {
+			return utils.ToErrorMessageJSON("获取文本链接失败")
+		}
+	}
+	if code != 200 || !gjson.Valid(body) {
+		return utils.ToErrorMessageJSON("获取文本链接失败")
+	}
+	info := gjson.Parse(body)
+	url := info.Get("url").String()
+
+	code, _, bodybs1 := utils.GetHTTPBytes(url, GetAuthorization())
+	if code != 200 {
+		return utils.ToErrorMessageJSON("获取文本链接失败")
+	}
+	bodybs := *bodybs1
+	if bodybs[0] == 0xFF && bodybs[1] == 0xFE {
+		conbs, err := utils.UTF16LEToUtf8(bodybs)
+		if err == nil {
+			bodybs = conbs
+		}
+	} else if bodybs[0] == 0xFE && bodybs[1] == 0xFF {
+		conbs, err := utils.UTF16BEToUtf8(bodybs)
+		if err == nil {
+			bodybs = conbs
+		}
+	} else if bodybs[0] == 0xEF && bodybs[1] == 0xBB && bodybs[2] == 0xBF {
+		//utf8
+	} else {
+		plist := chardet.Possible(bodybs)
+		if utils.IsContain(plist, "utf-8") {
+			//utf8
+		} else if utils.IsContain(plist, "gb18030") {
+			conbs, err := utils.GB18030ToUtf8(bodybs)
+			if err == nil {
+				bodybs = conbs
+			}
+		} else if utils.IsContain(plist, "gbk") {
+			conbs, err := utils.GbkToUtf8(bodybs)
+			if err == nil {
+				bodybs = conbs
+			}
+		} else if utils.IsContain(plist, "big5") {
+			conbs, err := utils.Big5ToUtf8(bodybs)
+			if err == nil {
+				bodybs = conbs
+			}
+		}
+	}
+	text := string(bodybs)
+	temp := []rune(text)
+	length4 := len(temp)
+	if length4 > 20480 { //1万字
+		text = string(temp[0:20480]) + "\n\n\n\n剩余" + strconv.FormatInt(int64(length4-20480), 10) + "字被省略.....\n\n\n\n"
+	}
+	text = strings.ReplaceAll(text, "	", " ")
+	return utils.ToSuccessJSON("text", text)
 }

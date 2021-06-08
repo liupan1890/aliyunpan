@@ -6,6 +6,8 @@ import (
 	"log"
 	"strconv"
 	"strings"
+	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/tidwall/gjson"
@@ -89,7 +91,7 @@ func ApiFileList(parentid string, marker string) (retjsonstr string) {
 		if category == "others" || category == "doc" {
 			ext = value.Get("file_extension").String()
 			if file_size < 102400 {
-				if strings.Index(";.c.cpp.java.htm.html.css.js.vue.php.aspx.shtml.asp.jsp.json.url.txt.md.markdown.xml.md5.ini.nfo.info.config.cfg.bat.sh.cmd.log.debug.go.qrc.lrc.", ext) > 0 {
+				if strings.Index(";.c.cpp.java.htm.html.css.js.vue.php.aspx.shtml.asp.jsp.json.url.txt.md.markdown.xml.md5.ini.nfo.info.config.cfg.bat.sh.cmd.log.debug.go.lrc.", ext) > 0 {
 					file_icon = "txt"
 				}
 			}
@@ -562,37 +564,40 @@ func ApiTrashBatch(filelist []string) (retjsonstr string) {
 	//https://api.aliyundrive.com/v2/recyclebin/trash   {"drive_id":"8699982","file_id":"60a92692849dfed0c585482fa71aecd2e790ba64"}
 	//https://api.aliyundrive.com/v2/batch {"requests":[{"body":{"drive_id":"8699982","file_id":"60a9276610ca470f2289432cada6e8336ba81e4a"},"headers":{"Content-Type":"application/json"},"id":"60a9276610ca470f2289432cada6e8336ba81e4a","method":"POST","url":"/recyclebin/trash"},{"body":{"drive_id":"8699982","file_id":"60a9275b7a25fc02f7e84f5ca170d8b0fc030878"},"headers":{"Content-Type":"application/json"},"id":"60a9275b7a25fc02f7e84f5ca170d8b0fc030878","method":"POST","url":"/recyclebin/trash"}],"resource":"file"}
 	//删除文件是204 删除文件夹是202
-	var apiurl = "https://api.aliyundrive.com/v2/batch"
+	count := int32(0)
+
 	var postdata = `{"requests":[`
 	var max = len(filelist) - 1
+	var add = 0
+
+	var blist = make([]string, 0)
 	for i := 0; i < len(filelist); i++ {
 		postdata += `{"body":{"drive_id":"` + _user.UserToken.P_default_drive_id + `","file_id":"` + filelist[i] + `"},"headers":{"Content-Type":"application/json"},"id":"` + filelist[i] + `","method":"POST","url":"/recyclebin/trash"}`
-		if i < max {
+		add++
+		if add == 90 && i < max {
+			postdata += `],"resource":"file"}`
+			blist = append(blist, postdata)
+			postdata = `{"requests":[`
+			add = 0
+		} else if i < max {
 			postdata += ","
 		}
 	}
 	postdata += `],"resource":"file"}`
 
-	code, _, body := utils.PostHTTPString(apiurl, GetAuthorization(), postdata)
-	if code == 401 {
-		//UserAccessToken 失效了，尝试刷新一次
-		ApiTokenRefresh("")
-		//刷新完了，重新尝试一遍
-		code, _, body = utils.PostHTTPString(apiurl, GetAuthorization(), postdata)
+	blist = append(blist, postdata)
+	var wg sync.WaitGroup
+	for b := 0; b < len(blist); b++ {
+		wg.Add(1)
+		go func(b int) {
+			add := _Batch(blist[b])
+			atomic.AddInt32(&count, add)
+			wg.Done()
+		}(b)
 	}
-	if code != 200 || !gjson.Valid(body) {
-		return utils.ToSuccessJSON2("count", 0, "error", len(filelist))
-	}
-	info := gjson.Parse(body)
-	count := 0
-	info.Get("responses").ForEach(func(key, value gjson.Result) bool {
-		var status = value.Get("status").Int()
-		if status == 202 || status == 204 {
-			count++
-		}
-		return true
-	})
-	return utils.ToSuccessJSON2("count", count, "error", len(filelist)-count)
+	wg.Wait()
+
+	return utils.ToSuccessJSON2("count", count, "error", len(filelist)-int(count))
 }
 
 func ApiFavorBatch(filelist []string, isfavor bool) (retjsonstr string) {
@@ -605,44 +610,45 @@ func ApiFavorBatch(filelist []string, isfavor bool) (retjsonstr string) {
 	//https://api.aliyundrive.com/v2/recyclebin/trash   {"drive_id":"8699982","file_id":"60a92692849dfed0c585482fa71aecd2e790ba64"}
 	//https://api.aliyundrive.com/v2/batch {"requests":[{"body":{"drive_id":"8699982","file_id":"60a9276610ca470f2289432cada6e8336ba81e4a"},"headers":{"Content-Type":"application/json"},"id":"60a9276610ca470f2289432cada6e8336ba81e4a","method":"POST","url":"/recyclebin/trash"},{"body":{"drive_id":"8699982","file_id":"60a9275b7a25fc02f7e84f5ca170d8b0fc030878"},"headers":{"Content-Type":"application/json"},"id":"60a9275b7a25fc02f7e84f5ca170d8b0fc030878","method":"POST","url":"/recyclebin/trash"}],"resource":"file"}
 	//返回200
-	var apiurl = "https://api.aliyundrive.com/v2/batch"
+	count := int32(0)
+
 	var postdata = `{"requests":[`
 	var max = len(filelist) - 1
+	var add = 0
+
+	var blist = make([]string, 0)
 	for i := 0; i < len(filelist); i++ {
 
 		var favdata = `{"body":{"drive_id":"` + _user.UserToken.P_default_drive_id + `","file_id":"` + filelist[i] + `","custom_index_key":"starred_yes","starred":true},"headers":{"Content-Type":"application/json"},"id":"` + filelist[i] + `","method":"POST","url":"/file/update"}`
 		if !isfavor {
 			favdata = `{"body":{"drive_id":"` + _user.UserToken.P_default_drive_id + `","file_id":"` + filelist[i] + `","custom_index_key":"","starred":false},"headers":{"Content-Type":"application/json"},"id":"` + filelist[i] + `","method":"POST","url":"/file/update"}`
-
 		}
-
 		postdata += favdata
-		if i < max {
+		add++
+		if add == 90 && i < max {
+			postdata += `],"resource":"file"}`
+			blist = append(blist, postdata)
+			postdata = `{"requests":[`
+			add = 0
+		} else if i < max {
 			postdata += ","
 		}
 	}
 	postdata += `],"resource":"file"}`
 
-	code, _, body := utils.PostHTTPString(apiurl, GetAuthorization(), postdata)
-	if code == 401 {
-		//UserAccessToken 失效了，尝试刷新一次
-		ApiTokenRefresh("")
-		//刷新完了，重新尝试一遍
-		code, _, body = utils.PostHTTPString(apiurl, GetAuthorization(), postdata)
+	blist = append(blist, postdata)
+	var wg sync.WaitGroup
+	for b := 0; b < len(blist); b++ {
+		wg.Add(1)
+		go func(b int) {
+			add := _Batch(blist[b])
+			atomic.AddInt32(&count, add)
+			wg.Done()
+		}(b)
 	}
-	if code != 200 || !gjson.Valid(body) {
-		return utils.ToSuccessJSON2("count", 0, "error", len(filelist))
-	}
-	info := gjson.Parse(body)
-	count := 0
-	info.Get("responses").ForEach(func(key, value gjson.Result) bool {
-		var status = value.Get("status").Int()
-		if status == 200 {
-			count++
-		}
-		return true
-	})
-	return utils.ToSuccessJSON2("count", count, "error", len(filelist)-count)
+	wg.Wait()
+
+	return utils.ToSuccessJSON2("count", count, "error", len(filelist)-int(count))
 }
 
 func ApiMoveBatch(movetoid string, filelist []string) (retjsonstr string) {
@@ -655,37 +661,40 @@ func ApiMoveBatch(movetoid string, filelist []string) (retjsonstr string) {
 	//https://api.aliyundrive.com/v2/batch
 	//{"requests":[{"body":{"drive_id":"8699982","file_id":"60a9265d37316002699a4d7285d2aa9ced3b6d2c","to_parent_file_id":"60a937763fb6e0e751004ffcb1bb5168bd490ae4"},"headers":{"Content-Type":"application/json"},"id":"60a9265d37316002699a4d7285d2aa9ced3b6d2c","method":"POST","url":"/file/move"}],"resource":"file"}
 	//移动文件 返回值200
-	var apiurl = "https://api.aliyundrive.com/v2/batch"
+	count := int32(0)
+
 	var postdata = `{"requests":[`
 	var max = len(filelist) - 1
+	var add = 0
+
+	var blist = make([]string, 0)
 	for i := 0; i < len(filelist); i++ {
 		postdata += `{"body":{"drive_id":"` + _user.UserToken.P_default_drive_id + `","file_id":"` + filelist[i] + `","to_parent_file_id":"` + movetoid + `"},"headers":{"Content-Type":"application/json"},"id":"` + filelist[i] + `","method":"POST","url":"/file/move"}`
-		if i < max {
+		add++
+		if add == 90 && i < max {
+			postdata += `],"resource":"file"}`
+			blist = append(blist, postdata)
+			postdata = `{"requests":[`
+			add = 0
+		} else if i < max {
 			postdata += ","
 		}
 	}
 	postdata += `],"resource":"file"}`
 
-	code, _, body := utils.PostHTTPString(apiurl, GetAuthorization(), postdata)
-	if code == 401 {
-		//UserAccessToken 失效了，尝试刷新一次
-		ApiTokenRefresh("")
-		//刷新完了，重新尝试一遍
-		code, _, body = utils.PostHTTPString(apiurl, GetAuthorization(), postdata)
+	blist = append(blist, postdata)
+	var wg sync.WaitGroup
+	for b := 0; b < len(blist); b++ {
+		wg.Add(1)
+		go func(b int) {
+			add := _Batch(blist[b])
+			atomic.AddInt32(&count, add)
+			wg.Done()
+		}(b)
 	}
-	if code != 200 || !gjson.Valid(body) {
-		return utils.ToSuccessJSON2("count", 0, "error", len(filelist))
-	}
-	info := gjson.Parse(body)
-	count := 0
-	info.Get("responses").ForEach(func(key, value gjson.Result) bool {
-		var status = value.Get("status").Int()
-		if status == 200 { //重名移动失败时,返回400
-			count++
-		}
-		return true
-	})
-	return utils.ToSuccessJSON2("count", count, "error", len(filelist)-count)
+	wg.Wait()
+
+	return utils.ToSuccessJSON2("count", count, "error", len(filelist)-int(count))
 }
 
 func ApiTrashDeleteBatch(filelist []string) (retjsonstr string) {
@@ -697,37 +706,40 @@ func ApiTrashDeleteBatch(filelist []string) (retjsonstr string) {
 	}()
 	//{"requests":[{"body":{"drive_id":"8699982","file_id":"60a5bb43bf60766feada4eca9d0da23a501eb7c8"},"headers":{"Content-Type":"application/json"},"id":"60a5bb43bf60766feada4eca9d0da23a501eb7c8","method":"POST","url":"/file/delete"}],"resource":"file"}
 	//彻底删除返回204 202
-	var apiurl = "https://api.aliyundrive.com/v2/batch"
+	count := int32(0)
+
 	var postdata = `{"requests":[`
 	var max = len(filelist) - 1
+	var add = 0
+
+	var blist = make([]string, 0)
 	for i := 0; i < len(filelist); i++ {
 		postdata += `{"body":{"drive_id":"` + _user.UserToken.P_default_drive_id + `","file_id":"` + filelist[i] + `"},"headers":{"Content-Type":"application/json"},"id":"` + filelist[i] + `","method":"POST","url":"/file/delete"}`
-		if i < max {
+		add++
+		if add == 90 && i < max {
+			postdata += `],"resource":"file"}`
+			blist = append(blist, postdata)
+			postdata = `{"requests":[`
+			add = 0
+		} else if i < max {
 			postdata += ","
 		}
 	}
 	postdata += `],"resource":"file"}`
 
-	code, _, body := utils.PostHTTPString(apiurl, GetAuthorization(), postdata)
-	if code == 401 {
-		//UserAccessToken 失效了，尝试刷新一次
-		ApiTokenRefresh("")
-		//刷新完了，重新尝试一遍
-		code, _, body = utils.PostHTTPString(apiurl, GetAuthorization(), postdata)
+	blist = append(blist, postdata)
+	var wg sync.WaitGroup
+	for b := 0; b < len(blist); b++ {
+		wg.Add(1)
+		go func(b int) {
+			add := _Batch(blist[b])
+			atomic.AddInt32(&count, add)
+			wg.Done()
+		}(b)
 	}
-	if code != 200 || !gjson.Valid(body) {
-		return utils.ToSuccessJSON2("count", 0, "error", len(filelist))
-	}
-	info := gjson.Parse(body)
-	count := 0
-	info.Get("responses").ForEach(func(key, value gjson.Result) bool {
-		var status = value.Get("status").Int()
-		if status == 204 || status == 202 {
-			count++
-		}
-		return true
-	})
-	return utils.ToSuccessJSON2("count", count, "error", len(filelist)-count)
+	wg.Wait()
+
+	return utils.ToSuccessJSON2("count", count, "error", len(filelist)-int(count))
 }
 func ApiTrashRestoreBatch(filelist []string) (retjsonstr string) {
 	defer func() {
@@ -738,17 +750,50 @@ func ApiTrashRestoreBatch(filelist []string) (retjsonstr string) {
 	}()
 	//{"requests":[{"body":{"drive_id":"8699982","file_id":"60a5bb4394b2ad243fb84509a576506afc890397"},"headers":{"Content-Type":"application/json"},"id":"60a5bb4394b2ad243fb84509a576506afc890397","method":"POST","url":"/recyclebin/restore"}],"resource":"file"}
 	//恢复文件返回204 202
-	var apiurl = "https://api.aliyundrive.com/v2/batch"
+	count := int32(0)
+
 	var postdata = `{"requests":[`
 	var max = len(filelist) - 1
+	var add = 0
+
+	var blist = make([]string, 0)
 	for i := 0; i < len(filelist); i++ {
 		postdata += `{"body":{"drive_id":"` + _user.UserToken.P_default_drive_id + `","file_id":"` + filelist[i] + `"},"headers":{"Content-Type":"application/json"},"id":"` + filelist[i] + `","method":"POST","url":"/recyclebin/restore"}`
-		if i < max {
+		add++
+		if add == 90 && i < max {
+			postdata += `],"resource":"file"}`
+			blist = append(blist, postdata)
+			postdata = `{"requests":[`
+			add = 0
+		} else if i < max {
 			postdata += ","
 		}
 	}
 	postdata += `],"resource":"file"}`
 
+	blist = append(blist, postdata)
+	var wg sync.WaitGroup
+	for b := 0; b < len(blist); b++ {
+		wg.Add(1)
+		go func(b int) {
+			add := _Batch(blist[b])
+			atomic.AddInt32(&count, add)
+			wg.Done()
+		}(b)
+	}
+	wg.Wait()
+
+	return utils.ToSuccessJSON2("count", count, "error", len(filelist)-int(count))
+}
+
+func _Batch(postdata string) (count int32) {
+	defer func() {
+		if errr := recover(); errr != nil {
+			log.Println("_BatchError ", " error=", errr)
+			count = 0
+		}
+	}()
+	var apiurl = "https://api.aliyundrive.com/v2/batch"
 	code, _, body := utils.PostHTTPString(apiurl, GetAuthorization(), postdata)
 	if code == 401 {
 		//UserAccessToken 失效了，尝试刷新一次
@@ -757,16 +802,16 @@ func ApiTrashRestoreBatch(filelist []string) (retjsonstr string) {
 		code, _, body = utils.PostHTTPString(apiurl, GetAuthorization(), postdata)
 	}
 	if code != 200 || !gjson.Valid(body) {
-		return utils.ToSuccessJSON2("count", 0, "error", len(filelist))
+		return 0
 	}
 	info := gjson.Parse(body)
-	count := 0
+	count = 0
 	info.Get("responses").ForEach(func(key, value gjson.Result) bool {
 		var status = value.Get("status").Int()
-		if status == 204 || status == 202 {
+		if status >= 200 && status <= 205 {
 			count++
 		}
 		return true
 	})
-	return utils.ToSuccessJSON2("count", count, "error", len(filelist)-count)
+	return count
 }

@@ -167,4 +167,17 @@ class Downloader {
     }
     return "error";
   }
+
+  static Future<String> goText(String key) async {
+    try {
+      print('goText');
+      var result = await HttpHelper.postToServer("GoText", jsonEncode({"file_id": key}));
+      if (result["code"] == 0) {
+        return result["text"];
+      }
+    } catch (e) {
+      print('goText ' + e.toString());
+    }
+    return "error";
+  }
 }

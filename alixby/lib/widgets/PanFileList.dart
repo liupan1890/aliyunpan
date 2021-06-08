@@ -1,7 +1,9 @@
 import 'package:alixby/api/Downloader.dart';
 import 'package:alixby/states/Global.dart';
 import 'package:alixby/states/PanFileState.dart';
+import 'package:alixby/utils/Loading.dart';
 import 'package:alixby/widgets/ImageDialog.dart';
+import 'package:alixby/widgets/TextDialog.dart';
 import 'package:bot_toast/bot_toast.dart';
 import 'package:flutter/rendering.dart';
 import 'package:hovering/hovering.dart';
@@ -30,19 +32,17 @@ class _PanFileListState extends State<PanFileList> {
 
   final verticalScroll = ScrollController();
   final GlobalKey fileConKey = GlobalKey();
+  final GlobalKey fileSBKey = GlobalKey();
+  final GlobalKey fileListKey = GlobalKey();
   @override
   Widget build(BuildContext context) {
-    if (verticalScroll.hasClients) {
-      Future.delayed(Duration(milliseconds: 200), () {
-        verticalScroll.position.didUpdateScrollPositionBy(0);
-      });
-    }
     return Container(
         key: fileConKey,
         width: double.infinity,
         decoration: BoxDecoration(border: Border(top: BorderSide(width: 1, color: MColors.pageRightBorderColor))),
         alignment: Alignment.topLeft,
         child: Scrollbar(
+            key: fileSBKey,
             controller: verticalScroll,
             isAlwaysShown: true,
             showTrackOnHover: true,
@@ -52,6 +52,7 @@ class _PanFileListState extends State<PanFileList> {
               children: [
                 Expanded(
                     child: ListView.builder(
+                  key: fileListKey,
                   controller: verticalScroll,
                   shrinkWrap: false,
                   primary: false,
@@ -96,7 +97,7 @@ class _PanFileListState extends State<PanFileList> {
   static onTapFileName(String key, String filetype, BuildContext context) {
     print('点击文件名');
     onTapFile(key);
-    var page = Global.panFileState.getPageName;
+    //var page = Global.panFileState.getPageName;
     //if (page == "trash") return;//回收站内文件同样可以预览
     //todo::收藏夹，向上遍历父文件夹路径
     if (filetype == "folder") {
@@ -109,7 +110,7 @@ class _PanFileListState extends State<PanFileList> {
       Downloader.goPlay(key);
       return;
     } else if (filetype == "image") {
-      var fcHide = BotToast.showLoading(duration: Duration(seconds: 20), backButtonBehavior: BackButtonBehavior.ignore);
+      var fcHide = Loading.showLoading();
       Downloader.goImage(key).then((value) {
         fcHide();
         if (value == "error" || value == "") {
@@ -127,7 +128,22 @@ class _PanFileListState extends State<PanFileList> {
       });
       return;
     } else if (filetype == "txt") {
-      BotToast.showText(text: "文本预览功能还在开发中");
+      var fcHide = Loading.showLoading();
+      Downloader.goText(key).then((value) {
+        fcHide();
+        if (value == "error") {
+          BotToast.showText(text: "预览文本失败,请重试");
+        } else {
+          showDialog(
+              barrierDismissible: true, //表示点击灰色背景的时候是否消失弹出框
+              context: context,
+              builder: (context) {
+                return WillPopScope(
+                    onWillPop: () async => false, //关键代码
+                    child: TextDialog(text: value));
+              });
+        }
+      });
       return;
     }
   }

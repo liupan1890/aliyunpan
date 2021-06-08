@@ -122,6 +122,9 @@ func UploadingAdd(UserID, localpath, uptoname, ParentID string, size int64, dtim
 		}
 	}()
 	var identity = utils.ToMd5(ParentID + "/" + localpath)
+	if strings.HasPrefix(localpath, "miaochuan|") {
+		identity = utils.ToMd5(ParentID + "/" + localpath + "/" + uptoname)
+	}
 	var UploadID = "Down:Uploading:" + UserID + ":" + identity
 
 	var m = &UploadFileModel{
@@ -277,10 +280,11 @@ func MakeUpload(item *UploadFileModel) {
 		mUpload.Delete(item.UploadID) //删除下载任务
 	}
 	OnFailed := func(worker *BigUploadWorker) {
-		if worker.IsUploading == false {
-			UpdateStateStop(item)
+		if worker.IsUploading == false || worker.UploadInfo.FileFullPath == "miaochuan" {
+			UpdateStateStop(item) //主动停止，或者是秒传任务都强制停止
+			item.FailedMessage = worker.FailedMessage
 		} else {
-			UpdateStateError(item, worker.FailedMessage)
+			UpdateStateError(item, worker.FailedMessage) //出错稍后重试
 		}
 		mUpload.Delete(item.UploadID)
 	}

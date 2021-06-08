@@ -67,7 +67,12 @@ type Router struct{}
 
 //ServeHTTP 路由匹配与请求分发
 func (mux *Router) ServeHTTP(writer http.ResponseWriter, req *http.Request) {
-
+	defer func() {
+		if err := recover(); err != nil {
+			log.Println("ServeHTTPError ", " error=", err)
+			http.Error(writer, "ServeHTTPError", http.StatusServiceUnavailable)
+		}
+	}()
 	//RemoteAddr:"127.0.0.1:6178"
 	//req.Host "localhost:29385"
 	//[::1]

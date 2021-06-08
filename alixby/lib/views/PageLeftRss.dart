@@ -1,3 +1,5 @@
+import 'package:alixby/states/Global.dart';
+
 import '../utils/MIcons.dart';
 
 import '../utils/MColors.dart';
@@ -13,15 +15,21 @@ class PageLeftRss extends StatefulWidget {
 
 class _PageLeftRssState extends State<PageLeftRss> with AutomaticKeepAliveClientMixin {
   final data = <PageLeftRowItem>[
-    PageLeftRowItem.newPageLeftRowItem("offline", "cloud", "离线任务"),
     PageLeftRowItem.newPageLeftRowItem("mlink", "link2", "秒传链接"),
     PageLeftRowItem.newPageLeftRowItem("msearch", "rvip", "聚合搜索"),
+    PageLeftRowItem.newPageLeftRowItem("offline", "cloud", "离线任务"),
     PageLeftRowItem.newPageLeftRowItem("help", "bulb", "操作帮助"),
   ];
 
-  String selectedKey = "help";
+  String selectedKey = "mlink";
 
   void onPageLeftRowItemChanged(String key) {
+    var index = 0;
+    if (key == "mlink") index = 0;
+    if (key == "msearch") index = 1;
+    if (key == "offline") index = 2;
+    if (key == "help") index = 3;
+    Global.userState.updatePageRssIndex(index);
     setState(() {
       selectedKey = key;
     });

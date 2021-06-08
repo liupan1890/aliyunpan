@@ -84,7 +84,7 @@ type IConfigModel struct {
 }
 
 //LocalExeVer 文件版本
-const LocalExeVer = "1.5.31.0"
+const LocalExeVer = "1.6.6.0"
 
 //Config 全局，serverconfig
 var Config = IConfigModel{
@@ -96,7 +96,7 @@ var Config = IConfigModel{
 	AliApiAgent:     "Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) ????/2.1.3 Chrome/89.0.4389.128 Electron/12.0.5 Safari/537.36",
 }
 
-//LoadSetting 加载设置
+//LoadSettingAndConfig 加载设置
 func LoadSettingAndConfig() {
 
 	_, SettingConfig := GetSetting("SettingConfig")

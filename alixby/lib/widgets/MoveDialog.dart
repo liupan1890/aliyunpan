@@ -1,8 +1,6 @@
 import 'package:alixby/api/AliFile.dart';
-import 'package:alixby/models/FileItem.dart';
-import 'package:alixby/states/Global.dart';
 import 'package:alixby/states/PanData.dart';
-import 'package:alixby/states/PanTreeState.dart';
+import 'package:alixby/utils/Loading.dart';
 import 'package:alixby/utils/MColors.dart';
 import 'package:alixby/utils/MIcons.dart';
 import 'package:bot_toast/bot_toast.dart';
@@ -13,7 +11,7 @@ import 'package:hovering/hovering.dart';
 
 class MoveDialog extends StatefulWidget {
   // ignore: non_constant_identifier_names
-  MoveDialog({Key? key, required this.parentid, required this.filelist}) : super(key: key) {}
+  MoveDialog({Key? key, required this.parentid, required this.filelist}) : super(key: key);
   // ignore: non_constant_identifier_names
   String parentid = "";
   // ignore: non_constant_identifier_names
@@ -65,7 +63,7 @@ class _MoveDialogState extends State<MoveDialog> {
                       child: Icon(MIcons.close, size: 18),
                       onTap: () => Navigator.of(context).pop('ok'),
                     ))),
-            Container(child: Text("复制/移动", style: TextStyle(fontSize: 20, color: MColors.textColor, height: 0))),
+            Container(child: Text("移动文件/文件夹", style: TextStyle(fontSize: 20, color: MColors.textColor, height: 0))),
             Container(
                 width: 440,
                 height: 370,
@@ -131,24 +129,15 @@ class _MoveDialogState extends State<MoveDialog> {
                 Padding(padding: EdgeInsets.only(left: 24)),
                 ElevatedButton(
                   onPressed: () {
-                    BotToast.showText(text: "此功能还在开发中");
-                  },
-                  child: Text("复制到此处"),
-                  style: ButtonStyle(minimumSize: MaterialStateProperty.all(Size(0, 35))),
-                ),
-                Padding(padding: EdgeInsets.only(left: 24)),
-                ElevatedButton(
-                  onPressed: () {
                     if (widget.filelist.length > 0) {
-                      var fcHide = BotToast.showLoading(
-                          duration: Duration(seconds: 35), backButtonBehavior: BackButtonBehavior.ignore);
+                      var fcHide = Loading.showLoading();
 
                       AliFile.apiMoveBatch(widget.filelist, selectKey).then((value) {
                         fcHide();
                         PanData.loadFileList(widget.parentid, "move"); //触发联网加载
                         pageExpandedNode("root", true);
                         Navigator.of(context).pop('ok');
-                        BotToast.showText(text: "成功移动" + value.toString() + "个文件", align: Alignment(0, 0));
+                        BotToast.showText(text: "成功移动" + value.toString() + "个文件");
                       });
                     }
                   },
@@ -217,7 +206,6 @@ class _MoveDialogState extends State<MoveDialog> {
 
   _expandNodeHandler(String key, bool expanded) {
     pageExpandedNode(key, expanded);
-    verticalScroll.position.didUpdateScrollPositionBy(0); //这里触发更新滚动条
   }
 
   _onNodeTap(String key) {

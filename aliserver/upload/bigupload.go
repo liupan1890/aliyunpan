@@ -111,6 +111,26 @@ func (worker *BigUploadWorker) StartUploadAsync(AutoRange bool) {
 //StartUploadSync 同步的，开始下载，等待下载结束(出错返回err)
 func (worker *BigUploadWorker) StartUploadSync(AutoRange bool) {
 	worker.IsUploading = true //标记开始下载这一个文件
+
+	if worker.UploadInfo.FileFullPath == "miaochuan" {
+		//单独执行秒传
+		same, _, _, err := aliyun.UploadCreatFile(worker.UploadInfo.ParentID, worker.UploadInfo.FileName, worker.UploadInfo.FileSize, worker.UploadInfo.FileHash)
+		if err != nil {
+			worker.IsFailed = true             //会导致全部blockWorker停止
+			worker.FailedMessage = err.Error() //更新错误信息
+			worker.IsCompleted = false
+		} else if same {
+			worker.IsCompleted = true //秒传成功了
+			worker.IsMakeFile = true  //不需要合并
+		} else {
+			worker.IsFailed = true        //会导致全部blockWorker停止
+			worker.FailedMessage = "秒传失败" //更新错误信息
+			worker.IsCompleted = false
+		}
+		worker.finishUpload()
+		return
+	}
+
 	err := worker.openUploadFile()
 	if err != nil { //打开文件时出错了
 		worker.IsFailed = true             //会导致全部blockWorker停止
@@ -156,7 +176,6 @@ func (worker *BigUploadWorker) StartUploadSync(AutoRange bool) {
 		worker.UploadInfo.FileHash = hash.Hash
 		worker.UploadInfo.FilePreHash = hash.Pre_hash
 		worker.FailedMessage = ""
-
 	}
 	//这里是，联网获取阿里的UploadID，检测是否能秒传
 	if worker.UploadInfo.UploadID == "" {
@@ -374,7 +393,7 @@ func blockWorkerUpload(worker *BigUploadWorker, blockIndex int) (err error) {
 	}
 	worker.fileLock.Unlock()
 	if readed == false {
-		return errors.New("Upload Read Buff From File Error")
+		return errors.New("upload Read Buff From File Error")
 	}
 	//联网读取url
 	uploadurl, err := aliyun.UploadFilePartUrl(worker.UploadInfo.ParentID, worker.UploadInfo.FileName, worker.UploadInfo.FileID, worker.UploadInfo.UploadID, blockIndex+1, blockSize)

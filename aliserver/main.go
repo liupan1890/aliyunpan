@@ -63,7 +63,7 @@ func main() {
 	data.Close()
 	//程序退出
 	fmt.Println("aliserver exit")
-	log.Println("alirver exit")
+	log.Println("aliserver exit")
 	utils.CloseLog()
 
 	os.Exit(0)

@@ -4,6 +4,7 @@ import (
 	"errors"
 	"os"
 	"path/filepath"
+	"strings"
 )
 
 //BigUploadInfo 要上传的文件的信息
@@ -88,16 +89,22 @@ func NewBigUploadInfoAutoBlock(ParentID string, FileFullPath string, FileName st
 		threadMax = 1
 	}
 
-	FileFullPath, _ = filepath.Abs(FileFullPath)
 	info = &BigUploadInfo{
 		UploadID:     "",
 		ParentID:     ParentID,
-		FileFullPath: FileFullPath,
+		FileFullPath: "",
 		FileName:     FileName,
 		FileSize:     fileSize,
 		FileHash:     "",
 		ThreadMax:    threadMax,
 		BlockSize:    blockSize,
+	}
+	if strings.HasPrefix(FileFullPath, "miaochuan|") {
+		info.FileFullPath = "miaochuan"
+		info.FileHash = FileFullPath[len("miaochuan|"):]
+		return info, nil
+	} else {
+		info.FileFullPath, _ = filepath.Abs(FileFullPath)
 	}
 	if info.FileSize <= 0 {
 		info.getFileSize()

@@ -15,11 +15,19 @@ class UserState extends ChangeNotifier {
   double get userBtnWidth => user.userID == "" ? 0 : 26;
   //当前所在页面 0=Rss 1=Pan 2=Down 3=Setting
   int userNavPageIndex = 1;
+  //当前所在页面 0=秒传 1=搜索 2=离线 3=帮助
+  int userNavPageRssIndex = 0;
   final pageController = PageController(initialPage: 1);
   updatePageIndex(int index) {
     if (index == userNavPageIndex) return;
     userNavPageIndex = index;
     pageController.jumpToPage(index);
+    notifyListeners();
+  }
+
+  updatePageRssIndex(int index) {
+    if (index == userNavPageRssIndex) return;
+    userNavPageRssIndex = index;
     notifyListeners();
   }
 

@@ -1,5 +1,6 @@
 import 'package:alixby/api/AliFile.dart';
 import 'package:alixby/states/Global.dart';
+import 'package:alixby/utils/Loading.dart';
 import 'package:alixby/utils/MColors.dart';
 import 'package:alixby/utils/MIcons.dart';
 import 'package:bot_toast/bot_toast.dart';
@@ -84,17 +85,16 @@ class RenameDialog extends StatelessWidget {
                           String dirname = controller.text;
                           dirname = dirname.replaceAll('"', '').trim();
 
-                          var fcHide = BotToast.showLoading(
-                              duration: Duration(seconds: 35), backButtonBehavior: BackButtonBehavior.ignore);
+                          var fcHide = Loading.showLoading();
 
                           AliFile.apiRename(file_id, dirname).then((value) {
                             fcHide();
                             if (value == "success") {
-                              Global.panTreeState.pageRefreshNode();
-                              BotToast.showText(text: "重命名成功", align: Alignment(0, 0));
+                              BotToast.showText(text: "重命名成功");
                               Navigator.of(context).pop('ok');
+                              Global.panTreeState.pageRefreshNode();
                             } else {
-                              BotToast.showText(text: "重命名失败请重试", align: Alignment(0, 0));
+                              BotToast.showText(text: "重命名失败请重试");
                             }
                           });
                         },

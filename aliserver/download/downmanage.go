@@ -10,6 +10,7 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 )
 
@@ -124,19 +125,32 @@ func DownFileMutil(ParentID string, SavePath string, keylist []string) string {
 	if UserID == "" {
 		return utils.ToErrorMessageJSON("还没有登录阿里云盘账号")
 	}
-
+	var wg sync.WaitGroup
+	var lock sync.Mutex
+	errnum := 0
 	var list []*aliyun.FileUrlModel
-	if len(keylist) < 4 {
-		//文件数量3个，单文件读取信息
+	if len(keylist) <= 5 {
+		//文件数量5个，单文件读取信息
 		for k := 0; k < len(keylist); k++ {
 			fileid := keylist[k]
 			if fileid != "" {
-				finfo, ferr := aliyun.ApiFileGetUrl(fileid, "")
-				if ferr != nil {
-					return utils.ToErrorMessageJSON("列出文件信息时出错")
-				}
-				list = append(list, &finfo)
+				wg.Add(1)
+				go func(fileid string) {
+					finfo, ferr := aliyun.ApiFileGetUrl(fileid, "")
+					if ferr != nil {
+						errnum++
+					} else {
+						lock.Lock()
+						list = append(list, &finfo)
+						lock.Unlock()
+					}
+					wg.Done()
+				}(fileid)
 			}
+		}
+		wg.Wait()
+		if errnum > 0 {
+			return utils.ToErrorMessageJSON("列出文件信息时出错")
 		}
 	} else {
 		//文件数量较多，批量读取文件信息
@@ -156,21 +170,28 @@ func DownFileMutil(ParentID string, SavePath string, keylist []string) string {
 			}
 		}
 	}
-
+	errnum = 0
 	lmax := len(list)
 	for m := 0; m < lmax; m++ {
 		if list[m].IsDir {
-			clist, cerr := aliyun.ApiFileListAllForDown(list[m].P_file_id, "/"+list[m].P_file_name, true) //递归列出文件夹下的所有文件
-			if cerr != nil {
-				return utils.ToErrorMessageJSON("列出文件信息时出错")
-			}
-			if len(clist) > 0 {
-				list = append(list, clist...)
-				break
-			}
+			wg.Add(1)
+			go func(m int) {
+				clist, cerr := aliyun.ApiFileListAllForDown(list[m].P_file_id, "/"+list[m].P_file_name, true) //递归列出文件夹下的所有文件
+				if cerr != nil {
+					errnum++
+				} else if len(clist) > 0 {
+					lock.Lock()
+					list = append(list, clist...)
+					lock.Unlock()
+				}
+				wg.Done()
+			}(m)
 		}
 	}
-
+	wg.Wait()
+	if errnum > 0 {
+		return utils.ToErrorMessageJSON("列出文件信息时出错")
+	}
 	LEN := len(list)
 	if LEN == 0 {
 		return utils.ToSuccessJSON("filecount", 0)

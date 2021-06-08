@@ -42,10 +42,5 @@ func UpdateTimeAsync() {
 			aliyun.AutoRefreshUserInfo()
 			UserTime = 0
 		}
-
-		if ReportTime >= 10*60 { //10分钟上报一次
-			utils.ReportLog()
-			ReportTime = 0
-		}
 	}
 }

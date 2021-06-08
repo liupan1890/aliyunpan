@@ -55,7 +55,7 @@ class FileItem {
     model.icon = item == null ? "" : item as String;
 
     var cdlist = json["children"];
-    if (cdlist != null) {
+    if (cdlist != null && cdlist.length > 0) {
       model.children = cdlist.map((m) => new FileItem.fromJson(m)).toList();
     }
     return model;

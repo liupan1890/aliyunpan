@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"log"
 	"os"
 )
 
@@ -22,9 +23,14 @@ type AliFileHash struct {
 	Hash     string
 }
 
-//ComputeFileEtag 计算一个文件的sha1
+//ComputeAliFileSha1 计算一个文件的sha1
 func ComputeAliFileSha1(filePtr *os.File, size int64) (hash AliFileHash, err error) {
-
+	defer func() {
+		if errr := recover(); errr != nil {
+			log.Println("ComputeAliFileSha1Error ", " error=", errr)
+			err = errors.New("sha1 error")
+		}
+	}()
 	hashbytes, err := computeSha1(filePtr)
 	if err != nil {
 		return hash, errors.New("sha1 error")

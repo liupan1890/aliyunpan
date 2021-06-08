@@ -56,12 +56,12 @@ class PageDownState extends ChangeNotifier {
         double subtime = DateTime.now().millisecondsSinceEpoch / 1000 - pageRefreshTime; //相差几秒
         if (getPageName == 'downing') {
           //正在下载，1秒刷新一次
-        } else if (getPageName == 'downed' && subtime < 4) {
-          return false; //已下载4秒刷新一次
+        } else if (getPageName == 'downed' && subtime < 2) {
+          return false; //已下载2秒刷新一次
         } else if (getPageName == 'uploading') {
           //正在上传，1秒刷新一次
-        } else if (getPageName == 'upload' && subtime < 4) {
-          return false; //已上传4秒刷新一次
+        } else if (getPageName == 'upload' && subtime < 2) {
+          return false; //已上传2秒刷新一次
         }
       }
       var dt1 = DateTime.now().millisecondsSinceEpoch;

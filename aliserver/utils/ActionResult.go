@@ -1,10 +1,7 @@
 package utils
 
 import (
-	"crypto/md5"
 	"encoding/json"
-	"fmt"
-	"io"
 	"strings"
 )
 
@@ -102,11 +99,4 @@ func ToJSONString(str string) string {
 	str = strings.Replace(str, `\r`, `\\r`, -1)
 	str = strings.Replace(str, `\n`, `\\n`, -1)
 	return str
-}
-
-func md5str(str string) string {
-	w := md5.New()
-	io.WriteString(w, str)
-	md5str := fmt.Sprintf("%x", w.Sum(nil))
-	return md5str
 }

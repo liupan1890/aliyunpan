@@ -10,7 +10,7 @@ import (
 	"github.com/tidwall/gjson"
 )
 
-//UpdateVerGitee 从Gitee更新
+//UpdateVerByTimer 从Gitee更新
 func UpdateVerByTimer() (isUpdate bool) {
 	defer func() {
 		if err := recover(); err != nil {
@@ -61,7 +61,7 @@ func UpdateVerByTimer() (isUpdate bool) {
 	return Config.ServerIP != ""
 }
 
-// UpdateVerAsync 启动后需要检查版本
+// UpdateVerAsyncByStart 启动后需要检查版本
 func UpdateVerAsyncByStart() {
 	//time.Sleep(time.Duration(15) * time.Second)
 	//CrearAPI()

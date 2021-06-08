@@ -1,8 +1,12 @@
-import 'package:alixby/utils/FileLinkifier.dart';
+import 'package:alixby/states/UserState.dart';
 import 'package:alixby/utils/MColors.dart';
+import 'package:alixby/views/PageRightRssLiXian.dart';
+import 'package:alixby/views/PageRightRssMiaoChuan.dart';
+import 'package:alixby/views/PageRightRssSearch.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_linkify/flutter_linkify.dart';
-import 'package:url_launcher/url_launcher.dart';
+import 'package:provider/provider.dart';
+
+import 'PageRightRssHelp.dart';
 
 class PageRightRss extends StatefulWidget {
   @override
@@ -16,30 +20,30 @@ class _PageRightRssState extends State<PageRightRss> with AutomaticKeepAliveClie
     print('_PageRightRssState initState');
   }
 
+  final PageController _pageController = PageController(initialPage: 0, keepPage: true);
+  final bodyList = [PageRightRssMiaoChuan(), PageRightRssSearch(), PageRightRssLiXian(), PageRightRssHelp()];
   @override
   // ignore: must_call_super
   Widget build(BuildContext context) {
-    return Container(
-        child: Column(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-          Text("此功能正在开发中"),
-          Padding(padding: EdgeInsets.only(top: 18)),
-          Text("这是一个正在开发中的版本，"),
-          Text("遇到BUG不要慌，反馈给我就好"),
-          Padding(padding: EdgeInsets.only(top: 18)),
-          Linkify(
-              onOpen: (link) {
-                launch(Uri.encodeFull(link.url));
-              },
-              text: "aliyundrive.com",
-              linkifiers: [
-                FileLinkifier(
-                    "https://github.com/liupan1890/aliyunpan", "https://github.com/liupan1890/aliyunpan/issues")
-              ],
-              linkStyle: TextStyle(fontSize: 14, color: MColors.linkColor, decoration: TextDecoration.none))
-        ]));
+    final page = Container(
+        key: Key("pagerightrss"),
+        decoration: BoxDecoration(color: MColors.pageRightBG),
+        child: Container(
+            //decoration: BoxDecoration(color: Colors.orange[50]),
+            child: PageView(
+          physics: NeverScrollableScrollPhysics(),
+          controller: _pageController,
+          scrollDirection: Axis.horizontal,
+          pageSnapping: true,
+          children: bodyList,
+        )));
+    var pageindex = context.watch<UserState>().userNavPageRssIndex;
+    if (_pageController.hasClients) {
+      if (pageindex != _pageController.page!.floor()) {
+        _pageController.jumpToPage(pageindex);
+      }
+    }
+    return page;
   }
 
   @override

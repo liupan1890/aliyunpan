@@ -20,7 +20,15 @@ func CheckUserID(userid string) bool {
 	return _user.UserID == userid
 }
 
-var _user = data.UserLoginModel{}
+var _user = data.UserLoginModel{
+	UserLoginType:    "",
+	UserID:           "",
+	UserName:         "",
+	UserAccessToken:  "",
+	UserRefreshToken: "",
+	UserToken:        data.UserTokenModel{},
+	UserInfo:         data.UserInfoModel{},
+}
 
 func SetUserToken(logintype string, token data.UserTokenModel) {
 	var userLogin = data.UserLoginModel{

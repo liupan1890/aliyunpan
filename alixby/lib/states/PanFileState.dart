@@ -4,6 +4,7 @@ import 'package:alixby/states/Global.dart';
 import 'package:alixby/utils/FileLinkifier.dart';
 import 'package:alixby/utils/MColors.dart';
 import 'package:alixby/utils/MIcons.dart';
+import 'package:alixby/utils/StringUtils.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_linkify/flutter_linkify.dart';
 
@@ -362,21 +363,34 @@ class PanFileState extends ChangeNotifier {
   }
 
   void _updateFileOrder() {
-    if (pageRightFileOrderBy == "文件名 从大到小") {
-      pageRightFileList = pageRightFileList0.reversed.toList();
-      return;
+    pageRightFileList = [];
+    List<PageRightFileItem> filelist = [];
+    for (int f = 0; f < pageRightFileList0.length; f++) {
+      if (pageRightFileList0[f].isDir)
+        pageRightFileList.add(pageRightFileList0[f]);
+      else
+        filelist.add(pageRightFileList0[f]);
     }
-    pageRightFileList = pageRightFileList0.toList();
-    if (pageRightFileOrderBy == "文件名 从小到大") {
-      //什么也不做，默认就是name asc
+
+    if (pageRightFileOrderBy == "文件名 从大到小") {
+      pageRightFileList.sort((a, b) => StringUtils.sortNumber1(b.title, a.title));
+      filelist.sort((a, b) => StringUtils.sortNumber1(b.title, a.title));
+    } else if (pageRightFileOrderBy == "文件名 从小到大") {
+      pageRightFileList.sort((a, b) => StringUtils.sortNumber1(a.title, b.title));
+      filelist.sort((a, b) => StringUtils.sortNumber1(a.title, b.title));
     } else if (pageRightFileOrderBy == "文件体积 从小到大") {
       pageRightFileList.sort((a, b) => a.fileSize.compareTo(b.fileSize));
+      filelist.sort((a, b) => a.fileSize.compareTo(b.fileSize));
     } else if (pageRightFileOrderBy == "文件体积 从大到小") {
       pageRightFileList.sort((a, b) => b.fileSize.compareTo(a.fileSize));
+      filelist.sort((a, b) => b.fileSize.compareTo(a.fileSize));
     } else if (pageRightFileOrderBy == "上传时间 从小到大") {
       pageRightFileList.sort((a, b) => a.fileTime.compareTo(b.fileTime));
+      filelist.sort((a, b) => a.fileTime.compareTo(b.fileTime));
     } else if (pageRightFileOrderBy == "上传时间 从大到小") {
       pageRightFileList.sort((a, b) => b.fileTime.compareTo(a.fileTime));
+      filelist.sort((a, b) => b.fileTime.compareTo(a.fileTime));
     }
+    pageRightFileList.addAll(filelist);
   }
 }

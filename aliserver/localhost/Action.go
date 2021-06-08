@@ -3,6 +3,7 @@ package localhost
 import (
 	"aliserver/aliyun"
 	"aliserver/download"
+	"aliserver/link"
 	"aliserver/upload"
 	"aliserver/utils"
 	"encoding/base64"
@@ -93,8 +94,14 @@ func HookURL(url string, method string, header string, postdata string, useragen
 }
 
 //HookAction 拦截自定义命令
-func HookAction(url string, postdata string) (bool, string) {
-
+func HookAction(url string, postdata string) (ishook bool, hookresult string) {
+	defer func() {
+		if errr := recover(); errr != nil {
+			log.Println("HookActionError ", " error=", errr)
+			ishook = true
+			hookresult = utils.ToErrorMessageJSON("HookActionError")
+		}
+	}()
 	switch url {
 	case "Ping":
 		return true, utils.ToSuccessJSON("Ping", "success")
@@ -177,6 +184,9 @@ func HookAction(url string, postdata string) (bool, string) {
 	case "GoImage":
 		file_id := gjson.Get(postdata, "file_id").String()
 		return true, aliyun.ApiImage(file_id)
+	case "GoText":
+		file_id := gjson.Get(postdata, "file_id").String()
+		return true, aliyun.ApiText(file_id)
 	case "GoDownFile":
 		filelist := gjson.Get(postdata, "filelist").Array()
 		list := make([]string, len(filelist))
@@ -274,6 +284,34 @@ func HookAction(url string, postdata string) (bool, string) {
 		key := gjson.Get(postdata, "key").String()
 		val := gjson.Get(postdata, "val").String()
 		return true, GoSetting(key, val)
+	case "GoLinkList":
+		return true, link.GoLinkList()
+	case "GoLinkDelete":
+		linkstr := gjson.Get(postdata, "link").String()
+		return true, link.GoLinkDelete(linkstr)
+	case "GoLinkCreat":
+		ispublic := gjson.Get(postdata, "ispublic").Bool()
+		jianjie := gjson.Get(postdata, "jianjie").String()
+		password := gjson.Get(postdata, "password").String()
+		outday := gjson.Get(postdata, "outday").String()
+		outsave := gjson.Get(postdata, "outsave").String()
+		parentid := gjson.Get(postdata, "parentid").String()
+		filelist := gjson.Get(postdata, "filelist").Array()
+		list := make([]string, len(filelist))
+		for i := 0; i < len(filelist); i++ {
+			list[i] = filelist[i].String()
+		}
+		return true, link.GoLinkCreat(jianjie, ispublic, password, outday, outsave, parentid, list)
+
+	case "GoLinkParse":
+		linkstr := gjson.Get(postdata, "link").String()
+		password := gjson.Get(postdata, "password").String()
+		return true, link.GoLinkParse(linkstr, password)
+
+	case "GoLinkUpload":
+		parentid := gjson.Get(postdata, "parentid").String()
+		linkstr := gjson.Get(postdata, "linkstr").String()
+		return true, link.GoLinkUpload(parentid, linkstr)
 	}
 	return false, ""
 }

@@ -85,6 +85,7 @@ func ariaDisconnectionMonitoring() {
 	timeout := 1
 	for {
 		time.Sleep(time.Second * time.Duration(2))
+
 		_, terr := Aria2Rpc.GetVersion()
 		if terr != nil {
 			log.Println("ariaDisconnect")

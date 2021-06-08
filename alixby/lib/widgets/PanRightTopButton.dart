@@ -3,8 +3,11 @@ import 'package:alixby/api/Downloader.dart';
 import 'package:alixby/api/Uploader.dart';
 import 'package:alixby/states/Global.dart';
 import 'package:alixby/states/PanData.dart';
+import 'package:alixby/utils/Loading.dart';
 import 'package:alixby/utils/MColors.dart';
 import 'package:alixby/utils/MIcons.dart';
+import 'package:alixby/widgets/CreatMiaoChuanDialog.dart';
+import 'package:alixby/widgets/SaveMiaoChuanDialog.dart';
 import 'package:bot_toast/bot_toast.dart';
 import 'package:flutter/material.dart';
 import 'package:file_selector_platform_interface/file_selector_platform_interface.dart';
@@ -53,7 +56,8 @@ class _PanRightTopButtonState extends State<PanRightTopButton> {
         _buildCreatDir(),
         Padding(padding: EdgeInsets.only(left: 12)),
         _buildUpload(),
-        Padding(padding: EdgeInsets.only(left: 12)),
+        Padding(padding: EdgeInsets.only(left: 42)),
+        _buildSaveMiaoChuan(),
       ],
     );
   }
@@ -74,7 +78,8 @@ class _PanRightTopButtonState extends State<PanRightTopButton> {
         _buildFavor(true),
         Padding(padding: EdgeInsets.only(left: 12)),
         _buildTrash(),
-        Padding(padding: EdgeInsets.only(left: 12)),
+        Padding(padding: EdgeInsets.only(left: 42)),
+        _buildCreatMiaoChuan(),
       ],
     );
   }
@@ -158,7 +163,7 @@ class _PanRightTopButtonState extends State<PanRightTopButton> {
   Widget _buildCreatDir() {
     return OutlinedButton.icon(
         icon: Icon(MIcons.folderadd, size: 16),
-        label: Text('创建文件夹'),
+        label: Text('新建文件夹'),
         onPressed: () {
           showDialog(
               barrierDismissible: true, //表示点击灰色背景的时候是否消失弹出框
@@ -183,14 +188,13 @@ class _PanRightTopButtonState extends State<PanRightTopButton> {
               for (int i = 0; i < values.length; i++) {
                 filelist.add(values[i].path);
               }
-              var fcHide =
-                  BotToast.showLoading(duration: Duration(seconds: 120), backButtonBehavior: BackButtonBehavior.ignore);
+              var fcHide = Loading.showLoading();
               Uploader.goUploadFile(parentid, filelist).then((value) {
                 fcHide();
                 if (value > 0) {
-                  BotToast.showText(text: "成功创建" + value.toString() + "个文件的上传任务", align: Alignment(0, 0));
+                  BotToast.showText(text: "成功创建" + value.toString() + "个文件的上传任务");
                 } else {
-                  BotToast.showText(text: "创建文件上传任务失败请重试", align: Alignment(0, 0));
+                  BotToast.showText(text: "创建文件上传任务失败请重试");
                 }
               });
             }
@@ -198,14 +202,13 @@ class _PanRightTopButtonState extends State<PanRightTopButton> {
         } else {
           FileSelectorPlatform.instance.getDirectoryPath(confirmButtonText: "上传整个选中的文件夹").then((dirpath) {
             if (dirpath != null) {
-              var fcHide =
-                  BotToast.showLoading(duration: Duration(seconds: 120), backButtonBehavior: BackButtonBehavior.ignore);
+              var fcHide = Loading.showLoading();
               Uploader.goUploadDir(parentid, dirpath).then((value) {
                 fcHide();
                 if (value > 0) {
-                  BotToast.showText(text: "成功创建" + value.toString() + "个文件夹的上传任务", align: Alignment(0, 0));
+                  BotToast.showText(text: "成功创建" + value.toString() + "个文件夹的上传任务");
                 } else {
-                  BotToast.showText(text: "创建文件夹上传任务失败请重试", align: Alignment(0, 0));
+                  BotToast.showText(text: "创建文件夹上传任务失败请重试");
                 }
               });
             }
@@ -262,15 +265,14 @@ class _PanRightTopButtonState extends State<PanRightTopButton> {
           if (Global.settingState.setting.savePathCheck == false) {
             //直接下载
             var savepath = Global.settingState.setting.savePath.replaceAll('"', '').trim();
-            var fcHide =
-                BotToast.showLoading(duration: Duration(seconds: 120), backButtonBehavior: BackButtonBehavior.ignore);
+            var fcHide = Loading.showLoading();
             var parentid = Global.panFileState.pageRightDirKey;
             Downloader.goDownFile(parentid, savepath, filelist).then((value) {
               fcHide();
               if (value > 0) {
-                BotToast.showText(text: "成功创建" + value.toString() + "个文件的下载任务", align: Alignment(0, 0));
+                BotToast.showText(text: "成功创建" + value.toString() + "个文件的下载任务");
               } else {
-                BotToast.showText(text: "创建下载任务失败请重试", align: Alignment(0, 0));
+                BotToast.showText(text: "创建下载任务失败请重试");
               }
             });
             return;
@@ -292,7 +294,7 @@ class _PanRightTopButtonState extends State<PanRightTopButton> {
   Widget _buildMove() {
     return OutlinedButton.icon(
         icon: Icon(MIcons.scissor, size: 16),
-        label: Text("复制/移动"),
+        label: Text("移动"),
         onPressed: () {
           var parentid = Global.panFileState.pageRightDirKey;
           var filelist = Global.panFileState.getSelectedFileKeys();
@@ -307,11 +309,47 @@ class _PanRightTopButtonState extends State<PanRightTopButton> {
         });
   }
 
+  Widget _buildCreatMiaoChuan() {
+    return OutlinedButton.icon(
+        icon: Icon(MIcons.link2, size: 16),
+        label: Text("新建秒传链"),
+        onPressed: () {
+          var parentid = Global.panFileState.pageRightDirKey;
+          var filelist = Global.panFileState.getSelectedFileKeys();
+          showDialog(
+              barrierDismissible: true, //表示点击灰色背景的时候是否消失弹出框
+              context: context,
+              builder: (context) {
+                return WillPopScope(
+                    onWillPop: () async => false, //关键代码
+                    child: CreatMiaoChuanDialog(parentid: parentid, filelist: filelist));
+              });
+        });
+  }
+
+  Widget _buildSaveMiaoChuan() {
+    return OutlinedButton.icon(
+        icon: Icon(MIcons.link2, size: 16),
+        label: Text("导入秒传链"),
+        onPressed: () {
+          var parentid = Global.panFileState.pageRightDirKey;
+          var parentname = Global.panFileState.getSelectedFileParentPath();
+          showDialog(
+              barrierDismissible: true, //表示点击灰色背景的时候是否消失弹出框
+              context: context,
+              builder: (context) {
+                return WillPopScope(
+                    onWillPop: () async => false, //关键代码
+                    child: SaveMiaoChuanDialog(parentid: parentid, parentname: parentname));
+              });
+        });
+  }
+
   Widget _buildRename() {
     if (widget.selectCount <= 1) {
       return OutlinedButton.icon(
           icon: Icon(MIcons.edit_square, size: 16),
-          label: Text('重命名'),
+          label: Text('改名'),
           onPressed: () {
             var filelist = Global.panFileState.getSelectedFiles();
 
@@ -327,7 +365,7 @@ class _PanRightTopButtonState extends State<PanRightTopButton> {
     } else {
       return OutlinedButton.icon(
           icon: Icon(MIcons.edit_square, size: 16),
-          label: Text('批量重命名', style: TextStyle(decoration: TextDecoration.lineThrough)),
+          label: Text('批量改名', style: TextStyle(decoration: TextDecoration.lineThrough)),
           onPressed: () {
             //todo::批量重命名
             print('批量重命名');
@@ -339,18 +377,17 @@ class _PanRightTopButtonState extends State<PanRightTopButton> {
   Widget _buildTrash() {
     return OutlinedButton.icon(
         icon: Icon(MIcons.rest, size: 16),
-        label: Text("移到回收站"),
+        label: Text("回收站"),
         onPressed: () {
           var filelist = Global.panFileState.getSelectedFileKeys();
           if (filelist.length > 0) {
-            var fcHide =
-                BotToast.showLoading(duration: Duration(seconds: 35), backButtonBehavior: BackButtonBehavior.ignore);
+            var fcHide = Loading.showLoading();
 
             AliFile.apiTrashBatch(filelist).then((value) {
               fcHide();
               Global.panTreeState.pageRefreshNode();
               PanData.clearTrash();
-              BotToast.showText(text: "成功移到回收站" + value.toString() + "个文件", align: Alignment(0, 0));
+              BotToast.showText(text: "成功移到回收站" + value.toString() + "个文件");
             });
           }
         });
@@ -365,13 +402,11 @@ class _PanRightTopButtonState extends State<PanRightTopButton> {
         onPressed: () {
           var filelist = Global.panFileState.getSelectedFileKeys();
           if (filelist.length > 0) {
-            var fcHide =
-                BotToast.showLoading(duration: Duration(seconds: 35), backButtonBehavior: BackButtonBehavior.ignore);
-
+            var fcHide = Loading.showLoading();
             AliFile.apiTrashDeleteBatch(filelist).then((value) {
               fcHide();
               Global.panTreeState.pageRefreshNode();
-              BotToast.showText(text: "成功" + txt + value.toString() + "个文件", align: Alignment(0, 0));
+              BotToast.showText(text: "成功" + txt + value.toString() + "个文件");
             });
           }
         });
@@ -386,13 +421,12 @@ class _PanRightTopButtonState extends State<PanRightTopButton> {
         onPressed: () {
           var filelist = Global.panFileState.getSelectedFileKeys();
           if (filelist.length > 0) {
-            var fcHide =
-                BotToast.showLoading(duration: Duration(seconds: 35), backButtonBehavior: BackButtonBehavior.ignore);
+            var fcHide = Loading.showLoading();
 
             AliFile.apiTrashRestoreBatch(filelist).then((value) {
               fcHide();
               Global.panTreeState.pageRefreshNode();
-              BotToast.showText(text: "成功" + txt + value.toString() + "个文件", align: Alignment(0, 0));
+              BotToast.showText(text: "成功" + txt + value.toString() + "个文件");
             });
           }
         });
@@ -423,14 +457,13 @@ class _PanRightTopButtonState extends State<PanRightTopButton> {
         onPressed: () {
           var filelist = Global.panFileState.getSelectedFileKeys();
           if (filelist.length > 0) {
-            var fcHide =
-                BotToast.showLoading(duration: Duration(seconds: 35), backButtonBehavior: BackButtonBehavior.ignore);
+            var fcHide = Loading.showLoading();
 
             AliFile.apiFavorBatch(isfavor, filelist).then((value) {
               fcHide();
               Global.panTreeState.pageRefreshNode();
               if (isfavor) PanData.clearFavor();
-              BotToast.showText(text: "成功" + txt + value.toString() + "个文件", align: Alignment(0, 0));
+              BotToast.showText(text: "成功" + txt + value.toString() + "个文件");
             });
           }
         });

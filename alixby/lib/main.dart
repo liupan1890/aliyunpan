@@ -26,6 +26,7 @@ void main() async {
         ChangeNotifierProvider(create: (_) => Global.panTreeState, lazy: false),
         ChangeNotifierProvider(create: (_) => Global.panFileState, lazy: false),
         ChangeNotifierProvider(create: (_) => Global.pageDownState, lazy: false),
+        ChangeNotifierProvider(create: (_) => Global.pageRssMiaoChuanState, lazy: false),
       ],
       child: MyApp(),
     ),

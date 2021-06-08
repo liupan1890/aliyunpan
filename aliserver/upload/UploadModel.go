@@ -5,7 +5,7 @@ import (
 	"time"
 )
 
-//DownFileModel 上传上传
+//UploadFileModel 上传上传
 type UploadFileModel struct {
 	UploadID string `json:"UploadID"`
 	UserID   string `json:"UserID"`
@@ -33,7 +33,7 @@ type UploadFileModel struct {
 
 var crc64q = crc64.MakeTable(0xC96C5795D7870F42)
 
-//DownFileOrder 时间排序
+//UploadFileOrder 时间排序
 type UploadFileOrder []*UploadFileModel
 
 func (a UploadFileOrder) Len() int           { return len(a) }

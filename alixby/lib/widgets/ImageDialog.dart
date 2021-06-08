@@ -9,9 +9,12 @@ import 'package:flutter/rendering.dart';
 class ImageDialog extends StatelessWidget {
   ImageDialog({Key? key, required this.imageUrl}) : super(key: key);
   String imageUrl = "";
+  final verticalScroll = ScrollController();
   @override
   Widget build(BuildContext context) {
     var size = MediaQuery.of(context).size;
+    var imagew = size.width * 0.8 - 40;
+    var imageh = size.height * 0.9 - 80;
     return Material(
       type: MaterialType.transparency,
       child: Center(
@@ -37,32 +40,48 @@ class ImageDialog extends StatelessWidget {
                     ))),
             Container(child: Text("图片预览", style: TextStyle(fontSize: 20, color: MColors.textColor, height: 0))),
             Container(
-                width: size.width * 0.8 - 40,
-                height: size.height * 0.9 - 80,
+                width: imagew,
+                height: imageh,
                 margin: EdgeInsets.only(top: 20),
-                child: ExtendedImage.network(
-                  imageUrl,
-                  headers: {"Referer": "https://www.aliyundrive.com/"},
-                  fit: BoxFit.contain,
-                  border: Border.all(color: Colors.grey, width: 1.0),
-                  borderRadius: BorderRadius.all(Radius.circular(6.0)),
-                  cache: true,
-                  //enableLoadState: false,
-                  mode: ExtendedImageMode.gesture,
-                  initGestureConfigHandler: (state) {
-                    return GestureConfig(
-                      minScale: 1.0,
-                      animationMinScale: 1.0,
-                      maxScale: 2.0,
-                      animationMaxScale: 2.0,
-                      speed: 1.0,
-                      inertialSpeed: 100.0,
-                      initialScale: 1.0,
-                      inPageView: false,
-                      initialAlignment: InitialAlignment.center,
-                    );
-                  },
-                )),
+                alignment: Alignment.topLeft,
+                child: Scrollbar(
+                    controller: verticalScroll,
+                    isAlwaysShown: true,
+                    showTrackOnHover: true,
+                    thickness: 9,
+                    hoverThickness: 9,
+                    child: SingleChildScrollView(
+                        controller: verticalScroll,
+                        scrollDirection: Axis.vertical,
+                        physics: BouncingScrollPhysics(),
+                        child: ConstrainedBox(
+                            constraints: BoxConstraints(minWidth: imagew, minHeight: imageh),
+                            child: Container(
+                                width: imagew,
+                                alignment: Alignment.topCenter,
+                                decoration: BoxDecoration(
+                                    border: Border.all(width: 1, color: Colors.grey),
+                                    borderRadius: BorderRadius.circular(6.0)),
+                                padding: EdgeInsets.all(4),
+                                margin: EdgeInsets.only(right: 16),
+                                child: ExtendedImage.network(imageUrl,
+                                    headers: {"Referer": "https://www.aliyundrive.com/"},
+                                    fit: BoxFit.none,
+                                    filterQuality: FilterQuality.high,
+                                    cache: true,
+                                    //enableLoadState: false,
+                                    mode: ExtendedImageMode.none, loadStateChanged: (ExtendedImageState state) {
+                                  switch (state.extendedImageLoadState) {
+                                    case LoadState.loading:
+                                      return null;
+                                    case LoadState.completed:
+                                      verticalScroll.animateTo(1,
+                                          duration: Duration(milliseconds: 100), curve: Curves.ease); //奇怪这里必须刷新一下才显示
+                                      return ExtendedRawImage(image: state.extendedImageInfo?.image);
+                                    case LoadState.failed:
+                                      return null;
+                                  }
+                                })))))),
           ],
         ),
       )),

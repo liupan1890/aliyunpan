@@ -120,7 +120,6 @@ class _PageLeftPanState extends State<PageLeftPan> with AutomaticKeepAliveClient
    */
   _expandNodeHandler(String key, bool expanded) {
     Global.panTreeState.pageExpandedNode(key, expanded);
-    verticalScroll.position.didUpdateScrollPositionBy(0); //这里触发更新滚动条
   }
 
   _onNodeTap(String key) {
@@ -131,11 +130,6 @@ class _PageLeftPanState extends State<PageLeftPan> with AutomaticKeepAliveClient
   final horizontalScroll = ScrollController();
   final GlobalKey treeConKey = GlobalKey();
   Widget _buildTree(BuildContext context) {
-    if (verticalScroll.hasClients) {
-      Future.delayed(Duration(milliseconds: 200), () {
-        verticalScroll.position.didUpdateScrollPositionBy(0);
-      });
-    }
     return Container(
         key: treeConKey,
         alignment: Alignment.topLeft,

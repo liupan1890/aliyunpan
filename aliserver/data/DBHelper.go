@@ -51,6 +51,7 @@ func initData() {
 		tx.CreateIndex("Downed", "Down:Downed:*", buntdb.IndexJSON("DownTime"))
 		tx.CreateIndex("Uploading", "Down:Uploading:*", buntdb.IndexJSON("DownTime"))
 		tx.CreateIndex("Upload", "Down:Upload:*", buntdb.IndexJSON("DownTime"))
+		tx.CreateIndex("Link", "Link:*", buntdb.IndexJSON("LogTime"))
 		return nil
 	})
 

@@ -1,5 +1,6 @@
 import 'package:alixby/api/AliFile.dart';
 import 'package:alixby/states/Global.dart';
+import 'package:alixby/utils/Loading.dart';
 import 'package:alixby/utils/MColors.dart';
 import 'package:alixby/utils/MIcons.dart';
 import 'package:bot_toast/bot_toast.dart';
@@ -37,7 +38,7 @@ class CreatDirDialog extends StatelessWidget {
                       child: Icon(MIcons.close, size: 18),
                       onTap: () => Navigator.of(context).pop('ok'),
                     ))),
-            Container(child: Text("创建文件夹", style: TextStyle(fontSize: 20, color: MColors.textColor))),
+            Container(child: Text("新建文件夹", style: TextStyle(fontSize: 20, color: MColors.textColor))),
             Container(
               width: 380,
               margin: EdgeInsets.only(top: 24),
@@ -79,17 +80,16 @@ class CreatDirDialog extends StatelessWidget {
                           String dirname = controller.text;
                           dirname = dirname.replaceAll('"', '').trim();
 
-                          var fcHide = BotToast.showLoading(
-                              duration: Duration(seconds: 35), backButtonBehavior: BackButtonBehavior.ignore);
+                          var fcHide = Loading.showLoading();
                           var parentid = Global.panFileState.pageRightDirKey;
                           AliFile.apiCreatForder(parentid, dirname).then((value) {
                             fcHide();
                             if (value == "success") {
                               Global.panTreeState.pageRefreshNode();
-                              BotToast.showText(text: "创建成功", align: Alignment(0, 0));
+                              BotToast.showText(text: "创建成功");
                               Navigator.of(context).pop('ok');
                             } else {
-                              BotToast.showText(text: "创建失败请重试", align: Alignment(0, 0));
+                              BotToast.showText(text: "创建失败请重试");
                             }
                           });
                         },

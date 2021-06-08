@@ -1,6 +1,7 @@
 import 'package:alixby/api/AliLogin.dart';
 import 'package:alixby/states/Global.dart';
 import 'package:alixby/utils/FileLinkifier.dart';
+import 'package:alixby/utils/Loading.dart';
 import 'package:alixby/utils/MColors.dart';
 import 'package:alixby/utils/MIcons.dart';
 import 'package:bot_toast/bot_toast.dart';
@@ -169,16 +170,15 @@ class LoginDialogCookie extends StatelessWidget {
                                   BotToast.showText(text: "refresh_token 应该是长度为32位的字符串！！", align: Alignment(0, 0));
                                   controller.clear();
                                 } else {
-                                  var fcHide = BotToast.showLoading(
-                                      duration: Duration(seconds: 15), backButtonBehavior: BackButtonBehavior.ignore);
+                                  var fcHide = Loading.showLoading();
                                   AliLogin.apiTokenRefresh(token).then((value) {
                                     fcHide();
                                     if (value == "success") {
                                       Global.userState.loadUser();
-                                      BotToast.showText(text: "登录成功", align: Alignment(0, 0));
+                                      BotToast.showText(text: "登录成功");
                                       Navigator.of(context).pop('ok');
                                     } else {
-                                      BotToast.showText(text: "登录失败请重试", align: Alignment(0, 0));
+                                      BotToast.showText(text: "登录失败请重试");
                                     }
                                   });
                                 }

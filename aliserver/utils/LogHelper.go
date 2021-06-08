@@ -38,12 +38,3 @@ func CloseLog() {
 		logFile = nil
 	}
 }
-
-//ReportLog 上报错误日志
-func ReportLog() {
-	defer func() {
-		if err := recover(); err != nil {
-			log.Println("ARUserError ", " error=", err)
-		}
-	}()
-}
