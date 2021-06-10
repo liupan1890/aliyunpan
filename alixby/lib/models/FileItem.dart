@@ -27,6 +27,7 @@ class FileItem {
 
   bool get isFile => type == "file";
   bool get isDir => type != "file";
+  bool get isWeiFa => status == "illegal";
   List<FileItem> children = [];
 
   factory FileItem.fromJson(Map<String, dynamic> json) {

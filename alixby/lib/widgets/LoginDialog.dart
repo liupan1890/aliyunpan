@@ -120,78 +120,81 @@ class _LoginDialogState extends State<LoginDialog> {
   @override
   Widget build(BuildContext context) {
     return Material(
-      type: MaterialType.transparency,
-      child: Center(
-          child: Container(
-        height: 300,
-        width: 300,
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(8),
-          color: Colors.white,
-        ),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.start,
-          children: <Widget>[
-            Container(
-                alignment: Alignment.topRight,
-                padding: EdgeInsets.only(top: 8, right: 8, bottom: 8),
-                child: MouseRegion(
-                    cursor: SystemMouseCursors.click,
-                    child: GestureDetector(
-                      behavior: HitTestBehavior.opaque,
-                      child: Icon(MIcons.close, size: 18),
-                      onTap: () => Navigator.of(context).pop('ok'),
-                    ))),
-            Container(child: Text("请用阿里云盘 App 扫码登录", style: TextStyle(fontSize: 20, color: MColors.textColor))),
-            Container(
-                width: 170,
-                height: 170,
-                child: Stack(
-                  alignment: Alignment.center,
-                  children: [
-                    FutureBuilder(
-                      builder: _buildFuture,
-                      future: _qrcodeCheck(),
-                    ),
-                    Container(
-                        color: Color(0xeeffffff),
-                        alignment: Alignment.center,
-                        width: loadError ? 160 : 0,
-                        height: 160,
-                        child: Column(mainAxisAlignment: MainAxisAlignment.center, children: <Widget>[
-                          Text("二维码已失效"),
-                          Padding(padding: EdgeInsets.only(top: 20)),
-                          ElevatedButton(
-                            child: Text("刷新二维码"),
-                            onPressed: () {
-                              updateState(() {
-                                loadError = false;
-                                loadQrcode = false;
+        type: MaterialType.transparency,
+        child: DefaultTextStyle(
+          //1.设置文本默认样式
+          style: TextStyle(color: MColors.textColor),
+          child: Center(
+              child: Container(
+            height: 300,
+            width: 300,
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(8),
+              color: Colors.white,
+            ),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.start,
+              children: <Widget>[
+                Container(
+                    alignment: Alignment.topRight,
+                    padding: EdgeInsets.only(top: 8, right: 8, bottom: 8),
+                    child: MouseRegion(
+                        cursor: SystemMouseCursors.click,
+                        child: GestureDetector(
+                          behavior: HitTestBehavior.opaque,
+                          child: Icon(MIcons.close, size: 18, color: MColors.textColor),
+                          onTap: () => Navigator.of(context).pop('ok'),
+                        ))),
+                Container(child: Text("请用阿里云盘 App 扫码登录", style: TextStyle(fontSize: 20, color: MColors.textColor))),
+                Container(
+                    width: 170,
+                    height: 170,
+                    child: Stack(
+                      alignment: Alignment.center,
+                      children: [
+                        FutureBuilder(
+                          builder: _buildFuture,
+                          future: _qrcodeCheck(),
+                        ),
+                        Container(
+                            color: Color(0xeeffffff),
+                            alignment: Alignment.center,
+                            width: loadError ? 160 : 0,
+                            height: 160,
+                            child: Column(mainAxisAlignment: MainAxisAlignment.center, children: <Widget>[
+                              Text("二维码已失效"),
+                              Padding(padding: EdgeInsets.only(top: 20)),
+                              ElevatedButton(
+                                child: Text("刷新二维码"),
+                                onPressed: () {
+                                  updateState(() {
+                                    loadError = false;
+                                    loadQrcode = false;
+                                  });
+                                },
+                              )
+                            ])),
+                      ],
+                    )),
+                Container(
+                    padding: EdgeInsets.only(top: 8),
+                    child: TextButton(
+                        child: Text("使用Cookie登录", style: TextStyle(color: MColors.linkColor)),
+                        onPressed: () {
+                          Navigator.of(context).pop('ok');
+                          showDialog(
+                              barrierDismissible: true, //表示点击灰色背景的时候是否消失弹出框
+                              context: context,
+                              builder: (context) {
+                                return WillPopScope(
+                                  onWillPop: () async => false, //关键代码
+                                  child: LoginDialogCookie(),
+                                );
                               });
-                            },
-                          )
-                        ])),
-                  ],
-                )),
-            Container(
-                padding: EdgeInsets.only(top: 8),
-                child: TextButton(
-                    child: Text("使用Cookie登录", style: TextStyle(color: MColors.linkColor)),
-                    onPressed: () {
-                      Navigator.of(context).pop('ok');
-                      showDialog(
-                          barrierDismissible: true, //表示点击灰色背景的时候是否消失弹出框
-                          context: context,
-                          builder: (context) {
-                            return WillPopScope(
-                              onWillPop: () async => false, //关键代码
-                              child: LoginDialogCookie(),
-                            );
-                          });
-                    })),
-          ],
-        ),
-      )),
-    );
+                        })),
+              ],
+            ),
+          )),
+        ));
   }
 }

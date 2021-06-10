@@ -120,15 +120,22 @@ class MyHomePage extends StatelessWidget {
             child: DefaultTextStyle(
                 //1.设置文本默认样式
                 style: TextStyle(color: MColors.textColor),
-                child: SplitView(
-                    gripSize: 3,
-                    gripColor: MColors.pageLeftDividerColor,
-                    gripColorActive: Colors.blue,
-                    minWidthSidebar: 295,
-                    maxWidthSidebar: screenWidth - 600,
-                    initialWeight: 0,
-                    viewMode: SplitViewMode.Horizontal,
-                    view1: PageLeft(),
-                    view2: PageRight()))));
+                child: Container(
+                    color: MColors.pageRightBG,
+                    child: SplitView(
+                      gripSize: 4,
+                      gripColor: Color(0x00ffffff),
+                      gripColorActive: Colors.blue,
+                      children: [PageLeft(), PageRight()],
+                      indicator: SplitIndicator(viewMode: SplitViewMode.Horizontal, color: Colors.blue),
+                      activeIndicator: SplitIndicator(
+                        viewMode: SplitViewMode.Horizontal,
+                        isActive: true,
+                      ),
+                      controller: SplitViewController(
+                          weights: [295 / screenWidth],
+                          limits: [WeightLimit(min: 295 / screenWidth, max: (screenWidth - 600) / screenWidth)]),
+                      viewMode: SplitViewMode.Horizontal,
+                    )))));
   }
 }

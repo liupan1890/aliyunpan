@@ -10,7 +10,6 @@ import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_linkify/flutter_linkify.dart';
 import 'package:hovering/hovering.dart';
-import 'package:url_launcher/url_launcher.dart';
 import 'package:provider/provider.dart';
 
 class PageRightRssMiaoChuan extends StatefulWidget {
@@ -18,18 +17,26 @@ class PageRightRssMiaoChuan extends StatefulWidget {
   _PageRightRssMiaoChuanState createState() => _PageRightRssMiaoChuanState();
 }
 
-class _PageRightRssMiaoChuanState extends State<PageRightRssMiaoChuan> with AutomaticKeepAliveClientMixin {
+class _PageRightRssMiaoChuanState extends State<PageRightRssMiaoChuan> {
   @override
   void initState() {
     super.initState();
     print('_PageRightRssMiaoChuanState initState');
   }
 
+  @override
+  void dispose() {
+    verticalScroll.dispose();
+    super.dispose();
+  }
+
   final verticalScroll = ScrollController();
+  final GlobalKey mcKey = GlobalKey();
   @override
   // ignore: must_call_super
   Widget build(BuildContext context) {
     return Column(
+      key: mcKey,
       children: [
         Container(
             height: 52,
@@ -87,8 +94,8 @@ class _PageRightRssMiaoChuanState extends State<PageRightRssMiaoChuan> with Auto
                           shrinkWrap: false,
                           primary: false,
                           addSemanticIndexes: false,
-                          addAutomaticKeepAlives: true,
-                          addRepaintBoundaries: true,
+                          addAutomaticKeepAlives: false,
+                          addRepaintBoundaries: false,
                           scrollDirection: Axis.vertical,
                           physics: ClampingScrollPhysics(),
                           itemExtent: 60,
@@ -120,33 +127,30 @@ class _PageRightRssMiaoChuanState extends State<PageRightRssMiaoChuan> with Auto
     }
   }
 
-  static Icon iconSelected = Icon(MIcons.link2, color: MColors.iconSelected);
-  static Icon iconSelect = Icon(MIcons.link2, color: MColors.iconDown);
-
   static Padding padding4 = Padding(padding: EdgeInsets.only(left: 4));
   static Padding padding12 = Padding(padding: EdgeInsets.only(left: 12));
   static Padding padding16 = Padding(padding: EdgeInsets.only(left: 16));
   static Padding padding22 = Padding(padding: EdgeInsets.only(left: 22));
-  static TextStyle textStyle = TextStyle(fontSize: 13, color: MColors.textColor);
-  static SizedBox linkBox = SizedBox(width: 40, height: 40, child: iconSelect);
-  static SizedBox linkBoxed = SizedBox(width: 40, height: 40, child: iconSelected);
-
-  var decoration = BoxDecoration(
-      color: MColors.pageRightFileBG,
-      border: Border(bottom: BorderSide(width: 1, color: MColors.pageRightBorderColor)));
-  var decorations = BoxDecoration(
-      color: MColors.pageRightFileBGSelect,
-      border: Border(bottom: BorderSide(width: 1, color: MColors.pageRightBorderColor)));
-
-  var hoverDecoration = BoxDecoration(
-      color: MColors.pageRightFileBGHover,
-      border: Border(bottom: BorderSide(width: 1, color: MColors.pageRightBorderColor)));
-  var hoverDecorations = BoxDecoration(
-      color: MColors.pageRightFileBGSelect,
-      border: Border(bottom: BorderSide(width: 1, color: MColors.pageRightBorderColor)));
 
   Widget _buildList(BuildContext context, int index) {
     var item = Global.pageRssMiaoChuanState.pageRightMiaoChuanList[index];
+    TextStyle textStyle = TextStyle(fontSize: 13, color: MColors.textColor);
+    SizedBox linkBox = SizedBox(width: 40, height: 40, child: Icon(MIcons.link2, color: MColors.iconDown));
+    SizedBox linkBoxed = SizedBox(width: 40, height: 40, child: Icon(MIcons.link2, color: MColors.iconSelected));
+
+    var decoration = BoxDecoration(
+        color: MColors.pageRightFileBG,
+        border: Border(bottom: BorderSide(width: 1, color: MColors.pageRightBorderColor)));
+    var decorations = BoxDecoration(
+        color: MColors.pageRightFileBGSelect,
+        border: Border(bottom: BorderSide(width: 1, color: MColors.pageRightBorderColor)));
+
+    var hoverDecoration = BoxDecoration(
+        color: MColors.pageRightFileBGHover,
+        border: Border(bottom: BorderSide(width: 1, color: MColors.pageRightBorderColor)));
+    var hoverDecorations = BoxDecoration(
+        color: MColors.pageRightFileBGSelect,
+        border: Border(bottom: BorderSide(width: 1, color: MColors.pageRightBorderColor)));
     //print("buildfile " + item.key);
     //if (item.icon[0] == '.') item.icon = FileIcons.getFileIcon(item.icon, "");
     return HoverContainer(
@@ -171,7 +175,7 @@ class _PageRightRssMiaoChuanState extends State<PageRightRssMiaoChuan> with Auto
                       ),
                     ),
                     Container(
-                        width: 76,
+                        width: 80,
                         alignment: Alignment.centerRight,
                         child: Text(item.logTimeStr, style: textStyle, maxLines: 2)),
                     padding22,
@@ -193,7 +197,4 @@ class _PageRightRssMiaoChuanState extends State<PageRightRssMiaoChuan> with Auto
                   ],
                 ))));
   }
-
-  @override
-  bool get wantKeepAlive => true;
 }

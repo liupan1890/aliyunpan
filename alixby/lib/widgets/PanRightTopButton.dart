@@ -78,8 +78,6 @@ class _PanRightTopButtonState extends State<PanRightTopButton> {
         _buildFavor(true),
         Padding(padding: EdgeInsets.only(left: 12)),
         _buildTrash(),
-        Padding(padding: EdgeInsets.only(left: 42)),
-        _buildCreatMiaoChuan(),
       ],
     );
   }
@@ -309,6 +307,7 @@ class _PanRightTopButtonState extends State<PanRightTopButton> {
         });
   }
 
+  // ignore: unused_element
   Widget _buildCreatMiaoChuan() {
     return OutlinedButton.icon(
         icon: Icon(MIcons.link2, size: 16),

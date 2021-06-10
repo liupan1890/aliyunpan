@@ -152,8 +152,8 @@ func DowningAdd(userid, savepath, identity, name, path, hash string, size int64,
 		Name:     name,
 		Size:     size,
 		Identity: identity,
-		Path:     path,
-		Hash:     hash,
+		//Path:     path,
+		Hash: hash,
 
 		DownTime:      dtime, // time.Now().UnixNano()
 		DownSize:      0,
@@ -221,7 +221,6 @@ func _StartDowning() {
 	if Aria2Rpc != nil {
 		downingUpdateProgress()
 
-		//每2s同步一次下载队列
 		TaskCountMax, terr := strconv.Atoi(data.Setting.DownMax)
 		if terr != nil {
 			TaskCountMax = 1
@@ -420,6 +419,9 @@ func UpdateStateTell(item *DownFileModel, info rpc.StatusInfo) {
 	} else if info.Status == "waiting" || info.Status == "active" {
 		//什么也不做
 	} else if info.Status == "error" {
+		if info.ErrorMessage == "" {
+			info.ErrorMessage = FormateAriaError(info.ErrorCode)
+		}
 		log.Println("Aria2DownError", item.DownID, item.Name, info.ErrorMessage)
 		item.AutoGID = 0
 		Aria2Rpc.RemoveDownloadResult(item.GID) //删除下载任务
@@ -432,6 +434,78 @@ func UpdateStateTell(item *DownFileModel, info rpc.StatusInfo) {
 		} else {
 			UpdateStateError(item, info.ErrorCode+":"+info.ErrorMessage)
 		}
+	}
+}
+
+func FormateAriaError(code string) string {
+
+	switch code {
+	case "1":
+		return "aria2c未知错误"
+	case "2":
+		return "aria2c网络超时"
+	case "3":
+		return "aria2c网络文件404"
+	case "4":
+		return "aria2c网络文件404"
+	case "5":
+		return "aria2c下载缓慢自动退出"
+	case "6":
+		return "aria2c发生网络中断"
+	case "7":
+		return "aria2c被强制退出错误"
+	case "8":
+		return "aria2c服务器不支持断点续传"
+	case "9":
+		return "aria2c本地硬盘空间不足"
+	case "10":
+		return "aria2c分片大小更改"
+	case "11":
+		return "aria2c重复任务"
+	case "12":
+		return "aria2c重复BT任务"
+	case "13":
+		return "aria2c文件已存在且不能覆盖"
+	case "14":
+		return "aria2c文件重命名失败"
+	case "15":
+		return "aria2c打开文件失败"
+	case "16":
+		return "aria2c创建文件大小时失败"
+	case "17":
+		return "aria2c文件写入失败"
+	case "18":
+		return "aria2c创建文件夹失败"
+	case "19":
+		return "aria2cDNS解析失败"
+	case "20":
+		return "aria2c解析磁力失败"
+	case "21":
+		return "aria2cFTP不支持的命令"
+	case "22":
+		return "aria2cHTTP响应头错误"
+	case "23":
+		return "aria2cHTTP重定向失败"
+	case "24":
+		return "aria2cHTTP认证失败"
+	case "25":
+		return "aria2c格式化种子失败"
+	case "26":
+		return "aria2c读取种子信息失败"
+	case "27":
+		return "aria2c磁力链接错误"
+	case "28":
+		return "aria2c提供了错误的参数"
+	case "29":
+		return "aria2c服务器超载暂时无法处理请求"
+	case "30":
+		return "aria2cRPC传输参数错误"
+	case "31":
+		return "aria2c多余的响应数据"
+	case "32":
+		return "aria2c文件sha1校验失败"
+	default:
+		return "aria2c未知错误"
 	}
 }
 

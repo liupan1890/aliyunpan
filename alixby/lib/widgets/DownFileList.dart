@@ -66,33 +66,16 @@ class _DownFileListState extends State<DownFileList> {
   }
 
   //static BoxDecoration decoration = BoxDecoration(color: Color(0xfff7f8fa), border: border);
-  static Icon icondSelected = Icon(MIcons.download, color: MColors.iconSelected);
-  static Icon icondSelect = Icon(MIcons.download, color: MColors.iconDown);
-  static Icon iconuSelected = Icon(MIcons.upload, color: MColors.iconSelected);
-  static Icon iconuSelect = Icon(MIcons.upload, color: MColors.iconDown);
+
   static Padding padding4 = Padding(padding: EdgeInsets.only(left: 4));
   static Padding padding12 = Padding(padding: EdgeInsets.only(left: 12));
   static Padding padding16 = Padding(padding: EdgeInsets.only(left: 16));
   static Padding padding22 = Padding(padding: EdgeInsets.only(left: 22));
-  static TextStyle textStyle = TextStyle(fontSize: 13, color: MColors.textColor);
-  static SizedBox downBox = SizedBox(width: 40, height: 40, child: icondSelect);
-  static SizedBox downBoxed = SizedBox(width: 40, height: 40, child: icondSelected);
-  static SizedBox uploadBox = SizedBox(width: 40, height: 40, child: iconuSelect);
-  static SizedBox uploadBoxed = SizedBox(width: 40, height: 40, child: iconuSelected);
-
-  var decoration = BoxDecoration(
-      color: MColors.pageRightFileBG,
-      border: Border(bottom: BorderSide(width: 1, color: MColors.pageRightBorderColor)));
-  var decorations = BoxDecoration(
-      color: MColors.pageRightFileBGSelect,
-      border: Border(bottom: BorderSide(width: 1, color: MColors.pageRightBorderColor)));
-
-  var hoverDecoration = BoxDecoration(
-      color: MColors.pageRightFileBGHover,
-      border: Border(bottom: BorderSide(width: 1, color: MColors.pageRightBorderColor)));
-  var hoverDecorations = BoxDecoration(
-      color: MColors.pageRightFileBGSelect,
-      border: Border(bottom: BorderSide(width: 1, color: MColors.pageRightBorderColor)));
+  TextStyle textStyle = TextStyle(fontSize: 13, color: MColors.textColor);
+  SizedBox downBox = SizedBox(width: 40, height: 40, child: Icon(MIcons.download, color: MColors.iconDown));
+  SizedBox downBoxed = SizedBox(width: 40, height: 40, child: Icon(MIcons.download, color: MColors.iconSelected));
+  SizedBox uploadBox = SizedBox(width: 40, height: 40, child: Icon(MIcons.upload, color: MColors.iconDown));
+  SizedBox uploadBoxed = SizedBox(width: 40, height: 40, child: Icon(MIcons.upload, color: MColors.iconSelected));
 
   static onTapFile(String key) {
     Global.pageDownState.pageSelectFile(key);
@@ -144,6 +127,19 @@ class _DownFileListState extends State<DownFileList> {
 
   Widget _buildList(BuildContext context, int index) {
     var item = Global.pageDownState.pageRightDownList[index];
+    var decoration = BoxDecoration(
+        color: MColors.pageRightFileBG,
+        border: Border(bottom: BorderSide(width: 1, color: MColors.pageRightBorderColor)));
+    var decorations = BoxDecoration(
+        color: MColors.pageRightFileBGSelect,
+        border: Border(bottom: BorderSide(width: 1, color: MColors.pageRightBorderColor)));
+
+    var hoverDecoration = BoxDecoration(
+        color: MColors.pageRightFileBGHover,
+        border: Border(bottom: BorderSide(width: 1, color: MColors.pageRightBorderColor)));
+    var hoverDecorations = BoxDecoration(
+        color: MColors.pageRightFileBGSelect,
+        border: Border(bottom: BorderSide(width: 1, color: MColors.pageRightBorderColor)));
     //print("buildfile " + item.key);
     //if (item.icon[0] == '.') item.icon = FileIcons.getFileIcon(item.icon, "");
     return HoverContainer(

@@ -80,20 +80,6 @@ class _PanFileListState extends State<PanFileList> {
   static SizedBox sizeBoxFavor = SizedBox(width: 40, height: 40, child: iconSelectFavor);
   static SizedBox sizeBoxed = SizedBox(width: 40, height: 40, child: iconSelected);
 
-  var decoration = BoxDecoration(
-      color: MColors.pageRightFileBG,
-      border: Border(bottom: BorderSide(width: 1, color: MColors.pageRightBorderColor)));
-  var decorations = BoxDecoration(
-      color: MColors.pageRightFileBGSelect,
-      border: Border(bottom: BorderSide(width: 1, color: MColors.pageRightBorderColor)));
-
-  var hoverDecoration = BoxDecoration(
-      color: MColors.pageRightFileBGHover,
-      border: Border(bottom: BorderSide(width: 1, color: MColors.pageRightBorderColor)));
-  var hoverDecorations = BoxDecoration(
-      color: MColors.pageRightFileBGSelect,
-      border: Border(bottom: BorderSide(width: 1, color: MColors.pageRightBorderColor)));
-
   static onTapFileName(String key, String filetype, BuildContext context) {
     print('点击文件名');
     onTapFile(key);
@@ -155,6 +141,19 @@ class _PanFileListState extends State<PanFileList> {
 
   Widget _buildList(BuildContext context, int index) {
     var item = Global.panFileState.pageRightFileList[index];
+    var decoration = BoxDecoration(
+        color: MColors.pageRightFileBG,
+        border: Border(bottom: BorderSide(width: 1, color: MColors.pageRightBorderColor)));
+    var decorations = BoxDecoration(
+        color: MColors.pageRightFileBGSelect,
+        border: Border(bottom: BorderSide(width: 1, color: MColors.pageRightBorderColor)));
+
+    var hoverDecoration = BoxDecoration(
+        color: MColors.pageRightFileBGHover,
+        border: Border(bottom: BorderSide(width: 1, color: MColors.pageRightBorderColor)));
+    var hoverDecorations = BoxDecoration(
+        color: MColors.pageRightFileBGSelect,
+        border: Border(bottom: BorderSide(width: 1, color: MColors.pageRightBorderColor)));
     //print("buildfile " + item.key);
     //if (item.icon[0] == '.') item.icon = FileIcons.getFileIcon(item.icon, "");
     return HoverContainer(

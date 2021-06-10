@@ -59,6 +59,7 @@ class MColors {
   static get iconAudio => mcolor.iconAudio;
   static get iconImage => mcolor.iconImage;
   static get iconTxt => mcolor.iconTxt;
+  static get iconWeiFa => mcolor.iconWeiFa;
 
   static get iconDown => mcolor.iconDown;
   static get iconSelect => mcolor.iconSelect;
@@ -125,8 +126,9 @@ class MColorsLight {
   Color iconFile = Color(0xffbcb3b3);
   Color iconVideo = Color(0xff3482F0);
   Color iconAudio = Color(0xff474DE2);
-  Color iconImage = Color(0xffEF3450);
+  Color iconImage = Color(0xffE03450);
   Color iconTxt = Color(0xff8BC755);
+  Color iconWeiFa = Color(0xffd81e06);
 
   Color iconDown = Color(0x66bcb3b3);
   Color iconSelect = Color(0x66bcb3b3);
@@ -141,8 +143,8 @@ class MColorsLight {
   Color dialogBgColor = Colors.white;
 
   Color thumbColor = Colors.grey.shade400;
-  Color trackColor = Colors.grey.shade200;
-  Color trackBorderColor = Colors.grey.shade300;
+  Color trackColor = Color(0x66e0e0e0);
+  Color trackBorderColor = Color(0x99e0e0e0);
   Color textColor = Color(0xee000000);
 }
 
@@ -193,8 +195,9 @@ class MColorsDark extends MColorsLight {
   Color iconFile = Color(0xffbcb3b3);
   Color iconVideo = Color(0xff3482F0);
   Color iconAudio = Color(0xff474DE2);
-  Color iconImage = Color(0xffEF3450);
+  Color iconImage = Color(0xffE03450);
   Color iconTxt = Color(0xff8BC755);
+  Color iconWeiFa = Color(0xffd81e06);
 
   Color iconDown = Color(0x66bcb3b3);
   Color iconSelect = Color(0x66bcb3b3);
@@ -204,12 +207,12 @@ class MColorsDark extends MColorsLight {
   Color pageRightFileBG = Color(0xff28282a); //
   Color pageRightFileBGHover = Color(0xdd47474a); //
   Color pageRightFileBGSelect = Color(0xff47474a); //
-  Color pageRightDownSpeedColor = Color(0xff47474a);
+  Color pageRightDownSpeedColor = Color(0xff67676a);
 
   Color dialogBgColor = Color(0xff333538); //
 
-  Color thumbColor = Colors.grey.shade600;
-  Color trackColor = Colors.grey.shade800;
-  Color trackBorderColor = Colors.grey.shade700;
+  Color thumbColor = Colors.grey.shade400;
+  Color trackColor = Color(0x99e0e0e0);
+  Color trackBorderColor = Color(0x99e0e0e0);
   Color textColor = Colors.white;
 }

@@ -9,7 +9,7 @@ class PageRightRssHelp extends StatefulWidget {
   _PageRightRssHelpState createState() => _PageRightRssHelpState();
 }
 
-class _PageRightRssHelpState extends State<PageRightRssHelp> with AutomaticKeepAliveClientMixin {
+class _PageRightRssHelpState extends State<PageRightRssHelp> {
   @override
   void initState() {
     super.initState();
@@ -41,7 +41,4 @@ class _PageRightRssHelpState extends State<PageRightRssHelp> with AutomaticKeepA
               linkStyle: TextStyle(fontSize: 14, color: MColors.linkColor, decoration: TextDecoration.none))
         ]));
   }
-
-  @override
-  bool get wantKeepAlive => true;
 }

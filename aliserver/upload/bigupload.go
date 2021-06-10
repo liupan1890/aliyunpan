@@ -104,38 +104,65 @@ func (worker *BigUploadWorker) StopUploadAsync() {
 }
 
 //StartUploadAsync 异步的，开始上传，立即返回
-func (worker *BigUploadWorker) StartUploadAsync(AutoRange bool) {
-	go worker.StartUploadSync(AutoRange)
+func (worker *BigUploadWorker) StartUploadAsync() {
+	go worker.StartUploadSync()
+}
+
+func (worker *BigUploadWorker) _UpdateStateError(msg string) {
+	worker.IsFailed = true     //会导致全部blockWorker停止
+	worker.FailedMessage = msg //更新错误信息
+	worker.IsCompleted = false
+	worker.IsMakeFile = false
+}
+func (worker *BigUploadWorker) _UpdateStateSuccess(ismakefile bool) {
+	worker.IsFailed = false
+	worker.FailedMessage = ""
+	worker.IsCompleted = true
+	worker.IsMakeFile = ismakefile
 }
 
 //StartUploadSync 同步的，开始下载，等待下载结束(出错返回err)
-func (worker *BigUploadWorker) StartUploadSync(AutoRange bool) {
+func (worker *BigUploadWorker) StartUploadSync() {
 	worker.IsUploading = true //标记开始下载这一个文件
 
 	if worker.UploadInfo.FileFullPath == "miaochuan" {
 		//单独执行秒传
 		same, _, _, err := aliyun.UploadCreatFile(worker.UploadInfo.ParentID, worker.UploadInfo.FileName, worker.UploadInfo.FileSize, worker.UploadInfo.FileHash)
 		if err != nil {
-			worker.IsFailed = true             //会导致全部blockWorker停止
-			worker.FailedMessage = err.Error() //更新错误信息
-			worker.IsCompleted = false
+			worker._UpdateStateError(err.Error())
 		} else if same {
-			worker.IsCompleted = true //秒传成功了
-			worker.IsMakeFile = true  //不需要合并
+			worker._UpdateStateSuccess(true) //秒传成功了,不需要合并
 		} else {
-			worker.IsFailed = true        //会导致全部blockWorker停止
-			worker.FailedMessage = "秒传失败" //更新错误信息
-			worker.IsCompleted = false
+			worker._UpdateStateError("秒传失败，云盘内没有此sha1的文件")
 		}
 		worker.finishUpload()
-		return
+		return //执行结束退出
+	}
+
+	if worker.UploadInfo.FileHash == "dir" {
+		//单独执行文件夹
+		DirID, err3 := aliyun.UploadCreatForder(worker.UploadInfo.ParentID, worker.UploadInfo.FileName)
+		if err3 != nil {
+			worker._UpdateStateError("云盘创建路径失败：" + worker.UploadInfo.FileName)
+			return
+		}
+		//遍历文件夹，获取文件树，并在网盘里创建对应的文件夹
+		SelectFileList, err := GetFilesWithDir(DirID, worker.UploadInfo.FileFullPath)
+		if err != nil {
+			worker._UpdateStateError(err.Error())
+			return
+		}
+		//添加文件的上传任务
+		UserID := aliyun.GetUserID()
+		UploadSelectFile(UserID, DirID, SelectFileList)
+		worker._UpdateStateSuccess(true) //不需要合并
+		worker.finishUpload()
+		return //执行结束退出
 	}
 
 	err := worker.openUploadFile()
 	if err != nil { //打开文件时出错了
-		worker.IsFailed = true             //会导致全部blockWorker停止
-		worker.FailedMessage = err.Error() //更新错误信息
-		worker.IsCompleted = false
+		worker._UpdateStateError(err.Error())
 		worker.finishUpload()
 		return
 	}
@@ -167,9 +194,7 @@ func (worker *BigUploadWorker) StartUploadSync(AutoRange bool) {
 		worker.FailedMessage = "计算sha1中"
 		hash, err := aliyun.ComputeAliFileSha1(worker.filePtr, worker.UploadInfo.FileSize)
 		if err != nil {
-			worker.IsFailed = true             //会导致全部blockWorker停止
-			worker.FailedMessage = err.Error() //更新错误信息
-			worker.IsCompleted = false
+			worker._UpdateStateError(err.Error())
 			worker.finishUpload()
 			return
 		}
@@ -181,9 +206,7 @@ func (worker *BigUploadWorker) StartUploadSync(AutoRange bool) {
 	if worker.UploadInfo.UploadID == "" {
 		same, uploadid, fileid, err := aliyun.UploadCreatFile(worker.UploadInfo.ParentID, worker.UploadInfo.FileName, worker.UploadInfo.FileSize, worker.UploadInfo.FileHash)
 		if err != nil {
-			worker.IsFailed = true             //会导致全部blockWorker停止
-			worker.FailedMessage = err.Error() //更新错误信息
-			worker.IsCompleted = false
+			worker._UpdateStateError(err.Error())
 			worker.finishUpload()
 			return
 		}
@@ -191,8 +214,7 @@ func (worker *BigUploadWorker) StartUploadSync(AutoRange bool) {
 		worker.UploadInfo.UploadTime = time.Now().Unix() //秒
 		worker.UploadInfo.FileID = fileid
 		if same {
-			worker.IsCompleted = true
-			worker.IsMakeFile = true //不需要合并
+			worker._UpdateStateSuccess(true) //秒传成功了,不需要合并
 		}
 	}
 
@@ -202,9 +224,7 @@ func (worker *BigUploadWorker) StartUploadSync(AutoRange bool) {
 	}
 	//获取上传URL失败
 	if worker.UploadInfo.UploadID == "" || worker.UploadInfo.FileID == "" { //没有下载地址
-		worker.IsFailed = true
-		worker.FailedMessage = "上传地址不能为空"
-		worker.IsCompleted = false
+		worker._UpdateStateError("上传地址不能为空")
 		worker.finishUpload()
 		return
 	}
@@ -294,9 +314,7 @@ func (worker *BigUploadWorker) finishUpload() {
 				block.IsUploadSuccess = false
 			}
 
-			worker.IsFailed = true               //会导致全部blockWorker停止
-			worker.FailedMessage = errmk.Error() //更新错误信息
-			worker.IsCompleted = false
+			worker._UpdateStateError(errmk.Error())
 		} else {
 			worker.IsMakeFile = true
 		}
@@ -330,9 +348,7 @@ func blockWorker(worker *BigUploadWorker, blockIndex <-chan int) {
 	defer func() {
 		if err := recover(); err != nil {
 			log.Println("UPblockWorkerError ", " error=", err)
-			worker.IsFailed = true
-			worker.FailedMessage = utils.NetErrorMessage("异常崩溃")
-			worker.IsCompleted = false
+			worker._UpdateStateError("异常崩溃")
 		}
 	}()
 

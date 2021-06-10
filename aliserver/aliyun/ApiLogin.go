@@ -84,6 +84,7 @@ func apiMiniLogin() {
 			utils.GetHTTPString(authurl(), "User-Agent: "+UA+"\nReferer: "+minilogin)
 		}
 	}
+	log.Println("apiMiniLogin client_id=", parame.M_client_id)
 	//刷新参数
 	if parame.P_csrf_token == "" || parame.M_token_time < checktime {
 		code, _, html := utils.GetHTTPString(minilogin, "User-Agent: "+UA+"\nReferer: "+minilogin)
@@ -275,6 +276,7 @@ func ApiTokenRefresh(refreshToken string) (retjsonstr string) {
 	})
 	code, _, body := utils.PostHTTPString("https://websv.aliyundrive.com/token/refresh", "User-Agent: "+UA+"\nReferer: "+aliurl+"\nContent-Type: application/json", postdata)
 	if code != 200 {
+		log.Println("ApiTokenRefresh code=", code, " client_id=", parame.M_client_id)
 		return utils.ToSuccessJSON("loginResult", "retry")
 	}
 	if !gjson.Valid(body) {

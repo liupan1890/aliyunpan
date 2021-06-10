@@ -97,7 +97,7 @@ func _ApiFileListAllForLink(file_id string, name string) (link *LinkFileModel, e
 					link.DirList = append(link.DirList, dir)
 					lock.Unlock()
 				}
-				wg.Done()
+				defer wg.Done()
 			}(item)
 		} else {
 			link.Size += item.P_size
@@ -112,6 +112,12 @@ func _ApiFileListAllForLink(file_id string, name string) (link *LinkFileModel, e
 }
 
 func ApiPostLinkToServer(urldata string, postdata *[]byte) (link string) {
+	defer func() {
+		if errr := recover(); errr != nil {
+			log.Println("ApiPostLinkToServerError ", " error=", errr)
+			link = "error"
+		}
+	}()
 	//出于服务器数据安全考虑，此处已被屏蔽
 	return "error"
 }
@@ -125,6 +131,7 @@ func ApiParseLinkToServer(urldata string, postdata *[]byte) (link *LinkFileModel
 		Message:  "error",
 		Size:     0,
 	}
+
 	//出于服务器数据安全考虑，此处已被屏蔽
 	return link, ""
 }

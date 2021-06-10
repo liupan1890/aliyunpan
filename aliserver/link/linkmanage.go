@@ -74,7 +74,7 @@ func GoLinkCreat(jianjie string, ispublic bool, password, outday, outsave, paren
 						list = append(list, &finfo)
 						lock.Unlock()
 					}
-					wg.Done()
+					defer wg.Done()
 				}(fileid)
 			}
 		}
@@ -127,7 +127,7 @@ func GoLinkCreat(jianjie string, ispublic bool, password, outday, outsave, paren
 					link.DirList = append(link.DirList, dir)
 					lock.Unlock()
 				}
-				wg.Done()
+				defer wg.Done()
 			}(m)
 		} else {
 			link.Size += item.P_size
@@ -279,7 +279,7 @@ func GetFilesWithDir(ParentID string, link *aliyun.LinkFileModel) (files []*uplo
 					lock.Unlock()
 				}
 			}
-			wg.Done()
+			defer wg.Done()
 		}(n)
 	}
 	wg.Wait()

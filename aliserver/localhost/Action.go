@@ -44,18 +44,12 @@ func ActionURL(w http.ResponseWriter, req *http.Request) {
 		method := gjson.Get(jsonstr, "method").String()
 		header := gjson.Get(jsonstr, "header").String()
 		postdata := gjson.Get(jsonstr, "postdata").String()
-		println("postdata=", postdata)
+		//println("postdata=", postdata)
 		if strings.HasPrefix(strings.ToLower(url), "http") {
 			jsonbs = []byte(HookURL(url, method, header, postdata, req.UserAgent()))
 		} else {
 			ishook, hookresult := HookAction(url, postdata)
 			if ishook {
-
-				if len(hookresult) > 40 {
-					println(hookresult[0:40])
-				} else {
-					println(hookresult)
-				}
 				jsonbs = []byte(`{"code":200, "header": "", "body": ` + hookresult + `}`)
 				//jsonbs = []byte(utils.ToSuccessJSON3("code", 200, "header", "", "body", hookresult))
 			} else {

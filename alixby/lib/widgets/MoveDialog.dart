@@ -9,6 +9,7 @@ import 'package:flutter/rendering.dart';
 import 'package:flutter_treeview/flutter_treeview.dart';
 import 'package:hovering/hovering.dart';
 
+// ignore: must_be_immutable
 class MoveDialog extends StatefulWidget {
   // ignore: non_constant_identifier_names
   MoveDialog({Key? key, required this.parentid, required this.filelist}) : super(key: key);
@@ -41,115 +42,118 @@ class _MoveDialogState extends State<MoveDialog> {
   @override
   Widget build(BuildContext context) {
     return Material(
-      type: MaterialType.transparency,
-      child: Center(
-          child: Container(
-        height: 500,
-        width: 500,
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(8),
-          color: MColors.dialogBgColor,
-        ),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.start,
-          children: <Widget>[
-            Container(
-                alignment: Alignment.topRight,
-                padding: EdgeInsets.only(top: 8, right: 8, bottom: 8),
-                child: MouseRegion(
-                    cursor: SystemMouseCursors.click,
-                    child: GestureDetector(
-                      behavior: HitTestBehavior.opaque,
-                      child: Icon(MIcons.close, size: 18),
-                      onTap: () => Navigator.of(context).pop('ok'),
-                    ))),
-            Container(child: Text("移动文件/文件夹", style: TextStyle(fontSize: 20, color: MColors.textColor, height: 0))),
-            Container(
-                width: 440,
-                height: 370,
-                margin: EdgeInsets.only(top: 22),
-                alignment: Alignment.topLeft,
-                child: Scrollbar(
-                    controller: verticalScroll,
-                    isAlwaysShown: true,
-                    hoverThickness: 9,
-                    thickness: 9,
-                    showTrackOnHover: true,
-                    child: SingleChildScrollView(
-                        controller: verticalScroll,
-                        scrollDirection: Axis.vertical,
-                        physics: BouncingScrollPhysics(),
-                        child: Container(
-                            alignment: Alignment.topLeft,
-                            padding: EdgeInsets.only(bottom: 12),
-                            child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                              Container(
-                                  //color: Colors.red[50],
-                                  alignment: Alignment.topLeft,
-                                  width: 424,
-                                  padding: EdgeInsets.only(bottom: 12),
-                                  child: TreeView(
-                                    shrinkWrap: true,
-                                    primary: true,
-                                    controller: treeController,
-                                    physics: BouncingScrollPhysics(),
-                                    allowParentSelect: true,
-                                    supportParentDoubleTap: true,
-                                    onExpansionChanged: _expandNodeHandler,
-                                    onNodeTap: _onNodeTap,
-                                    nodeBuilder: _builderTreeNode,
-                                    theme: TreeViewTheme(
-                                      expanderTheme: ExpanderThemeData(
-                                        type: ExpanderType.caret,
-                                        modifier: ExpanderModifier.none,
-                                        position: ExpanderPosition.start,
-                                        color: MColors.userNavColor,
-                                        size: 20,
-                                      ),
-                                      labelStyle: TextStyle(fontSize: 16, fontWeight: FontWeight.normal),
-                                      parentLabelStyle: TextStyle(fontSize: 16, fontWeight: FontWeight.normal),
-                                      iconTheme: IconThemeData(size: 18, color: MColors.pageLeftRowItemIconColor),
-                                      colorScheme: ColorScheme.light().copyWith(primary: Colors.transparent),
-                                      expandSpeed: Duration(milliseconds: 100),
-                                    ),
-                                  )),
-                              Container(width: 16, height: 300),
-                            ]))))),
-            Container(
-              width: 440,
-              padding: EdgeInsets.only(top: 12),
-              child: Row(mainAxisAlignment: MainAxisAlignment.end, children: [
-                Text("把选中的 " + widget.filelist.length.toString() + " 个文件"),
-                Padding(padding: EdgeInsets.only(left: 24)),
-                OutlinedButton(
-                  onPressed: () => Navigator.of(context).pop('ok'),
-                  child: Text("取消"),
-                  style: ButtonStyle(minimumSize: MaterialStateProperty.all(Size(0, 35))),
-                ),
-                Padding(padding: EdgeInsets.only(left: 24)),
-                ElevatedButton(
-                  onPressed: () {
-                    if (widget.filelist.length > 0) {
-                      var fcHide = Loading.showLoading();
-
-                      AliFile.apiMoveBatch(widget.filelist, selectKey).then((value) {
-                        fcHide();
-                        PanData.loadFileList(widget.parentid, "move"); //触发联网加载
-                        pageExpandedNode("root", true);
-                        Navigator.of(context).pop('ok');
-                        BotToast.showText(text: "成功移动" + value.toString() + "个文件");
-                      });
-                    }
-                  },
-                  child: Text("移动到此处"),
-                  style: ButtonStyle(minimumSize: MaterialStateProperty.all(Size(0, 35))),
-                ),
-              ]),
+        type: MaterialType.transparency,
+        child: DefaultTextStyle(
+          //1.设置文本默认样式
+          style: TextStyle(color: MColors.textColor),
+          child: Center(
+              child: Container(
+            height: 500,
+            width: 500,
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(8),
+              color: MColors.dialogBgColor,
             ),
-          ],
-        ),
-      )),
-    );
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.start,
+              children: <Widget>[
+                Container(
+                    alignment: Alignment.topRight,
+                    padding: EdgeInsets.only(top: 8, right: 8, bottom: 8),
+                    child: MouseRegion(
+                        cursor: SystemMouseCursors.click,
+                        child: GestureDetector(
+                          behavior: HitTestBehavior.opaque,
+                          child: Icon(MIcons.close, size: 18, color: MColors.textColor),
+                          onTap: () => Navigator.of(context).pop('ok'),
+                        ))),
+                Container(child: Text("移动文件/文件夹", style: TextStyle(fontSize: 20, color: MColors.textColor, height: 0))),
+                Container(
+                    width: 440,
+                    height: 370,
+                    margin: EdgeInsets.only(top: 22),
+                    alignment: Alignment.topLeft,
+                    child: Scrollbar(
+                        controller: verticalScroll,
+                        isAlwaysShown: true,
+                        hoverThickness: 9,
+                        thickness: 9,
+                        showTrackOnHover: true,
+                        child: SingleChildScrollView(
+                            controller: verticalScroll,
+                            scrollDirection: Axis.vertical,
+                            physics: BouncingScrollPhysics(),
+                            child: Container(
+                                alignment: Alignment.topLeft,
+                                padding: EdgeInsets.only(bottom: 12),
+                                child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                                  Container(
+                                      //color: Colors.red[50],
+                                      alignment: Alignment.topLeft,
+                                      width: 424,
+                                      padding: EdgeInsets.only(bottom: 12),
+                                      child: TreeView(
+                                        shrinkWrap: true,
+                                        primary: true,
+                                        controller: treeController,
+                                        physics: BouncingScrollPhysics(),
+                                        allowParentSelect: true,
+                                        supportParentDoubleTap: true,
+                                        onExpansionChanged: _expandNodeHandler,
+                                        onNodeTap: _onNodeTap,
+                                        nodeBuilder: _builderTreeNode,
+                                        theme: TreeViewTheme(
+                                          expanderTheme: ExpanderThemeData(
+                                            type: ExpanderType.caret,
+                                            modifier: ExpanderModifier.none,
+                                            position: ExpanderPosition.start,
+                                            color: MColors.userNavColor,
+                                            size: 20,
+                                          ),
+                                          labelStyle: TextStyle(fontSize: 16, fontWeight: FontWeight.normal),
+                                          parentLabelStyle: TextStyle(fontSize: 16, fontWeight: FontWeight.normal),
+                                          iconTheme: IconThemeData(size: 18, color: MColors.pageLeftRowItemIconColor),
+                                          colorScheme: ColorScheme.light().copyWith(primary: Colors.transparent),
+                                          expandSpeed: Duration(milliseconds: 100),
+                                        ),
+                                      )),
+                                  Container(width: 16, height: 300),
+                                ]))))),
+                Container(
+                  width: 440,
+                  padding: EdgeInsets.only(top: 12),
+                  child: Row(mainAxisAlignment: MainAxisAlignment.end, children: [
+                    Text("把选中的 " + widget.filelist.length.toString() + " 个文件"),
+                    Padding(padding: EdgeInsets.only(left: 24)),
+                    OutlinedButton(
+                      onPressed: () => Navigator.of(context).pop('ok'),
+                      child: Text("取消"),
+                      style: ButtonStyle(minimumSize: MaterialStateProperty.all(Size(0, 35))),
+                    ),
+                    Padding(padding: EdgeInsets.only(left: 24)),
+                    ElevatedButton(
+                      onPressed: () {
+                        if (widget.filelist.length > 0) {
+                          var fcHide = Loading.showLoading();
+
+                          AliFile.apiMoveBatch(widget.filelist, selectKey).then((value) {
+                            fcHide();
+                            PanData.loadFileList(widget.parentid, "move"); //触发联网加载
+                            pageExpandedNode("root", true);
+                            Navigator.of(context).pop('ok');
+                            BotToast.showText(text: "成功移动" + value.toString() + "个文件");
+                          });
+                        }
+                      },
+                      child: Text("移动到此处"),
+                      style: ButtonStyle(minimumSize: MaterialStateProperty.all(Size(0, 35))),
+                    ),
+                  ]),
+                ),
+              ],
+            ),
+          )),
+        ));
   }
 
   _updateTree(TreeViewController tree) {

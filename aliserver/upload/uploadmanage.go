@@ -5,13 +5,11 @@ import (
 	"aliserver/data"
 	"aliserver/utils"
 	"encoding/json"
-	"errors"
 	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strconv"
 	"strings"
-	"sync"
 	"time"
 )
 
@@ -21,6 +19,7 @@ type UploadSelectModel struct {
 	Size     int64  `json:"size"`
 	Path     string `json:"path"`
 	Name     string `json:"name"`
+	IsDir    bool   `json:"IsDir"`
 	ParentID string `json:"ParentID"`
 }
 
@@ -193,7 +192,7 @@ func UploadSelectFile(UserID string, ParentID string, SelectFileList []*UploadSe
 	uploadinglist := make([]*UploadFileModel, 0, LEN)
 	for i := 0; i < LEN; i++ {
 		item := SelectFileList[i]
-		uploading, err := UploadingAdd(UserID, item.Path, item.Name, item.ParentID, item.Size, dtime)
+		uploading, err := UploadingAdd(UserID, item.Path, item.Name, item.ParentID, item.Size, item.IsDir, dtime)
 		if err == nil {
 			uploadinglist = append(uploadinglist, uploading)
 			filecount++
@@ -229,46 +228,21 @@ func GetFilesWithDir(ParentID, DirPath string) (files []*UploadSelectModel, err 
 	if err != nil {
 		return nil, err
 	}
-	var wg sync.WaitGroup
-	var lock sync.Mutex
-	errnum := 0
+
 	files = make([]*UploadSelectModel, 0, len(dir))
 	for _, fi := range dir {
-		if fi.IsDir() == false {
-			m := UploadSelectModel{
-				Size:     fi.Size(),
-				Path:     filepath.Join(DirPath, fi.Name()),
-				Name:     fi.Name(),
-				ParentID: ParentID,
-			}
-			lock.Lock()
-			files = append(files, &m)
-			lock.Unlock()
-		} else {
-			//先在网盘里创建对应的文件夹,获得文件夹ID
-			wg.Add(1)
-			go func(dirname string) {
-				DirID, err3 := aliyun.UploadCreatForder(ParentID, dirname)
-				if err3 != nil {
-					errnum++
-				} else {
-					// 然后递归遍历
-					childfiles, err2 := GetFilesWithDir(DirID, filepath.Join(DirPath, dirname))
-					if err2 != nil {
-						errnum++
-					} else if len(childfiles) > 0 {
-						lock.Lock()
-						files = append(files, childfiles...)
-						lock.Unlock()
-					}
-				}
-				wg.Done()
-			}(fi.Name())
+
+		m := UploadSelectModel{
+			Size:     fi.Size(),
+			Path:     filepath.Join(DirPath, fi.Name()),
+			Name:     fi.Name(),
+			ParentID: ParentID,
 		}
-	}
-	wg.Wait()
-	if errnum > 0 {
-		return nil, errors.New("向网盘内创建路径时出错")
+		if fi.IsDir() {
+			m.IsDir = true
+			m.Size = 0
+		}
+		files = append(files, &m)
 	}
 	return files, nil
 }

@@ -81,7 +81,7 @@ func (info *BigUploadInfo) creatBlockList() error {
 }
 
 //NewBigUploadInfoAutoBlock 创建一个文件上传信息(根据threadMax自动计算分片大小)(err 没有文件大小联网请求大小出错)
-func NewBigUploadInfoAutoBlock(ParentID string, FileFullPath string, FileName string, fileSize int64, blockSize int64, threadMax int) (info *BigUploadInfo, err error) {
+func NewBigUploadInfoAutoBlock(ParentID string, FileFullPath string, FileName string, fileSize int64, isdir bool, blockSize int64, threadMax int) (info *BigUploadInfo, err error) {
 	if blockSize <= 0 {
 		blockSize = 1024 * 1024 * 4 //必须是4MB的倍数
 	}
@@ -106,11 +106,13 @@ func NewBigUploadInfoAutoBlock(ParentID string, FileFullPath string, FileName st
 	} else {
 		info.FileFullPath, _ = filepath.Abs(FileFullPath)
 	}
-	if info.FileSize <= 0 {
+	if isdir {
+		info.FileHash = "dir"
+	} else if info.FileSize <= 0 {
 		info.getFileSize()
 	}
 
-	if err == nil {
+	if err == nil && isdir == false {
 		err = info.creatBlockList()
 	}
 	return info, err

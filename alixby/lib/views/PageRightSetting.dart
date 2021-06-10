@@ -353,7 +353,7 @@ class _PageRightSettingState extends State<PageRightSetting> with AutomaticKeepA
                       dropdownColor: MColors.userNavMenuBG,
                       onChanged: (String? newValue) {
                         BotToast.showText(text: "此功能还在开发中");
-                        return;
+                        //return;
                         if (newValue != null) {
                           Global.settingState.theme(newValue);
                           BotToast.showText(text: "皮肤模式需要退出程序重新打开后才能生效", duration: Duration(seconds: 10));

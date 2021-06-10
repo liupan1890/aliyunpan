@@ -13,6 +13,7 @@ type UploadFileModel struct {
 	Name      string `json:"name"`
 	Size      int64  `json:"size"`
 	LocalPath string `json:"localpath"`
+	IsDir     bool   `json:"IsDir"`
 	ParentID  string `json:"ParentID"`
 	//downworker
 	DownTime      int64  `json:"DownTime"`

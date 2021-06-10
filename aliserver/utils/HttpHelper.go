@@ -11,6 +11,7 @@ import (
 	"net/http"
 	"net/url"
 	"strings"
+	"time"
 )
 
 //Body 拼接PostBodyJson
@@ -41,7 +42,6 @@ func Raw(metho string, url string, header string, postdata *bytes.Reader) (code 
 			body = &ebs
 		}
 	}()
-
 	request, _ := http.NewRequest(metho, url, postdata)
 	if header != "" {
 		hls := strings.Split(header, "\n")
@@ -104,6 +104,9 @@ func GetHTTPString(url string, header string) (code int, head string, body strin
 
 	var bodybytes *[]byte
 	for i := 0; i < 2; i++ {
+		if i > 0 {
+			time.Sleep(time.Duration(400 * time.Millisecond))
+		}
 		code, head, bodybytes = Raw("GET", url, header, bytes.NewReader(nil))
 		if bodybytes != nil {
 			body = string(*bodybytes)
@@ -122,6 +125,9 @@ func GetHTTPString(url string, header string) (code int, head string, body strin
 func GetHTTPBytes(url string, header string) (code int, head string, body *[]byte) {
 
 	for i := 0; i < 2; i++ {
+		if i > 0 {
+			time.Sleep(time.Duration(400 * time.Millisecond))
+		}
 		code, head, body = Raw("GET", url, header, bytes.NewReader(nil))
 		if code == 200 || code == 206 {
 			return 200, head, body
@@ -137,6 +143,10 @@ func GetHTTPBytes(url string, header string) (code int, head string, body *[]byt
 func GetZIPString(url string, header string) (code int, head string, body *[]byte) {
 	var bodybytes *[]byte
 	for i := 0; i < 2; i++ {
+
+		if i > 0 {
+			time.Sleep(time.Duration(400 * time.Millisecond))
+		}
 		code, head, bodybytes = Raw("GET", url, header, bytes.NewReader(nil))
 		if bodybytes != nil {
 			body = bodybytes
@@ -167,6 +177,7 @@ func GetZIPString(url string, header string) (code int, head string, body *[]byt
 			}
 		}
 		zipReader = nil
+
 	}
 	return code, head, body
 }
@@ -176,6 +187,9 @@ func PostHTTPString(url string, header string, postdata string) (code int, head 
 
 	var bodybytes *[]byte
 	for i := 0; i < 2; i++ {
+		if i > 0 {
+			time.Sleep(time.Duration(400 * time.Millisecond))
+		}
 		body = ""
 		bodybytes = nil
 		code, head, bodybytes = Raw("POST", url, header, bytes.NewReader([]byte(postdata)))
@@ -196,6 +210,9 @@ func PostHTTPBytes(url string, header string, postdata *[]byte) (code int, head 
 
 	var bodybytes *[]byte
 	for i := 0; i < 2; i++ {
+		if i > 0 {
+			time.Sleep(time.Duration(400 * time.Millisecond))
+		}
 		body = ""
 		bodybytes = nil
 		code, head, bodybytes = Raw("POST", url, header, bytes.NewReader(*postdata))

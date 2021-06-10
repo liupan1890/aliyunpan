@@ -5,8 +5,6 @@ import (
 	"aliserver/data"
 	"aliserver/utils"
 	"log"
-	"os"
-	"path/filepath"
 	"time"
 )
 
@@ -23,14 +21,13 @@ func UpdateTimeAsync() {
 		UserTime += 3
 		ReportTime += 3
 
-		applock := filepath.Join(utils.ExePath(), "app.lock")
-		fp, err := os.OpenFile(applock, os.O_CREATE|os.O_WRONLY, 2)
-		if err != nil {
+		var isrun = utils.ProcessCheck()
+
+		if isrun {
 			//说明UI正在运行中
 		} else {
 			//说明UI退出了，后台服务进程也跟着退出
-			log.Println("aliserver stop")
-			fp.Close()
+			log.Println("aliserver check stop")
 			StopServer()
 		}
 

@@ -144,7 +144,7 @@ func DownFileMutil(ParentID string, SavePath string, keylist []string) string {
 						list = append(list, &finfo)
 						lock.Unlock()
 					}
-					wg.Done()
+					defer wg.Done()
 				}(fileid)
 			}
 		}
@@ -170,52 +170,37 @@ func DownFileMutil(ParentID string, SavePath string, keylist []string) string {
 			}
 		}
 	}
-	errnum = 0
-	lmax := len(list)
-	for m := 0; m < lmax; m++ {
-		if list[m].IsDir {
-			wg.Add(1)
-			go func(m int) {
-				clist, cerr := aliyun.ApiFileListAllForDown(list[m].P_file_id, "/"+list[m].P_file_name, true) //递归列出文件夹下的所有文件
-				if cerr != nil {
-					errnum++
-				} else if len(clist) > 0 {
-					lock.Lock()
-					list = append(list, clist...)
-					lock.Unlock()
-				}
-				wg.Done()
-			}(m)
-		}
-	}
-	wg.Wait()
-	if errnum > 0 {
-		return utils.ToErrorMessageJSON("列出文件信息时出错")
-	}
+
 	LEN := len(list)
 	if LEN == 0 {
 		return utils.ToSuccessJSON("filecount", 0)
 	}
 	//下载文件
-	filecount := 0
+	filecount := _DownFileAddList(UserID, SavePath, list)
+	return utils.ToSuccessJSON("filecount", filecount)
+}
+
+func _DownFileAddList(UserID string, SavePath string, list []*aliyun.FileUrlModel) (filecount int) {
+	LEN := len(list)
+	filecount = 0
 	dtime := time.Now().UnixNano()
 	downinglist := make([]*DownFileModel, 0, LEN)
 	for i := 0; i < LEN; i++ {
 		info := list[i]
 		path := utils.ClearFileName(info.P_file_path, false)
 		name := utils.ClearFileName(info.P_file_name, true)
-
+		hash := info.P_sha1
+		size := info.P_size
 		if info.IsDir {
-			SavePathFull := filepath.Join(SavePath, path, name) //创建本地文件夹
-			os.MkdirAll(SavePathFull, 0777)
-		} else {
-			downing, err := DowningAdd(UserID, SavePath, info.P_file_id, name, path, info.P_sha1, info.P_size, dtime)
-			if err == nil {
-				downinglist = append(downinglist, downing)
-				filecount++
-			}
-			dtime++
+			hash = "dir"
+			size = 0
 		}
+		downing, err := DowningAdd(UserID, SavePath, info.P_file_id, name, path, hash, size, dtime)
+		if err == nil {
+			downinglist = append(downinglist, downing)
+			filecount++
+		}
+		dtime++
 	}
 
 	DataDowning.Lock() //c8
@@ -237,7 +222,7 @@ func DownFileMutil(ParentID string, SavePath string, keylist []string) string {
 		}
 	}
 	DataDowning.Unlock() //c8
-	return utils.ToSuccessJSON("filecount", filecount)
+	return filecount
 }
 
 //DowningStartAll 开始全部

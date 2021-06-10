@@ -200,7 +200,10 @@ class PanFileState extends ChangeNotifier {
         if (Global.userState.userNavPageIndex != 1) return false;
         if (!Global.userState.isLogin) return false;
         double subtime = DateTime.now().millisecondsSinceEpoch / 1000 - pageRefreshTime; //相差几秒
-        if (getPageName == 'file' && (pageRightFileList0.length > 1000 || subtime < 60)) {
+        if (pageRightFileList0.length >= 1500) {
+          return false; //文件太多不自动刷新
+        }
+        if (getPageName == 'file' && subtime < 60) {
           return false; //文件列表，60秒刷新一次
         } else if (getPageName == 'trash' && subtime < 60) {
           return false; //回收站60秒刷新一次
@@ -315,6 +318,7 @@ class PanFileState extends ChangeNotifier {
   final Icon iconVideo = Icon(MIcons.file_video, key: Key("video"), size: 22, color: MColors.iconVideo);
   final Icon iconAudio = Icon(MIcons.file_audio, key: Key("audio"), size: 22, color: MColors.iconAudio);
   final Icon iconTxt = Icon(MIcons.file_txt2, key: Key("txt"), size: 22, color: MColors.iconTxt);
+  final Icon iconWeiFa = Icon(MIcons.weifa, key: Key("weifa"), size: 22, color: MColors.iconWeiFa);
   //刷新文件列表
   void _updateFileList(FileItem file, bool isUpdate) {
     List<String> selectKeys = [];
@@ -331,17 +335,19 @@ class PanFileState extends ChangeNotifier {
       var item = file.children[i];
       var model = PageRightFileItem.newPageRightFileItem(
           item.key,
-          (item.isDir
-              ? iconFolder
-              : item.icon == "video"
-                  ? iconVideo
-                  : item.icon == "audio"
-                      ? iconAudio
-                      : item.icon == "image"
-                          ? iconImage
-                          : item.icon == "txt"
-                              ? iconTxt
-                              : iconFile),
+          (item.isWeiFa
+              ? iconWeiFa
+              : item.isDir
+                  ? iconFolder
+                  : item.icon == "video"
+                      ? iconVideo
+                      : item.icon == "audio"
+                          ? iconAudio
+                          : item.icon == "image"
+                              ? iconImage
+                              : item.icon == "txt"
+                                  ? iconTxt
+                                  : iconFile),
           item.name,
           item.size,
           item.time,

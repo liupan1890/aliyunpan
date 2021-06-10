@@ -25,7 +25,8 @@ func IsDarwin() bool {
 }
 
 func OpenForder(DirPath string, FileName string) {
-	exec.Command("open", DirPath)
+	open.Start(DirPath)
+	//exec.Command("/bin/sh", "-c", "open", DirPath)
 }
 
 //RunDownFinish 下载完回调
@@ -43,11 +44,24 @@ func RunDownFinish(GID, FileNum, FilePath string) {
 
 //RunPlayer 调用播放器
 func RunPlayer(playerpath string, url string, useragent string) error {
-	if strings.HasPrefix(strings.ToLower(playerpath), "/applications/") == false {
-		return errors.New("mac player 必须类似/Applications/xxx.app")
+
+	dir := ExePath()
+	aria := dir + "mpv"
+	aria2c := "./mpv"
+
+	if FileExists(aria) == false {
+		return errors.New("mpv not exist " + aria)
 	}
-	err := open.StartWith(url, playerpath)
-	return err
+	args := []string{"--force-window=yes", "--referrer=https://www.aliyundrive.com/", "--user-agent=\"" + useragent + "\"", url}
+
+	cmd := exec.Command(aria2c, args...)
+	cmd.Dir = dir
+	err := cmd.Start()
+	if err != nil {
+		return err
+	}
+	cmd.Process.Release()
+	return nil
 }
 
 func RunAria() (bool, error) {
@@ -69,4 +83,15 @@ func RunAria() (bool, error) {
 		return true, err
 	}
 	return true, cmd.Process.Release()
+}
+
+func ProcessCheck() bool {
+	//mac 因为沙盒不支持文件锁
+	result, err := exec.Command("/bin/sh", "-c", "ps ux").Output()
+	if err != nil {
+		return true
+	}
+	log.Println(string(result))
+	var index = strings.Index(string(result), "/Contents/MacOS/alixby")
+	return index > 0
 }

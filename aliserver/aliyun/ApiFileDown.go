@@ -116,6 +116,10 @@ func ApiFileGetUrl(file_id string, parentpath string) (urlinfo FileUrlModel, err
 		if content_hash_name != "sha1" {
 			content_hash = ""
 		}
+
+		if info.Get("thumbnail").Exists() && strings.Index(info.Get("thumbnail").String(), "illegal_thumbnail") > 0 {
+			size = 9560 //违规视频大小
+		}
 		return FileUrlModel{P_file_id: file_id, P_file_path: parentpath, P_file_name: name, P_sha1: content_hash, P_size: size, IsUrl: true, IsDir: false}, nil
 	} else {
 		return FileUrlModel{P_file_id: file_id, P_file_path: parentpath, P_file_name: name, IsUrl: false, IsDir: true}, nil
@@ -174,7 +178,7 @@ func _ApiFileListAllForDown(parentid string, parentpath string, isfull bool) (li
 						list = append(list, rlist...)
 						lock.Unlock()
 					}
-					wg.Done()
+					defer wg.Done()
 				}(i)
 			}
 		}
@@ -192,7 +196,7 @@ func ApiFileListUrl(parentid string, parentpath string, marker string) (list []*
 
 	var postjson = map[string]interface{}{"drive_id": _user.UserToken.P_default_drive_id,
 		"parent_file_id":  parentid,
-		"limit":           1500,
+		"limit":           100,
 		"all":             false,
 		"fields":          "thumbnail",
 		"order_by":        "name",
@@ -241,6 +245,11 @@ func ApiFileListUrl(parentid string, parentpath string, marker string) (list []*
 			if content_hash_name != "sha1" {
 				content_hash = ""
 			}
+
+			if info.Get("thumbnail").Exists() && strings.Index(info.Get("thumbnail").String(), "illegal_thumbnail") > 0 {
+				size = 9560 //违规视频大小
+			}
+
 			list = append(list, &FileUrlModel{P_file_id: file_id, P_file_path: parentpath, P_file_name: name, P_sha1: content_hash, P_size: size, IsUrl: true, IsDir: false})
 		} else {
 			list = append(list, &FileUrlModel{P_file_id: file_id, P_file_path: parentpath, P_file_name: name, IsUrl: false, IsDir: true})
@@ -265,7 +274,6 @@ func ApiPlay(file_id string) string {
 			return utils.ToErrorMessageJSON("找不到播放器" + mpvpath)
 		}
 	} else if utils.IsDarwin() {
-
 		mpvpath = filepath.Join(utils.ExePath(), "mpv")
 		if !utils.FileExists(mpvpath) {
 			return utils.ToErrorMessageJSON("找不到播放器" + mpvpath)

@@ -9,7 +9,7 @@ class PageRightRssLiXian extends StatefulWidget {
   _PageRightRssLiXianState createState() => _PageRightRssLiXianState();
 }
 
-class _PageRightRssLiXianState extends State<PageRightRssLiXian> with AutomaticKeepAliveClientMixin {
+class _PageRightRssLiXianState extends State<PageRightRssLiXian> {
   @override
   void initState() {
     super.initState();
@@ -41,7 +41,4 @@ class _PageRightRssLiXianState extends State<PageRightRssLiXian> with AutomaticK
               linkStyle: TextStyle(fontSize: 14, color: MColors.linkColor, decoration: TextDecoration.none))
         ]));
   }
-
-  @override
-  bool get wantKeepAlive => true;
 }

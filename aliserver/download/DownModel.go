@@ -23,10 +23,14 @@ type DownFileModel struct {
 	DownServer string `json:"DownServer"`
 	//FileInfo
 	Identity string `json:"identity"`
-	Name     string `json:"name"`
-	Size     int64  `json:"size"`
-	Path     string `json:"path"`
-	Hash     string `json:"hash"`
+	//要下载的文件名--IMG_2020_01.jpg
+	Name string `json:"name"`
+	//要下载的文件大小
+	Size int64 `json:"size"`
+	//
+	//Path string `json:"path"`
+	//dir 或者 文件sha1
+	Hash string `json:"hash"`
 
 	//downworker
 	DownTime      int64  `json:"DownTime"`

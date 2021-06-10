@@ -65,3 +65,16 @@ func RunAria() (bool, error) {
 	}
 	return true, cmd.Process.Release()
 }
+
+func ProcessCheck() bool {
+	applock := filepath.Join(ExePath(), "app.lock")
+	fp, err := os.OpenFile(applock, os.O_CREATE|os.O_WRONLY, 2)
+	if err != nil {
+		//说明UI正在运行中
+		return true
+	} else {
+		//说明UI退出了，后台服务进程也跟着退出
+		fp.Close()
+		return false
+	}
+}

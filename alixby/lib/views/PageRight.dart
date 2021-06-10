@@ -35,6 +35,8 @@ class _PageRightState extends State<PageRight> {
           } else if (event.isControlPressed) {
             Global.isCtrl = true;
           }
+          Global.shiftMac = event.isShiftPressed;
+          Global.ctrlMac = event.isControlPressed || event.isMetaPressed;
         },
         child: Container(
             key: Key("pageright"),

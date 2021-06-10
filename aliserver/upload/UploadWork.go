@@ -114,7 +114,7 @@ func UploadAdd(Item *UploadFileModel) error {
 }
 
 //UploadingAdd 创建一个上传任务
-func UploadingAdd(UserID, localpath, uptoname, ParentID string, size int64, dtime int64) (upload *UploadFileModel, err error) {
+func UploadingAdd(UserID, localpath, uptoname, ParentID string, size int64, isdir bool, dtime int64) (upload *UploadFileModel, err error) {
 	defer func() {
 		if errr := recover(); errr != nil {
 			log.Println("UploadingAddError ", " error=", errr)
@@ -134,6 +134,7 @@ func UploadingAdd(UserID, localpath, uptoname, ParentID string, size int64, dtim
 		Name:      uptoname,
 		Size:      size,
 		LocalPath: localpath,
+		IsDir:     isdir,
 		ParentID:  ParentID,
 
 		DownTime:      dtime, // time.Now().UnixNano()
@@ -258,7 +259,7 @@ func downingMakeDowning(TaskCountMax int, UploadingCount int) {
 func MakeUpload(item *UploadFileModel) {
 	threadcount := int(1) //阿里云盘必须按顺序，一个一个的上传，不能并发
 	if item.Uploader == nil {
-		info, err := NewBigUploadInfoAutoBlock(item.ParentID, item.LocalPath, item.Name, item.Size, 1024*1024*10, threadcount)
+		info, err := NewBigUploadInfoAutoBlock(item.ParentID, item.LocalPath, item.Name, item.Size, item.IsDir, 1024*1024*10, threadcount)
 		if err != nil {
 			b, _ := json.Marshal(*item)
 			log.Println("上传启动失败", string(b)) //不可能出现
@@ -290,7 +291,7 @@ func MakeUpload(item *UploadFileModel) {
 	}
 	cli := NewBigUploadWorker(item.Uploader, OnUpdate, OnCompleted, OnFailed)
 	mUpload.Store(item.UploadID, cli)
-	cli.StartUploadAsync(false)
+	cli.StartUploadAsync()
 }
 
 //StopUploading 停止上传主线程

@@ -44,6 +44,7 @@ class _LoadingWidgetState extends State<LoadingWidget> with SingleTickerProvider
   Widget build(BuildContext context) {
     if (show == false) return Container(width: 0, height: 0);
     return Card(
+      color: MColors.dialogBgColor,
       child: Padding(
           padding: const EdgeInsets.all(16.0),
           child: Container(

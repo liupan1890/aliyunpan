@@ -16,9 +16,16 @@ import (
 
 //MakeDownloadAria MakeDownload
 func MakeDownloadAria(item *DownFileModel) {
-	ThreadCountMax, terr := strconv.Atoi(data.Setting.ThreadMax)
-	if terr != nil {
-		ThreadCountMax = 1
+
+	ThreadCountMax := 4
+	FileCountMax, terr := strconv.Atoi(data.Setting.DownMax)
+	if terr == nil {
+		if FileCountMax >= 4 {
+			ThreadCountMax = 12
+		}
+		if FileCountMax >= 8 {
+			ThreadCountMax = 16
+		}
 	}
 	go StartDownAsync(item, ThreadCountMax)
 }
@@ -59,7 +66,26 @@ func openSaveFile(item *DownFileModel) (isexist bool, issame bool, err error) {
 
 //StartDownAsync StartDownAsync
 func StartDownAsync(item *DownFileModel, threadcount int) {
-	item.AutoGID = -1 //标识，不需要刷新进度
+	item.AutoGID = -1 //标识，不需要刷新进度,在下面Aria2Rpc.AddURI成功后UpdateStateDowning时会置0
+
+	//处理文件夹
+	if item.Hash == "dir" {
+		SavePathFull := filepath.Join(item.DownSavePath, item.Name) //创建本地文件夹
+		os.MkdirAll(SavePathFull, 0777)
+		UserID := aliyun.GetUserID()
+		//遍历子文件，添加到下载队列，保存为已完成
+		clist, cerr := aliyun.ApiFileListAllForDown(item.Identity, "", false) //列出文件夹下的所有文件
+		if cerr != nil {
+			UpdateStateError(item, "解析文件夹失败:"+cerr.Error())
+			return
+		}
+		if len(clist) > 0 {
+			_DownFileAddList(UserID, SavePathFull, clist)
+		}
+		UpdateStateDowned(item)
+		return
+	}
+
 	//创建文件夹，如果size=0创建空文件，最后判断是否已下载过，
 	_, issame, err := openSaveFile(item)
 	if err != nil {
@@ -78,7 +104,7 @@ func StartDownAsync(item *DownFileModel, threadcount int) {
 		downurl, _, err := aliyun.ApiFileDownloadUrl(item.Identity, 60*60*2)
 		if err != nil {
 			fmt.Println("DownloadAddress", err)
-			time.Sleep(time.Duration(1) * time.Second)
+			time.Sleep(time.Duration(2) * time.Second)
 			continue
 		}
 		url = downurl

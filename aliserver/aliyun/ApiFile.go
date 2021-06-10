@@ -36,7 +36,7 @@ func ApiFileList(parentid string, marker string) (retjsonstr string) {
 
 	var postjson = map[string]interface{}{"drive_id": _user.UserToken.P_default_drive_id,
 		"parent_file_id":  parentid,
-		"limit":           1500,
+		"limit":           100,
 		"all":             false,
 		"fields":          "thumbnail",
 		"order_by":        "name",
@@ -77,6 +77,7 @@ func ApiFileList(parentid string, marker string) (retjsonstr string) {
 	var file_icon = ""
 	var category = ""
 	var ext = ""
+	var status = ""
 	for i := 0; i < max; i++ {
 		value = items[i]
 
@@ -90,7 +91,9 @@ func ApiFileList(parentid string, marker string) (retjsonstr string) {
 
 		if category == "others" || category == "doc" {
 			ext = value.Get("file_extension").String()
-			if file_size < 102400 {
+			if strings.Index(";.3gp.3iv.asf.avi.cpk.divx.dv.hdv.fli.flv.f4v.f4p.h264.i263.m2t.m2ts.mts.ts.trp.m4v.mkv.mov.mp2.mp4.mpeg.mpg.mpg2.mpg4.nsv.nut.nuv.rm.rmvb.vcd.vob.webm.wmv.mk3d.hevc.yuv.y4m", ext) > 0 {
+				file_icon = "video"
+			} else if file_size < 102400 {
 				if strings.Index(";.c.cpp.java.htm.html.css.js.vue.php.aspx.shtml.asp.jsp.json.url.txt.md.markdown.xml.md5.ini.nfo.info.config.cfg.bat.sh.cmd.log.debug.go.lrc.", ext) > 0 {
 					file_icon = "txt"
 				}
@@ -98,6 +101,10 @@ func ApiFileList(parentid string, marker string) (retjsonstr string) {
 		}
 		if file_icon != "folder" && file_icon != "image" && file_icon != "video" && file_icon != "audio" && file_icon != "txt" {
 			file_icon = "file"
+		}
+		status = value.Get("status").String()
+		if value.Get("thumbnail").Exists() && strings.Index(value.Get("thumbnail").String(), "illegal_thumbnail") > 0 {
+			status = "illegal"
 		}
 
 		builder.WriteString(`{"key":"`)
@@ -121,7 +128,7 @@ func ApiFileList(parentid string, marker string) (retjsonstr string) {
 		builder.WriteString(`","starred":`)
 		builder.WriteString(strconv.FormatBool(value.Get("starred").Bool()))
 		builder.WriteString(`,"status":"`)
-		builder.WriteString(value.Get("status").String())
+		builder.WriteString(status)
 
 		if i >= (max - 1) {
 			builder.WriteString(`"}`)
@@ -234,7 +241,7 @@ func ApiFavorFileList(marker string) (retjsonstr string) {
 	var postjson = map[string]interface{}{"drive_id": _user.UserToken.P_default_drive_id,
 		"custom_index_key": "starred_yes",
 		"parent_file_id":   "root",
-		"limit":            1500,
+		"limit":            100,
 		"fields":           "thumbnail",
 		"order_by":         "name",
 		"order_direction":  "ASC"}
@@ -274,6 +281,7 @@ func ApiFavorFileList(marker string) (retjsonstr string) {
 	var file_icon = ""
 	var category = ""
 	var ext = ""
+	var status = ""
 	for i := 0; i < max; i++ {
 		value = items[i]
 
@@ -290,10 +298,14 @@ func ApiFavorFileList(marker string) (retjsonstr string) {
 			if strings.Index(";.3gp.3iv.asf.avi.cpk.divx.dv.hdv.fli.flv.f4v.f4p.h264.i263.m2t.m2ts.mts.ts.trp.m4v.mkv.mov.mp2.mp4.mpeg.mpg.mpg2.mpg4.nsv.nut.nuv.rm.rmvb.vcd.vob.webm.wmv.mk3d.hevc.yuv.y4m", ext) > 0 {
 				file_icon = "video"
 			} else if file_size < 102400 {
-				if strings.Index(";.c.cpp.java.htm.html.css.js.vue.php.aspx.shtml.asp.jsp.json.url.txt.md.markdown.xml.md5.ini.nfo.info.config.cfg.bat.sh.cmd.log.debug.go.qrc.lrc.", ext) > 0 {
+				if strings.Index(";.c.cpp.java.htm.html.css.js.vue.php.aspx.shtml.asp.jsp.json.url.txt.md.markdown.xml.md5.ini.nfo.info.config.cfg.bat.sh.cmd.log.debug.go.lrc.", ext) > 0 {
 					file_icon = "txt"
 				}
 			}
+		}
+		status = value.Get("status").String()
+		if value.Get("thumbnail").Exists() && strings.Index(value.Get("thumbnail").String(), "illegal_thumbnail") > 0 {
+			status = "illegal"
 		}
 
 		builder.WriteString(`{"key":"`)
@@ -317,7 +329,7 @@ func ApiFavorFileList(marker string) (retjsonstr string) {
 		builder.WriteString(`","starred":`)
 		builder.WriteString(strconv.FormatBool(value.Get("starred").Bool()))
 		builder.WriteString(`,"status":"`)
-		builder.WriteString(value.Get("status").String())
+		builder.WriteString(status)
 
 		if i >= (max - 1) {
 			builder.WriteString(`"}`)
@@ -341,7 +353,7 @@ func ApiTrashFileList(marker string) (retjsonstr string) {
 	var apiurl = "https://api.aliyundrive.com/v2/recyclebin/list"
 
 	var postjson = map[string]interface{}{"drive_id": _user.UserToken.P_default_drive_id,
-		"limit":           1500,
+		"limit":           100,
 		"fields":          "thumbnail",
 		"order_by":        "name",
 		"order_direction": "ASC"}
@@ -381,6 +393,7 @@ func ApiTrashFileList(marker string) (retjsonstr string) {
 	var file_icon = ""
 	var category = ""
 	var ext = ""
+	var status = ""
 	for i := 0; i < max; i++ {
 		value = items[i]
 
@@ -394,11 +407,18 @@ func ApiTrashFileList(marker string) (retjsonstr string) {
 
 		if category == "others" || category == "doc" {
 			ext = value.Get("file_extension").String()
-			if file_size < 102400 {
-				if strings.Index(";.c.cpp.java.htm.html.css.js.vue.php.aspx.shtml.asp.jsp.json.url.txt.md.markdown.xml.md5.ini.nfo.info.config.cfg.bat.sh.cmd.log.debug.go.qrc.lrc.", ext) > 0 {
+			if strings.Index(";.3gp.3iv.asf.avi.cpk.divx.dv.hdv.fli.flv.f4v.f4p.h264.i263.m2t.m2ts.mts.ts.trp.m4v.mkv.mov.mp2.mp4.mpeg.mpg.mpg2.mpg4.nsv.nut.nuv.rm.rmvb.vcd.vob.webm.wmv.mk3d.hevc.yuv.y4m", ext) > 0 {
+				file_icon = "video"
+			} else if file_size < 102400 {
+				if strings.Index(";.c.cpp.java.htm.html.css.js.vue.php.aspx.shtml.asp.jsp.json.url.txt.md.markdown.xml.md5.ini.nfo.info.config.cfg.bat.sh.cmd.log.debug.go.lrc.", ext) > 0 {
 					file_icon = "txt"
 				}
 			}
+		}
+
+		status = value.Get("status").String()
+		if value.Get("thumbnail").Exists() && strings.Index(value.Get("thumbnail").String(), "illegal_thumbnail") > 0 {
+			status = "illegal"
 		}
 
 		builder.WriteString(`{"key":"`)
@@ -422,7 +442,7 @@ func ApiTrashFileList(marker string) (retjsonstr string) {
 		builder.WriteString(`","starred":`)
 		builder.WriteString(strconv.FormatBool(value.Get("starred").Bool()))
 		builder.WriteString(`,"status":"`)
-		builder.WriteString(value.Get("status").String())
+		builder.WriteString(status)
 
 		if i >= (max - 1) {
 			builder.WriteString(`"}`)
@@ -564,7 +584,6 @@ func ApiTrashBatch(filelist []string) (retjsonstr string) {
 	//https://api.aliyundrive.com/v2/recyclebin/trash   {"drive_id":"8699982","file_id":"60a92692849dfed0c585482fa71aecd2e790ba64"}
 	//https://api.aliyundrive.com/v2/batch {"requests":[{"body":{"drive_id":"8699982","file_id":"60a9276610ca470f2289432cada6e8336ba81e4a"},"headers":{"Content-Type":"application/json"},"id":"60a9276610ca470f2289432cada6e8336ba81e4a","method":"POST","url":"/recyclebin/trash"},{"body":{"drive_id":"8699982","file_id":"60a9275b7a25fc02f7e84f5ca170d8b0fc030878"},"headers":{"Content-Type":"application/json"},"id":"60a9275b7a25fc02f7e84f5ca170d8b0fc030878","method":"POST","url":"/recyclebin/trash"}],"resource":"file"}
 	//删除文件是204 删除文件夹是202
-	count := int32(0)
 
 	var postdata = `{"requests":[`
 	var max = len(filelist) - 1
@@ -586,16 +605,7 @@ func ApiTrashBatch(filelist []string) (retjsonstr string) {
 	postdata += `],"resource":"file"}`
 
 	blist = append(blist, postdata)
-	var wg sync.WaitGroup
-	for b := 0; b < len(blist); b++ {
-		wg.Add(1)
-		go func(b int) {
-			add := _Batch(blist[b])
-			atomic.AddInt32(&count, add)
-			wg.Done()
-		}(b)
-	}
-	wg.Wait()
+	count := _RunBatch(blist)
 
 	return utils.ToSuccessJSON2("count", count, "error", len(filelist)-int(count))
 }
@@ -610,7 +620,6 @@ func ApiFavorBatch(filelist []string, isfavor bool) (retjsonstr string) {
 	//https://api.aliyundrive.com/v2/recyclebin/trash   {"drive_id":"8699982","file_id":"60a92692849dfed0c585482fa71aecd2e790ba64"}
 	//https://api.aliyundrive.com/v2/batch {"requests":[{"body":{"drive_id":"8699982","file_id":"60a9276610ca470f2289432cada6e8336ba81e4a"},"headers":{"Content-Type":"application/json"},"id":"60a9276610ca470f2289432cada6e8336ba81e4a","method":"POST","url":"/recyclebin/trash"},{"body":{"drive_id":"8699982","file_id":"60a9275b7a25fc02f7e84f5ca170d8b0fc030878"},"headers":{"Content-Type":"application/json"},"id":"60a9275b7a25fc02f7e84f5ca170d8b0fc030878","method":"POST","url":"/recyclebin/trash"}],"resource":"file"}
 	//返回200
-	count := int32(0)
 
 	var postdata = `{"requests":[`
 	var max = len(filelist) - 1
@@ -637,16 +646,7 @@ func ApiFavorBatch(filelist []string, isfavor bool) (retjsonstr string) {
 	postdata += `],"resource":"file"}`
 
 	blist = append(blist, postdata)
-	var wg sync.WaitGroup
-	for b := 0; b < len(blist); b++ {
-		wg.Add(1)
-		go func(b int) {
-			add := _Batch(blist[b])
-			atomic.AddInt32(&count, add)
-			wg.Done()
-		}(b)
-	}
-	wg.Wait()
+	count := _RunBatch(blist)
 
 	return utils.ToSuccessJSON2("count", count, "error", len(filelist)-int(count))
 }
@@ -661,7 +661,6 @@ func ApiMoveBatch(movetoid string, filelist []string) (retjsonstr string) {
 	//https://api.aliyundrive.com/v2/batch
 	//{"requests":[{"body":{"drive_id":"8699982","file_id":"60a9265d37316002699a4d7285d2aa9ced3b6d2c","to_parent_file_id":"60a937763fb6e0e751004ffcb1bb5168bd490ae4"},"headers":{"Content-Type":"application/json"},"id":"60a9265d37316002699a4d7285d2aa9ced3b6d2c","method":"POST","url":"/file/move"}],"resource":"file"}
 	//移动文件 返回值200
-	count := int32(0)
 
 	var postdata = `{"requests":[`
 	var max = len(filelist) - 1
@@ -683,16 +682,7 @@ func ApiMoveBatch(movetoid string, filelist []string) (retjsonstr string) {
 	postdata += `],"resource":"file"}`
 
 	blist = append(blist, postdata)
-	var wg sync.WaitGroup
-	for b := 0; b < len(blist); b++ {
-		wg.Add(1)
-		go func(b int) {
-			add := _Batch(blist[b])
-			atomic.AddInt32(&count, add)
-			wg.Done()
-		}(b)
-	}
-	wg.Wait()
+	count := _RunBatch(blist)
 
 	return utils.ToSuccessJSON2("count", count, "error", len(filelist)-int(count))
 }
@@ -706,7 +696,6 @@ func ApiTrashDeleteBatch(filelist []string) (retjsonstr string) {
 	}()
 	//{"requests":[{"body":{"drive_id":"8699982","file_id":"60a5bb43bf60766feada4eca9d0da23a501eb7c8"},"headers":{"Content-Type":"application/json"},"id":"60a5bb43bf60766feada4eca9d0da23a501eb7c8","method":"POST","url":"/file/delete"}],"resource":"file"}
 	//彻底删除返回204 202
-	count := int32(0)
 
 	var postdata = `{"requests":[`
 	var max = len(filelist) - 1
@@ -728,16 +717,7 @@ func ApiTrashDeleteBatch(filelist []string) (retjsonstr string) {
 	postdata += `],"resource":"file"}`
 
 	blist = append(blist, postdata)
-	var wg sync.WaitGroup
-	for b := 0; b < len(blist); b++ {
-		wg.Add(1)
-		go func(b int) {
-			add := _Batch(blist[b])
-			atomic.AddInt32(&count, add)
-			wg.Done()
-		}(b)
-	}
-	wg.Wait()
+	count := _RunBatch(blist)
 
 	return utils.ToSuccessJSON2("count", count, "error", len(filelist)-int(count))
 }
@@ -750,7 +730,6 @@ func ApiTrashRestoreBatch(filelist []string) (retjsonstr string) {
 	}()
 	//{"requests":[{"body":{"drive_id":"8699982","file_id":"60a5bb4394b2ad243fb84509a576506afc890397"},"headers":{"Content-Type":"application/json"},"id":"60a5bb4394b2ad243fb84509a576506afc890397","method":"POST","url":"/recyclebin/restore"}],"resource":"file"}
 	//恢复文件返回204 202
-	count := int32(0)
 
 	var postdata = `{"requests":[`
 	var max = len(filelist) - 1
@@ -772,27 +751,36 @@ func ApiTrashRestoreBatch(filelist []string) (retjsonstr string) {
 	postdata += `],"resource":"file"}`
 
 	blist = append(blist, postdata)
+	count := _RunBatch(blist)
+
+	return utils.ToSuccessJSON2("count", count, "error", len(filelist)-int(count))
+}
+
+func _RunBatch(blist []string) (count int32) {
+	count = 0
 	var wg sync.WaitGroup
 	for b := 0; b < len(blist); b++ {
 		wg.Add(1)
 		go func(b int) {
 			add := _Batch(blist[b])
 			atomic.AddInt32(&count, add)
-			wg.Done()
+			defer wg.Done()
 		}(b)
 	}
 	wg.Wait()
-
-	return utils.ToSuccessJSON2("count", count, "error", len(filelist)-int(count))
+	return count
 }
 
+var HTTPTOTAL = make(chan struct{}, 5) //batch操作不能太快
 func _Batch(postdata string) (count int32) {
 	defer func() {
+		<-HTTPTOTAL //读取，执行完读取1次，让下一个请求可以执行
 		if errr := recover(); errr != nil {
 			log.Println("_BatchError ", " error=", errr)
 			count = 0
 		}
 	}()
+	HTTPTOTAL <- struct{}{} //写入，如果已经写入了5次，就会在这里阻塞住
 	var apiurl = "https://api.aliyundrive.com/v2/batch"
 	code, _, body := utils.PostHTTPString(apiurl, GetAuthorization(), postdata)
 	if code == 401 {

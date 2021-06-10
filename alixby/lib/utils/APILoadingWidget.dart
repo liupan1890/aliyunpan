@@ -52,6 +52,7 @@ class _APILoadingWidgetState extends State<APILoadingWidget> with SingleTickerPr
   Widget build(BuildContext context) {
     if (show == false) return Container(width: 0, height: 0);
     return Card(
+      color: MColors.dialogBgColor,
       child: Padding(
           padding: const EdgeInsets.all(4.0),
           child: Container(

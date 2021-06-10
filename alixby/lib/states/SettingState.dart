@@ -71,10 +71,9 @@ class SettingState extends ChangeNotifier {
     savePathController.text = setting.savePath;
     downSpeedController.text = setting.downSpeed;
 
-    if (setting.ver != setting.serverVer) {
+    if (Setting.UIVER != setting.serverVer) {
       //提示版本升级
-      BotToast.showText(
-          text: "检测到新版本 (" + setting.serverVer + ") 请升级!", align: Alignment(0, 0), duration: Duration(seconds: 8));
+      BotToast.showText(text: "检测到新版本 (" + setting.serverVer + ") 请升级!", align: Alignment(0, 0), duration: null);
     }
 
     notifyListeners();

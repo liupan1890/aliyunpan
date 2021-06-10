@@ -442,6 +442,8 @@ class MIcons {
         return file_xsl;
       case 'ui':
         return ui;
+      case 'weifa':
+        return weifa;
     }
 
     return file_file;
@@ -737,4 +739,5 @@ class MIcons {
 
   static const IconData file_xsl = IconData(0xe657, fontFamily: 'iconfont');
   static const IconData ui = IconData(0xe600, fontFamily: 'iconfont');
+  static const IconData weifa = IconData(0xe601, fontFamily: 'iconfont');
 }

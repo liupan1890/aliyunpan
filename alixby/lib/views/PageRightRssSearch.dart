@@ -9,7 +9,7 @@ class PageRightRssSearch extends StatefulWidget {
   _PageRightRssSearchState createState() => _PageRightRssSearchState();
 }
 
-class _PageRightRssSearchState extends State<PageRightRssSearch> with AutomaticKeepAliveClientMixin {
+class _PageRightRssSearchState extends State<PageRightRssSearch> {
   @override
   void initState() {
     super.initState();
@@ -41,7 +41,4 @@ class _PageRightRssSearchState extends State<PageRightRssSearch> with AutomaticK
               linkStyle: TextStyle(fontSize: 14, color: MColors.linkColor, decoration: TextDecoration.none))
         ]));
   }
-
-  @override
-  bool get wantKeepAlive => true;
 }
