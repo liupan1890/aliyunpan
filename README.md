@@ -49,6 +49,7 @@ MacOS：[v1.6.10 https://wwe.lanzoui.com/b01nqc4gd](https://wwe.lanzoui.com/b01n
 功能规划：
 6. 文件加密/洗码工具
 7. 离线下载功能
+8. 同步盘功能
 ``````
 
 <br />
