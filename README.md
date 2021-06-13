@@ -16,7 +16,7 @@ MacOS：[v1.6.13 https://wwe.lanzoui.com/b01nqc4gd](https://wwe.lanzoui.com/b01n
 
 <br />
 
-已经发布在小众软件发现频道，大爱小众[https://meta.appinn.net](meta.appinn.net)
+已经发布在小众软件发现频道，大爱小众[meta.appinn.net](https://meta.appinn.net)
 
 <br />
 
@@ -26,7 +26,7 @@ MacOS：[v1.6.13 https://wwe.lanzoui.com/b01nqc4gd](https://wwe.lanzoui.com/b01n
 2.支持 阿里云盘基本功能(列出文件/重命名/移动/回收站/收藏夹/在线解压)
 3.支持 在线预览全格式原画视频（非转码）,在线预览图片、文本
 4.支持 批量下载文件/文件夹，多文件同时下载，支持断点续传，可以稳定满速下载
-5.支持 批量上传文件/文件夹，多文件同时上传，支持断点续传
+5.支持 批量上传文件/文件夹，多文件同时上传，支持文件秒传，支持断点续传
 6.支持 保存别人通过秒传链接分享的文件，支持导入115秒传链接的文件
 7.支持 Windows / MacOS 双系统
 8.支持 复制文件到(官方只有移动到),支持批量重命名
@@ -109,5 +109,5 @@ https://blog.csdn.net/H_Zaiii/article/details/105730557
 答：小白羊是绿色软件，直接删除小白羊所在的文件夹就可以了，没有任何安装残留！
 
 
-我要800star
+v1.6.13我要800star
 
