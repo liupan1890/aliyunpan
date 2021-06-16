@@ -32,7 +32,7 @@ MacOS：[v1.6.13 https://wwe.lanzoui.com/b01nqc4gd](https://wwe.lanzoui.com/b01n
 8.支持 复制文件到(官方只有移动到),支持批量重命名
 
 开发中功能：
-文件洗码工具
+保存阿里云盘分享链接，保存115网盘分享链接
 ``````
 
 <br />
