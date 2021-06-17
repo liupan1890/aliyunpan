@@ -12,8 +12,9 @@
   
 Windows：[v1.6.13 https://wwe.lanzoui.com/b01npsg8h](https://wwe.lanzoui.com/b01npsg8h)
 
-MacOS：[v1.6.13 https://wwe.lanzoui.com/b01nqc4gd](https://wwe.lanzoui.com/b01nqc4gd)
+MacOS：[v1.6.13 https://www.macwk.com/soft/aliyun-drive-xiaobaiyang](https://www.macwk.com/soft/aliyun-drive-xiaobaiyang)
 
+Mac版由macwk.com使用自有签名打包dmg，可以简单点击安装了(不需要输入终端命令)，推荐下载此版本，已测MacOS10.12-11.4,兼容M1
 <br />
 
 已经发布在小众软件发现频道，大爱小众[meta.appinn.net](https://meta.appinn.net)
