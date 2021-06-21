@@ -4,15 +4,13 @@
 
 这是我个人基于阿里云盘网页版开发的PC客户端，已经实现了阿里云盘官方客户端的基本功能
 
-<br />
-
-> 6月13日已更新v1.6.13！很多人私信我说我强制删除创建秒传链接的功能太突然，那么端午福利，这是最后一版可以创建秒传链接的小白羊，之后的版本都会彻底删除创建秒传链接功能。大家多体谅吧，个人项目不想这么多事。有句话怎么说来着，只要我不更新，你就LueLueLue
-
   <br />
   
-Windows：[v1.6.13 https://wwe.lanzoui.com/b01npsg8h](https://wwe.lanzoui.com/b01npsg8h)
+v1.6.21：[https://wwe.lanzoui.com/b01npsg8h](https://wwe.lanzoui.com/b01npsg8h)
 
-MacOS：[v1.6.13 https://www.macwk.com/soft/aliyun-drive-xiaobaiyang](https://www.macwk.com/soft/aliyun-drive-xiaobaiyang)
+v1.6.13：[https://wwe.lanzoui.com/b01nqc4gd](https://wwe.lanzoui.com/b01nqc4gd)
+
+MacOS：[https://www.macwk.com/soft/aliyun-drive-xiaobaiyang](https://www.macwk.com/soft/aliyun-drive-xiaobaiyang)
 
 Mac版由macwk.com使用自有签名打包dmg，可以简单点击安装了(不需要输入终端命令)，推荐下载此版本，已测MacOS10.12-11.4,兼容M1
 <br />
@@ -22,7 +20,7 @@ Mac版由macwk.com使用自有签名打包dmg，可以简单点击安装了(不�
 <br />
 
 ``````
-2021年6月13日 已完成功能：
+2021年6月21日 已完成功能：
 1.支持 扫码登录/Cookie登录
 2.支持 阿里云盘基本功能(列出文件/重命名/移动/回收站/收藏夹/在线解压)
 3.支持 在线预览全格式原画视频（非转码）,在线预览图片、文本
@@ -31,6 +29,7 @@ Mac版由macwk.com使用自有签名打包dmg，可以简单点击安装了(不�
 6.支持 保存别人通过秒传链接分享的文件，支持导入115秒传链接的文件
 7.支持 Windows / MacOS 双系统
 8.支持 复制文件到(官方只有移动到),支持批量重命名
+9.支持 管理相册，支持相册内文件和网盘内文件互相复制/移动
 
 开发中功能：
 保存阿里云盘分享链接，保存115网盘分享链接
@@ -60,6 +59,7 @@ Mac版由macwk.com使用自有签名打包dmg，可以简单点击安装了(不�
 秒传链接：
 1. 保存别人分享的阿里云盘秒传链接，到自己的网盘内
 2. 保存别人分享的115秒传链接(靠运气)到自己的网盘内
+3. 为自己网盘内的文件创建秒传链接文件，减少网盘空间占用
 ``````
 
 <br />
@@ -109,6 +109,4 @@ https://blog.csdn.net/H_Zaiii/article/details/105730557
 
 答：小白羊是绿色软件，直接删除小白羊所在的文件夹就可以了，没有任何安装残留！
 
-
-v1.6.13我要800star
 
