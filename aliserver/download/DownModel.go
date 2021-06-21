@@ -23,6 +23,7 @@ type DownFileModel struct {
 	DownServer string `json:"DownServer"`
 	//FileInfo
 	Identity string `json:"identity"`
+	BoxID    string `json:"boxid"`
 	//要下载的文件名--IMG_2020_01.jpg
 	Name string `json:"name"`
 	//要下载的文件大小

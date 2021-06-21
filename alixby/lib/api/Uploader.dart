@@ -6,11 +6,10 @@ import 'HttpHelper.dart';
 
 class Uploader {
   //创建上传任务
-  static Future<int> goUploadFile(String parentid, List<String> filelist) async {
+  static Future<int> goUploadFile(String box, String parentid, List<String> filelist) async {
     try {
-      print('goUploadFile');
-      var result =
-          await HttpHelper.postToServer("GoUploadFile", jsonEncode({"parentid": parentid, 'filelist': filelist}));
+      var result = await HttpHelper.postToServer(
+          "GoUploadFile", jsonEncode({'box': box, "parentid": parentid, 'filelist': filelist}));
       if (result["code"] == 0) {
         return result["filecount"];
       }
@@ -21,10 +20,10 @@ class Uploader {
   }
 
   //创建上传任务
-  static Future<int> goUploadDir(String parentid, String dirpath) async {
+  static Future<int> goUploadDir(String box, String parentid, String dirpath) async {
     try {
-      print('goUploadDir');
-      var result = await HttpHelper.postToServer("GoUploadDir", jsonEncode({"parentid": parentid, 'dirpath': dirpath}));
+      var result = await HttpHelper.postToServer(
+          "GoUploadDir", jsonEncode({'box': box, "parentid": parentid, 'dirpath': dirpath}));
       if (result["code"] == 0) {
         return result["filecount"];
       }
@@ -34,11 +33,24 @@ class Uploader {
     return 0;
   }
 
+  //创建上传任务
+  static Future<int> goUploadFileAndDir(String box, String parentid, List<String> filelist) async {
+    try {
+      var result = await HttpHelper.postToServer(
+          "GoUploadFileAndDir", jsonEncode({'box': box, "parentid": parentid, 'filelist': filelist}));
+      if (result["code"] == 0) {
+        return result["filecount"];
+      }
+    } catch (e) {
+      print('goUploadFileAndDir ' + e.toString());
+    }
+    return 0;
+  }
+
   //查询当前正在上传的任务
   static Future<PageRightDownModel> goUploadingList() async {
     var uploaddata = PageRightDownModel();
     try {
-      print('goUploadingList');
       var result = await HttpHelper.postToServer("GoUploadingList", "");
       if (result["code"] == 0) {
         uploaddata.filecount = result["filecount"];
@@ -59,7 +71,6 @@ class Uploader {
   //查询当前已上传的任务
   static Future<PageRightDownModel> goUploadList() async {
     try {
-      print('goUploadList ');
       var result = await HttpHelper.postToServer("GoUploadList", "");
       if (result["code"] == 0) {
         var uploaddata = PageRightDownModel();
@@ -80,7 +91,6 @@ class Uploader {
 
   static Future<String> goUploadingStart(String uploadid) async {
     try {
-      print('goUploadingStart');
       var result = await HttpHelper.postToServer("GoUploadingStart", jsonEncode({"uploadid": uploadid}));
       if (result["code"] == 0) {
         return "success";
@@ -93,7 +103,6 @@ class Uploader {
 
   static Future<String> goUploadingStop(String uploadid) async {
     try {
-      print('goUploadingStop');
       var result = await HttpHelper.postToServer("GoUploadingStop", jsonEncode({"uploadid": uploadid}));
       if (result["code"] == 0) {
         return "success";
@@ -106,7 +115,6 @@ class Uploader {
 
   static Future<String> goUploadingDelete(String uploadid) async {
     try {
-      print('goUploadingDelete');
       var result = await HttpHelper.postToServer("GoUploadingDelete", jsonEncode({"uploadid": uploadid}));
       if (result["code"] == 0) {
         return "success";
@@ -119,7 +127,6 @@ class Uploader {
 
   static Future<String> goUploadingForder(String uploadid) async {
     try {
-      print('goUploadingForder');
       var result = await HttpHelper.postToServer("GoUploadingForder", jsonEncode({"uploadid": uploadid}));
       if (result["code"] == 0) {
         return "success";
@@ -132,7 +139,6 @@ class Uploader {
 
   static Future<String> goUploadDelete(String uploadid) async {
     try {
-      print('goUploadDelete ');
       var result = await HttpHelper.postToServer("GoUploadDelete", jsonEncode({"uploadid": uploadid}));
       if (result["code"] == 0) {
         return "success";
@@ -145,7 +151,6 @@ class Uploader {
 
   static Future<String> goUploadForder(String uploadid) async {
     try {
-      print('goUploadForder');
       var result = await HttpHelper.postToServer("GoUploadForder", jsonEncode({"uploadid": uploadid}));
       if (result["code"] == 0) {
         return "success";

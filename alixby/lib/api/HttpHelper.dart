@@ -26,6 +26,7 @@ class HttpHelper {
         return jsonDecode("{\"code\":503,\"message\":\"error\"}");
       }
     } catch (exception) {
+      print(exception);
       return jsonDecode("{\"code\":503,\"message\":\"error\"}");
     }
   }

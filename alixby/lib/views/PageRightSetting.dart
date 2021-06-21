@@ -1,5 +1,6 @@
 import 'package:alixby/states/Global.dart';
 import 'package:alixby/states/SettingState.dart';
+import 'package:alixby/states/UserState.dart';
 import 'package:alixby/utils/FileLinkifier.dart';
 import 'package:alixby/utils/MColors.dart';
 import 'package:alixby/utils/MIcons.dart';
@@ -18,14 +19,19 @@ class _PageRightSettingState extends State<PageRightSetting> with AutomaticKeepA
   @override
   void initState() {
     super.initState();
-    print('_PageRightSettingState initState');
   }
 
   final verticalScroll = ScrollController();
+  @override
+  void dispose() {
+    verticalScroll.dispose();
+    super.dispose();
+  }
 
   @override
   // ignore: must_call_super
   Widget build(BuildContext context) {
+    var userName = context.watch<UserState>().userName;
     return Column(
       children: [
         Container(
@@ -38,9 +44,12 @@ class _PageRightSettingState extends State<PageRightSetting> with AutomaticKeepA
                     child: Linkify(
                         onOpen: null,
                         text: "APP设置",
-                        linkifiers: [FileLinkifier("APP设置", "")],
-                        linkStyle:
-                            TextStyle(fontSize: 13, color: MColors.linkColor, decoration: TextDecoration.none))))),
+                        linkifiers: [FileLinkifier("APP设置", "", "")],
+                        linkStyle: TextStyle(
+                            fontSize: 13,
+                            color: MColors.linkColor,
+                            decoration: TextDecoration.none,
+                            fontFamily: "opposans"))))),
         Container(height: 1, width: double.infinity, color: MColors.pageRightBorderColor),
         Expanded(
             child: Scrollbar(
@@ -62,14 +71,26 @@ class _PageRightSettingState extends State<PageRightSetting> with AutomaticKeepA
                           Padding(padding: EdgeInsets.only(top: 32)),
                           Container(
                             width: 400,
-                            child: Text("∷界面设置"),
+                            child: Text("∷界面设置",
+                                style: TextStyle(
+                                    fontFamily: "opposans",
+                                    decoration: TextDecoration.underline,
+                                    decorationStyle: TextDecorationStyle.solid,
+                                    decorationThickness: 2,
+                                    decorationColor: Colors.yellowAccent.shade700)),
                           ),
                           Padding(padding: EdgeInsets.only(top: 8)),
                           _buildTextSize(context),
                           Padding(padding: EdgeInsets.only(top: 32)),
                           Container(
                             width: 400,
-                            child: Text("∷下载文件保存位置"),
+                            child: Text("∷下载文件保存位置",
+                                style: TextStyle(
+                                    fontFamily: "opposans",
+                                    decoration: TextDecoration.underline,
+                                    decorationStyle: TextDecorationStyle.solid,
+                                    decorationThickness: 2,
+                                    decorationColor: Colors.yellowAccent.shade700)),
                           ),
                           Padding(padding: EdgeInsets.only(top: 8)),
                           _buildSavePath(),
@@ -77,20 +98,63 @@ class _PageRightSettingState extends State<PageRightSetting> with AutomaticKeepA
                           Padding(padding: EdgeInsets.only(top: 24)),
                           Container(
                             width: 400,
-                            child: Text("∷全局下载速度限制"),
+                            child: Text("∷全局下载速度限制",
+                                style: TextStyle(
+                                    fontFamily: "opposans",
+                                    decoration: TextDecoration.underline,
+                                    decorationStyle: TextDecorationStyle.solid,
+                                    decorationThickness: 2,
+                                    decorationColor: Colors.yellowAccent.shade700)),
                           ),
                           Padding(padding: EdgeInsets.only(top: 8)),
                           _buildDownSpeed(),
                           Padding(padding: EdgeInsets.only(top: 32)),
                           Container(
                             width: 400,
-                            child: Text("∷同时上传/下载任务数"),
+                            child: Text("∷同时上传/下载任务数",
+                                style: TextStyle(
+                                    fontFamily: "opposans",
+                                    decoration: TextDecoration.underline,
+                                    decorationStyle: TextDecorationStyle.solid,
+                                    decorationThickness: 2,
+                                    decorationColor: Colors.yellowAccent.shade700)),
                           ),
                           Padding(padding: EdgeInsets.only(top: 8)),
                           _buildDownMax(context),
-                          Padding(padding: EdgeInsets.only(top: 24)),
+                          Padding(padding: EdgeInsets.only(top: 8)),
                           _buildSha1Check(context),
                           Padding(padding: EdgeInsets.only(top: 24)),
+                          Container(
+                            width: 400,
+                            child: Text("∷账号设置",
+                                style: TextStyle(
+                                    fontFamily: "opposans",
+                                    decoration: TextDecoration.underline,
+                                    decorationStyle: TextDecorationStyle.solid,
+                                    decorationThickness: 2,
+                                    decorationColor: Colors.yellowAccent.shade700)),
+                          ),
+                          Padding(padding: EdgeInsets.only(top: 8)),
+                          Container(
+                              width: 400,
+                              child: Row(children: [
+                                Text(
+                                  userName,
+                                  style: TextStyle(
+                                      color: MColors.userNavColor,
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.bold,
+                                      fontFamily: "opposans"),
+                                  maxLines: 1,
+                                  softWrap: false,
+                                  overflow: TextOverflow.clip,
+                                ),
+                                Padding(padding: EdgeInsets.only(left: 16)),
+                                OutlinedButton(
+                                  child: Text("退出登录"),
+                                  onPressed: () => Global.userState.logoffUser(),
+                                ),
+                              ])),
                         ],
                       ),
                     )))),
@@ -114,18 +178,18 @@ class _PageRightSettingState extends State<PageRightSetting> with AutomaticKeepA
       child: Stack(
         children: [
           ConstrainedBox(
-              constraints: BoxConstraints(maxHeight: 56),
+              constraints: BoxConstraints(maxHeight: 60),
               child: TextField(
                 readOnly: true,
                 controller: Global.settingState.savePathController,
                 maxLines: 1,
                 autocorrect: false,
                 enableSuggestions: false,
-                style: TextStyle(fontSize: 14, color: MColors.textColor),
+                style: TextStyle(fontSize: 14, color: MColors.textColor, fontFamily: "opposans"),
                 cursorColor: MColors.inputBorderHover,
                 decoration: InputDecoration(
                   helperText: "选择一个文件夹，所有文件默认都下载到此文件夹内",
-                  helperStyle: TextStyle(fontSize: 13, color: MColors.textColor),
+                  helperStyle: TextStyle(fontSize: 13, color: MColors.textColor, fontFamily: "opposans"),
                   contentPadding: EdgeInsets.symmetric(vertical: 4, horizontal: 8),
                   focusedBorder: OutlineInputBorder(
                     borderSide: BorderSide(
@@ -168,12 +232,15 @@ class _PageRightSettingState extends State<PageRightSetting> with AutomaticKeepA
           selectedTileColor: Colors.transparent,
           checkColor: Colors.white,
           activeColor: MColors.inputBorderHover,
-          title: Text(
-            '每次下载都提示我选择保存位置',
-            style: TextStyle(
-                fontSize: 14,
-                color: Global.settingState.setting.savePathCheck ? MColors.inputBorderHover : MColors.textColor),
-          ),
+          title: Tooltip(
+              message: '不推荐勾选，默认按照网盘全路径保存，勾选后可以自己选择路径',
+              child: Text(
+                '每次下载都提示我选择保存位置',
+                style: TextStyle(
+                    fontSize: 14,
+                    color: Global.settingState.setting.savePathCheck ? MColors.inputBorderHover : MColors.textColor,
+                    fontFamily: "opposans"),
+              )),
           value: (context.watch<SettingState>().setting.savePathCheck ? true : null),
           selected: context.watch<SettingState>().setting.savePathCheck,
           onChanged: (bool? value) {
@@ -188,17 +255,17 @@ class _PageRightSettingState extends State<PageRightSetting> with AutomaticKeepA
       child: Stack(
         children: [
           ConstrainedBox(
-              constraints: BoxConstraints(maxHeight: 56),
+              constraints: BoxConstraints(maxHeight: 60),
               child: TextField(
                 controller: Global.settingState.downSpeedController,
                 maxLines: 1,
                 autocorrect: false,
                 enableSuggestions: false,
-                style: TextStyle(fontSize: 14, color: MColors.textColor),
+                style: TextStyle(fontSize: 14, color: MColors.textColor, fontFamily: "opposans"),
                 cursorColor: MColors.inputBorderHover,
                 decoration: InputDecoration(
                   helperText: "按照 '你填的' MB/s 限制最大下载速度，填0不限速",
-                  helperStyle: TextStyle(fontSize: 13, color: MColors.textColor),
+                  helperStyle: TextStyle(fontSize: 13, color: MColors.textColor, fontFamily: "opposans"),
                   contentPadding: EdgeInsets.symmetric(vertical: 4, horizontal: 8),
                   focusedBorder: OutlineInputBorder(
                     borderSide: BorderSide(
@@ -248,6 +315,7 @@ class _PageRightSettingState extends State<PageRightSetting> with AutomaticKeepA
                 ),
                 child: DropdownButton<String>(
                   isDense: true,
+                  style: TextStyle(color: MColors.textColor, fontFamily: "opposans"),
                   itemHeight: 32, //需要修改kMinInteractiveDimension =32
                   elevation: 0,
                   value: context.watch<SettingState>().setting.downMax,
@@ -260,7 +328,8 @@ class _PageRightSettingState extends State<PageRightSetting> with AutomaticKeepA
                       .map<DropdownMenuItem<String>>((String value) {
                     return DropdownMenuItem<String>(
                       value: value,
-                      child: Text('同时上传/下载' + value + '个文件', style: TextStyle(fontSize: 14, color: MColors.textColor)),
+                      child: Text('同时上传/下载' + value + '个文件',
+                          style: TextStyle(fontSize: 14, color: MColors.textColor, fontFamily: "opposans")),
                     );
                   }).toList(),
                 ))));
@@ -279,12 +348,15 @@ class _PageRightSettingState extends State<PageRightSetting> with AutomaticKeepA
           selectedTileColor: Colors.transparent,
           checkColor: Colors.white,
           activeColor: MColors.inputBorderHover,
-          title: Text(
-            '每次下载完成后校验文件完整性(sha1)',
-            style: TextStyle(
-                fontSize: 14,
-                color: Global.settingState.setting.downSha1Check ? MColors.inputBorderHover : MColors.textColor),
-          ),
+          title: Tooltip(
+              message: '不推荐勾选，会占用大量CPU',
+              child: Text(
+                '每次下载完成后校验文件完整性(sha1)',
+                style: TextStyle(
+                    fontSize: 14,
+                    color: Global.settingState.setting.downSha1Check ? MColors.inputBorderHover : MColors.textColor,
+                    fontFamily: "opposans"),
+              )),
           value: (context.watch<SettingState>().setting.downSha1Check ? true : null),
           selected: context.watch<SettingState>().setting.downSha1Check,
           onChanged: (bool? value) {
@@ -312,6 +384,7 @@ class _PageRightSettingState extends State<PageRightSetting> with AutomaticKeepA
                   ),
                   child: DropdownButton<String>(
                       isDense: true,
+                      style: TextStyle(color: MColors.textColor, fontFamily: "opposans"),
                       itemHeight: 32, //需要修改kMinInteractiveDimension =32
                       elevation: 0,
                       value: context.watch<SettingState>().setting.textScale.toString(),
@@ -323,13 +396,16 @@ class _PageRightSettingState extends State<PageRightSetting> with AutomaticKeepA
                       items: [
                         DropdownMenuItem<String>(
                             value: "1.0",
-                            child: Text('正常文字大小', style: TextStyle(fontSize: 14, color: MColors.textColor))),
+                            child: Text('正常文字大小',
+                                style: TextStyle(fontSize: 14, color: MColors.textColor, fontFamily: "opposans"))),
                         DropdownMenuItem<String>(
                             value: "1.1",
-                            child: Text('较大文字大小', style: TextStyle(fontSize: 15, color: MColors.textColor))),
+                            child: Text('较大文字大小',
+                                style: TextStyle(fontSize: 15, color: MColors.textColor, fontFamily: "opposans"))),
                         DropdownMenuItem<String>(
                             value: "1.2",
-                            child: Text('最大文字大小', style: TextStyle(fontSize: 16, color: MColors.textColor))),
+                            child: Text('最大文字大小',
+                                style: TextStyle(fontSize: 16, color: MColors.textColor, fontFamily: "opposans"))),
                       ]))),
           Padding(padding: EdgeInsets.only(left: 24)),
           UnconstrainedBox(
@@ -352,8 +428,6 @@ class _PageRightSettingState extends State<PageRightSetting> with AutomaticKeepA
                       underline: Container(height: 0),
                       dropdownColor: MColors.userNavMenuBG,
                       onChanged: (String? newValue) {
-                        BotToast.showText(text: "此功能还在开发中");
-                        //return;
                         if (newValue != null) {
                           Global.settingState.theme(newValue);
                           BotToast.showText(text: "皮肤模式需要退出程序重新打开后才能生效", duration: Duration(seconds: 10));
@@ -362,20 +436,16 @@ class _PageRightSettingState extends State<PageRightSetting> with AutomaticKeepA
                       items: [
                         DropdownMenuItem<String>(
                             value: "day",
-                            child: Text('浅色模式', style: TextStyle(fontSize: 14, color: MColors.textColor))),
+                            child: Text('浅色模式',
+                                style: TextStyle(fontSize: 14, color: MColors.textColor, fontFamily: "opposans"))),
                         DropdownMenuItem<String>(
                             value: "dark",
-                            child: Text('深色模式', style: TextStyle(fontSize: 14, color: MColors.textColor))),
+                            child: Text('深色模式',
+                                style: TextStyle(fontSize: 14, color: MColors.textColor, fontFamily: "opposans"))),
                       ]))),
         ]));
   }
 
   @override
   bool get wantKeepAlive => true;
-
-  @override
-  void dispose() {
-    verticalScroll.dispose();
-    super.dispose();
-  }
 }

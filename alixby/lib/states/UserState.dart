@@ -9,12 +9,18 @@ class UserState extends ChangeNotifier {
   // APP是否登录(如果有用户信息，则证明登录过)
   bool get isLogin => user.userID != "";
   //登录后显示用户名，未登录时显示 点击登录
+  String get userFace => user.userID == "" ? "" : user.userFace;
   String get userName => user.userID == "" ? "点击登录" : user.userName;
   String get userPanUsed => "网盘空间 " + user.panUsed + " / " + user.panTotal;
-  //登录后显示退出按钮，未登录时不显示
-  double get userBtnWidth => user.userID == "" ? 0 : 26;
-  //当前所在页面 0=Rss 1=Pan 2=Down 3=Setting
+
+  //当前所在页面 0=Rss 1=Pan 2=XiangCe 3=Down 4=Setting
   int userNavPageIndex = 1;
+
+  String get box => userNavPageIndex == 1
+      ? "box"
+      : userNavPageIndex == 2
+          ? "xiangce"
+          : "";
   //当前所在页面 0=秒传 1=搜索 2=离线 3=帮助
   int userNavPageRssIndex = 0;
   final pageController = PageController(initialPage: 1);
@@ -31,10 +37,10 @@ class UserState extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<bool> loadUser() async {
+  Future<bool> loadUser(bool isLogin) async {
     user = await AliLogin.apiUserInfo();
-    if (user.userID != "") {
-      Global.panTreeState.pageExpandedNode('root', true);
+    if (isLogin && user.userID != "") {
+      Global.pageExpandedNodeByRoot();
     }
     notifyListeners();
     return user.userID != "";
@@ -43,8 +49,7 @@ class UserState extends ChangeNotifier {
   Future<void> logoffUser() async {
     await AliLogin.apiUserLogoff();
     user = AliUserInfo();
-    Global.panTreeState.userLogoff();
-    Global.panFileState.userLogoff();
+    Global.pageClearNodeByLogoff();
     notifyListeners();
   }
 }

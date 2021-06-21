@@ -4,6 +4,7 @@ import 'HttpHelper.dart';
 class AliUserInfo {
   String userID = "";
   String userName = "";
+  String userFace = "";
   String panUsed = "";
   String panTotal = "";
   // ignore: non_constant_identifier_names
@@ -19,7 +20,6 @@ class AliLogin {
 
   static Future<AliUserInfo> apiUserInfo() async {
     try {
-      print('apiUserInfo');
       var result = await HttpHelper.postToServer("ApiUserInfo", "");
       if (result["code"] == 0) {
         String infojson = result["info"];
@@ -28,6 +28,7 @@ class AliLogin {
           var user = AliUserInfo();
           user.userID = info["userID"];
           user.userName = info["userName"];
+          user.userFace = info["userFace"];
           user.panUsed = info["panUsed"];
           user.panTotal = info["panTotal"];
           user.drive_size = info["drive_size"];
@@ -44,7 +45,6 @@ class AliLogin {
 
   static Future apiUserLogoff() async {
     try {
-      print('apiUserLogoff');
       await HttpHelper.postToServer("ApiUserLogoff", "");
     } catch (e) {
       print('apiUserLogoff ' + e.toString());
@@ -53,7 +53,6 @@ class AliLogin {
 
   static Future<String> apiQrcodeGenerate() async {
     try {
-      print('apiQrcodeGenerate');
       var result = await HttpHelper.postToServer("ApiQrcodeGenerate", "");
       if (result["code"] == 0) return result["codeContent"];
     } catch (e) {
@@ -64,7 +63,6 @@ class AliLogin {
 
   static Future<String> apiQrcodeQuery() async {
     try {
-      print('apiQrcodeQuery');
       var result = await HttpHelper.postToServer("ApiQrcodeQuery", "");
       if (result["code"] == 0) return result["loginResult"];
     } catch (e) {
@@ -76,7 +74,6 @@ class AliLogin {
   static Future<String> apiTokenRefresh(String refreshToken) async {
     if (refreshToken == "") return "retry";
     try {
-      print('apiTokenRefresh');
       var result = await HttpHelper.postToServer("ApiTokenRefresh", jsonEncode({'refreshToken': refreshToken}));
       if (result["code"] == 0) return result["loginResult"];
     } catch (e) {

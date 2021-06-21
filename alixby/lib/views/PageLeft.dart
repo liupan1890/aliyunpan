@@ -1,8 +1,8 @@
-import '../widgets/UserNavMenu.dart';
+import 'package:alixby/views/UserNavMenu.dart';
 import 'package:hovering/hovering.dart';
 
-import '../widgets/UserNav.dart';
-import '../utils/MColors.dart';
+import 'package:alixby/views/UserNav.dart';
+import 'package:alixby/utils/MColors.dart';
 import 'package:flutter/material.dart';
 
 class PageLeft extends StatefulWidget {
@@ -14,7 +14,6 @@ class _PageLeftState extends State<PageLeft> {
   @override
   void initState() {
     super.initState();
-    print('_PageLeftState initState');
   }
 
   @override

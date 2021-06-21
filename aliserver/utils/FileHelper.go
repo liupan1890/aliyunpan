@@ -137,23 +137,26 @@ func ExePath() string {
 
 //ClearFileName 清理文件名
 func ClearFileName(name string, file bool) string {
-	name = filepath.Clean(name)
-	if name == "." {
-		return ""
+	if name != "." {
+		name = filepath.Clean(name)
+		if name == "." {
+			return ""
+		}
 	}
+
 	//< > / \ | :  * ?
-	name = strings.Replace(name, "<", "", -1)
-	name = strings.Replace(name, ">", "", -1)
-	name = strings.Replace(name, "|", "", -1)
-	name = strings.Replace(name, ":", "", -1)
-	name = strings.Replace(name, "*", "", -1)
-	name = strings.Replace(name, "?", "", -1)
+	name = strings.Replace(name, "<", "_", -1)
+	name = strings.Replace(name, ">", "_", -1)
+	name = strings.Replace(name, "|", "_", -1)
+	name = strings.Replace(name, ":", "_", -1)
+	name = strings.Replace(name, "*", "_", -1)
+	name = strings.Replace(name, "?", "_", -1)
 	name = strings.Replace(name, "\\", "/", -1)
 	//name = strings.Replace(name, "//", "/", -1)
 	//name = strings.Replace(name, "//", "/", -1)
 	//name = strings.Replace(name, "..", ".", -1)
 	if file {
-		name = strings.Replace(name, "/", "", -1) //文件名清理掉/
+		name = strings.Replace(name, "/", "_", -1) //文件名清理掉/
 	} else {
 		var pathchar = string(os.PathSeparator) //mac linux
 		if pathchar != "/" {
@@ -161,4 +164,12 @@ func ClearFileName(name string, file bool) string {
 		}
 	}
 	return name
+}
+
+func JoinFilePath(dir string, file string) string {
+	if file != "." {
+		return filepath.Join(dir, file)
+	}
+	var pathchar = string(os.PathSeparator)
+	return strings.TrimRight(strings.TrimRight(dir, "\\"), "/") + pathchar + file
 }

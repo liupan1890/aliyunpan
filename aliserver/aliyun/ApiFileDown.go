@@ -22,7 +22,7 @@ type FileUrlModel struct {
 	//文件相对路径
 	P_file_path string `json:"path"`
 	//P_url        string `json:"url"`
-	//P_domain_id  string `json:"domain_id"`
+	P_drive_id string `json:"drive_id"`
 	//P_crc64_hash string `json:"crc64_hash"`
 	P_sha1 string `json:"sha1"`
 	P_size int64  `json:"size"`
@@ -30,7 +30,7 @@ type FileUrlModel struct {
 	IsDir  bool
 }
 
-func ApiFileDownloadUrl(file_id string, expire_sec int) (downurl string, size int64, err error) {
+func ApiFileDownloadUrl(boxid string, file_id string, expire_sec int) (downurl string, size int64, err error) {
 	defer func() {
 		if errr := recover(); errr != nil {
 			log.Println("ApiFileDownloadUrlError ", " error=", errr)
@@ -39,7 +39,7 @@ func ApiFileDownloadUrl(file_id string, expire_sec int) (downurl string, size in
 	}()
 	var apiurl = "https://api.aliyundrive.com/v2/file/get_download_url"
 
-	var postjson = map[string]interface{}{"drive_id": _user.UserToken.P_default_drive_id,
+	var postjson = map[string]interface{}{"drive_id": boxid,
 		"file_id":    file_id,
 		"expire_sec": expire_sec,
 	}
@@ -61,15 +61,16 @@ func ApiFileDownloadUrl(file_id string, expire_sec int) (downurl string, size in
 		return "", 0, errors.New("error")
 	}
 	info := gjson.Parse(body)
-	url := info.Get("url").String()
+	//url := info.Get("internal_url").String() //internal_url  url
+	url := info.Get("url").String() //internal_url  url
 	size = info.Get("size").Int()
 	return url, size, nil
 }
 
 //ApiFileGetUrl 读取一个文件的信息
-func ApiFileGetUrl(file_id string, parentpath string) (urlinfo FileUrlModel, err error) {
+func ApiFileGetUrl(boxid string, file_id string, parentpath string) (urlinfo FileUrlModel, err error) {
 	//https://api.aliyundrive.com/v2/file/get
-	//{"drive_id":"8699982","file_id":"60a521893abc43ae8386480788b1016a214724ac"}
+	//{"drive_id":"9999999","file_id":"60a521893abc43ae8386480788b1016a214724ac"}
 	//download_url  url 15分钟有效
 	defer func() {
 		if errr := recover(); errr != nil {
@@ -80,7 +81,7 @@ func ApiFileGetUrl(file_id string, parentpath string) (urlinfo FileUrlModel, err
 
 	var apiurl = "https://api.aliyundrive.com/v2/file/get"
 
-	var postjson = map[string]interface{}{"drive_id": _user.UserToken.P_default_drive_id,
+	var postjson = map[string]interface{}{"drive_id": boxid,
 		"file_id": file_id}
 
 	b, _ := json.Marshal(postjson)
@@ -120,17 +121,17 @@ func ApiFileGetUrl(file_id string, parentpath string) (urlinfo FileUrlModel, err
 		if info.Get("thumbnail").Exists() && strings.Index(info.Get("thumbnail").String(), "illegal_thumbnail") > 0 {
 			size = 9560 //违规视频大小
 		}
-		return FileUrlModel{P_file_id: file_id, P_file_path: parentpath, P_file_name: name, P_sha1: content_hash, P_size: size, IsUrl: true, IsDir: false}, nil
+		return FileUrlModel{P_drive_id: boxid, P_file_id: file_id, P_file_path: parentpath, P_file_name: name, P_sha1: content_hash, P_size: size, IsUrl: true, IsDir: false}, nil
 	} else {
-		return FileUrlModel{P_file_id: file_id, P_file_path: parentpath, P_file_name: name, IsUrl: false, IsDir: true}, nil
+		return FileUrlModel{P_drive_id: boxid, P_file_id: file_id, P_file_path: parentpath, P_file_name: name, IsUrl: false, IsDir: true}, nil
 	}
 }
 
 //ApiFileListAllForDown 读取一个文件夹包含的文件列表 isfull==true时遍历所有子文件夹
-func ApiFileListAllForDown(parentid string, parentpath string, isfull bool) (list []*FileUrlModel, err error) {
+func ApiFileListAllForDown(boxid string, parentid string, parentpath string, isfull bool) (list []*FileUrlModel, err error) {
 	for i := 0; i < 3; i++ {
 		var list []*FileUrlModel
-		list, err := _ApiFileListAllForDown(parentid, parentpath, isfull)
+		list, err := _ApiFileListAllForDown(boxid, parentid, parentpath, isfull)
 		if err == nil {
 			return list, nil
 		}
@@ -139,7 +140,7 @@ func ApiFileListAllForDown(parentid string, parentpath string, isfull bool) (lis
 }
 
 //_ApiFileListAllForDown 读取一个文件夹包含的文件列表 isfull==true时遍历所有子文件夹
-func _ApiFileListAllForDown(parentid string, parentpath string, isfull bool) (list []*FileUrlModel, err error) {
+func _ApiFileListAllForDown(boxid string, parentid string, parentpath string, isfull bool) (list []*FileUrlModel, err error) {
 	defer func() {
 		if errr := recover(); errr != nil {
 			log.Println("_ApiFileListAllForDownError ", " error=", errr)
@@ -148,7 +149,7 @@ func _ApiFileListAllForDown(parentid string, parentpath string, isfull bool) (li
 	}()
 	var marker = ""
 	for {
-		flist, next, ferr := ApiFileListUrl(parentid, parentpath, marker)
+		flist, next, ferr := ApiFileListUrl(boxid, parentid, parentpath, marker)
 		if ferr != nil {
 			return nil, errors.New("error") //有错误直接退出
 		}
@@ -169,7 +170,7 @@ func _ApiFileListAllForDown(parentid string, parentpath string, isfull bool) (li
 			if list[i].IsDir {
 				wg.Add(1)
 				go func(i int) {
-					rlist, rerr := ApiFileListAllForDown(list[i].P_file_id, list[i].P_file_path+"/"+list[i].P_file_name, true)
+					rlist, rerr := ApiFileListAllForDown(boxid, list[i].P_file_id, list[i].P_file_path+"/"+list[i].P_file_name, true)
 					//注意这里，如果子文件夹遍历时出错了，直接退出，确保要么全部成功，要么全部失败，不丢失
 					if rerr != nil {
 						errnum++
@@ -191,10 +192,10 @@ func _ApiFileListAllForDown(parentid string, parentpath string, isfull bool) (li
 }
 
 //ApiFileListUrl 真的读取子文件列表，不能有catch，出错要直接崩溃，上级调用会catch
-func ApiFileListUrl(parentid string, parentpath string, marker string) (list []*FileUrlModel, next_marker string, err error) {
+func ApiFileListUrl(boxid string, parentid string, parentpath string, marker string) (list []*FileUrlModel, next_marker string, err error) {
 	var apiurl = "https://api.aliyundrive.com/v2/file/list"
 
-	var postjson = map[string]interface{}{"drive_id": _user.UserToken.P_default_drive_id,
+	var postjson = map[string]interface{}{"drive_id": boxid,
 		"parent_file_id":  parentid,
 		"limit":           100,
 		"all":             false,
@@ -250,9 +251,9 @@ func ApiFileListUrl(parentid string, parentpath string, marker string) (list []*
 				size = 9560 //违规视频大小
 			}
 
-			list = append(list, &FileUrlModel{P_file_id: file_id, P_file_path: parentpath, P_file_name: name, P_sha1: content_hash, P_size: size, IsUrl: true, IsDir: false})
+			list = append(list, &FileUrlModel{P_drive_id: boxid, P_file_id: file_id, P_file_path: parentpath, P_file_name: name, P_sha1: content_hash, P_size: size, IsUrl: true, IsDir: false})
 		} else {
-			list = append(list, &FileUrlModel{P_file_id: file_id, P_file_path: parentpath, P_file_name: name, IsUrl: false, IsDir: true})
+			list = append(list, &FileUrlModel{P_drive_id: boxid, P_file_id: file_id, P_file_path: parentpath, P_file_name: name, IsUrl: false, IsDir: true})
 		}
 	}
 
@@ -260,7 +261,7 @@ func ApiFileListUrl(parentid string, parentpath string, marker string) (list []*
 }
 
 //ApiPlay 调用本地播放器
-func ApiPlay(file_id string) string {
+func ApiPlay(boxid string, file_id string) string {
 	defer func() {
 		if errr := recover(); errr != nil {
 			log.Println("ApiPlayError ", " error=", errr)
@@ -282,7 +283,7 @@ func ApiPlay(file_id string) string {
 		mpvpath = "mpv"
 	}
 
-	downurl, _, err := ApiFileDownloadUrl(file_id, 60*60*4)
+	downurl, _, err := ApiFileDownloadUrl(boxid, file_id, 60*60*3)
 	if err != nil {
 		return utils.ToErrorMessageJSON("获取视频链接失败")
 	}
@@ -296,7 +297,7 @@ func ApiPlay(file_id string) string {
 }
 
 //ApiImage 在线预览图片
-func ApiImage(file_id string) string {
+func ApiImage(boxid string, file_id string) string {
 	defer func() {
 		if errr := recover(); errr != nil {
 			log.Println("ApiImageError ", " error=", errr)
@@ -305,7 +306,7 @@ func ApiImage(file_id string) string {
 
 	var apiurl = "https://api.aliyundrive.com/v2/file/get"
 
-	var postjson = map[string]interface{}{"drive_id": _user.UserToken.P_default_drive_id,
+	var postjson = map[string]interface{}{"drive_id": boxid,
 		"file_id": file_id}
 
 	b, _ := json.Marshal(postjson)
@@ -337,7 +338,7 @@ func ApiImage(file_id string) string {
 }
 
 //ApiText 在线预览文本
-func ApiText(file_id string) string {
+func ApiText(boxid string, file_id string) string {
 	defer func() {
 		if errr := recover(); errr != nil {
 			log.Println("ApiTextError ", " error=", errr)
@@ -346,7 +347,7 @@ func ApiText(file_id string) string {
 
 	var apiurl = "https://api.aliyundrive.com/v2/file/get"
 
-	var postjson = map[string]interface{}{"drive_id": _user.UserToken.P_default_drive_id,
+	var postjson = map[string]interface{}{"drive_id": boxid,
 		"file_id": file_id}
 
 	b, _ := json.Marshal(postjson)
@@ -373,45 +374,50 @@ func ApiText(file_id string) string {
 		return utils.ToErrorMessageJSON("获取文本链接失败")
 	}
 	bodybs := *bodybs1
-	if bodybs[0] == 0xFF && bodybs[1] == 0xFE {
-		conbs, err := utils.UTF16LEToUtf8(bodybs)
-		if err == nil {
-			bodybs = conbs
-		}
-	} else if bodybs[0] == 0xFE && bodybs[1] == 0xFF {
-		conbs, err := utils.UTF16BEToUtf8(bodybs)
-		if err == nil {
-			bodybs = conbs
-		}
-	} else if bodybs[0] == 0xEF && bodybs[1] == 0xBB && bodybs[2] == 0xBF {
-		//utf8
-	} else {
-		plist := chardet.Possible(bodybs)
-		if utils.IsContain(plist, "utf-8") {
+	if len(bodybs) > 0 {
+		if bodybs[0] == 0xFF && bodybs[1] == 0xFE {
+			conbs, err := utils.UTF16LEToUtf8(bodybs)
+			if err == nil {
+				bodybs = conbs
+			}
+		} else if bodybs[0] == 0xFE && bodybs[1] == 0xFF {
+			conbs, err := utils.UTF16BEToUtf8(bodybs)
+			if err == nil {
+				bodybs = conbs
+			}
+		} else if bodybs[0] == 0xEF && bodybs[1] == 0xBB && bodybs[2] == 0xBF {
 			//utf8
-		} else if utils.IsContain(plist, "gb18030") {
-			conbs, err := utils.GB18030ToUtf8(bodybs)
-			if err == nil {
-				bodybs = conbs
-			}
-		} else if utils.IsContain(plist, "gbk") {
-			conbs, err := utils.GbkToUtf8(bodybs)
-			if err == nil {
-				bodybs = conbs
-			}
-		} else if utils.IsContain(plist, "big5") {
-			conbs, err := utils.Big5ToUtf8(bodybs)
-			if err == nil {
-				bodybs = conbs
+		} else {
+			plist := chardet.Possible(bodybs)
+			if utils.IsContain(plist, "utf-8") {
+				//utf8
+			} else if utils.IsContain(plist, "gb18030") {
+				conbs, err := utils.GB18030ToUtf8(bodybs)
+				if err == nil {
+					bodybs = conbs
+				}
+			} else if utils.IsContain(plist, "gbk") {
+				conbs, err := utils.GbkToUtf8(bodybs)
+				if err == nil {
+					bodybs = conbs
+				}
+			} else if utils.IsContain(plist, "big5") {
+				conbs, err := utils.Big5ToUtf8(bodybs)
+				if err == nil {
+					bodybs = conbs
+				}
 			}
 		}
 	}
 	text := string(bodybs)
 	temp := []rune(text)
 	length4 := len(temp)
-	if length4 > 20480 { //1万字
-		text = string(temp[0:20480]) + "\n\n\n\n剩余" + strconv.FormatInt(int64(length4-20480), 10) + "字被省略.....\n\n\n\n"
+	if length4 > 1024*100 { //1万字
+		text = string(temp[0:1024*100]) + "\n\n\n\n剩余" + strconv.FormatInt(int64(length4-1024*100), 10) + "字被省略.....\n\n\n\n"
 	}
 	text = strings.ReplaceAll(text, "	", " ")
+	if text == "" {
+		text = "文件内容是空的"
+	}
 	return utils.ToSuccessJSON("text", text)
 }

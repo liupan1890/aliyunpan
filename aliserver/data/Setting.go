@@ -62,7 +62,7 @@ type ISettingModel struct {
 var Setting = ISettingModel{
 	SavePath:      "",
 	SavePathCheck: false,
-	TextScale:     "1.0",
+	TextScale:     "1.1",
 	Theme:         "day",
 	DownSpeed:     "0", //全局不限速
 	DownMax:       "3", //3文件
@@ -84,7 +84,7 @@ type IConfigModel struct {
 }
 
 //LocalExeVer 文件版本
-const LocalExeVer = "1.6.10.0"
+const LocalExeVer = "1.6.21.0"
 
 //Config 全局，serverconfig
 var Config = IConfigModel{

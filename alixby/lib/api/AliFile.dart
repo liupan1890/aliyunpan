@@ -8,8 +8,9 @@ import 'package:flutter/material.dart';
 import 'HttpHelper.dart';
 
 class FileListModel {
-  FileListModel(this.time, this.key, this.name);
+  FileListModel(this.time, this.box, this.key, this.name);
   int time = 0;
+  String box = "";
   String key = "";
   String name = "";
   List<FileItem> list = [];
@@ -22,7 +23,8 @@ class AliFile {
   AliFile();
 
   //name updated_at  created_at  size
-  static Future<FileListModel> apiFileList(int time, String parentid, String name, {String marker = ""}) async {
+  static Future<FileListModel> apiFileList(int time, String box, String parentid, String name,
+      {String marker = ""}) async {
     var fcHide = BotToast.showCustomLoading(
         toastBuilder: (cancelFunc) {
           return APILoadingWidget(cancelFunc: cancelFunc, title: (marker == "" ? '列文件：' : "分页中：") + name);
@@ -37,17 +39,18 @@ class AliFile {
         backgroundColor: Colors.transparent);
 
     if (parentid == "") parentid = "root";
-    var model = FileListModel(time, parentid, name);
+    var model = FileListModel(time, box, parentid, name);
     if (marker != "") model.isMarker = true;
 
     try {
-      var result = await HttpHelper.postToServer("ApiFileList", jsonEncode({'parentid': parentid, "marker": marker}));
+      var result = await HttpHelper.postToServer(
+          "ApiFileList", jsonEncode({'box': box, 'parentid': parentid, "marker": marker}));
       if (result["code"] == 0) {
         model.next_marker = result["next_marker"] as String;
         var items = result["items"];
         List<FileItem> list = [];
         for (int i = 0; i < items.length; i++) {
-          var m = new FileItem.fromJson(items[i]);
+          var m = new FileItem.fromJson(box, items[i]);
           list.add(m);
         }
         model.list = list;
@@ -66,7 +69,7 @@ class AliFile {
   }
 
   //name updated_at  created_at  size
-  static Future<FileListModel> apiDirList(String parentid, String name) async {
+  static Future<FileListModel> apiDirList(String box, String parentid, String name) async {
     var fcHide = BotToast.showCustomLoading(
         toastBuilder: (cancelFunc) {
           return APILoadingWidget(cancelFunc: cancelFunc, title: '列文件夹：' + name);
@@ -81,16 +84,16 @@ class AliFile {
         backgroundColor: Colors.transparent);
 
     if (parentid == "") parentid = "root";
-    var model = FileListModel(0, parentid, name);
+    var model = FileListModel(0, box, parentid, name);
 
     try {
-      var result = await HttpHelper.postToServer("ApiDirList", jsonEncode({'parentid': parentid}));
+      var result = await HttpHelper.postToServer("ApiDirList", jsonEncode({'box': box, 'parentid': parentid}));
       if (result["code"] == 0) {
         var items = result["items"];
         List<FileItem> list = [];
         for (int i = 0; i < items.length; i++) {
           if (items[i]["key"] == "break") continue;
-          var m = new FileItem.fromJson(items[i]);
+          var m = new FileItem.fromJson(box, items[i]);
           list.add(m);
         }
         model.list = list;
@@ -99,7 +102,7 @@ class AliFile {
         BotToast.showText(text: "拉取 " + name + " 失败");
       }
     } catch (e) {
-      print('apiFileList ' + e.toString());
+      print('apiDirList ' + e.toString());
       model.key = "error";
       BotToast.showText(text: "拉取 " + name + " 失败");
     } finally {
@@ -108,11 +111,10 @@ class AliFile {
     return model;
   }
 
-  static Future<String> apiCreatForder(String parentkey, String dirname) async {
+  static Future<String> apiCreatForder(String box, String parentkey, String dirname) async {
     try {
-      print('apiCreatForder');
-      var result =
-          await HttpHelper.postToServer("ApiCreatForder", jsonEncode({'parentid': parentkey, 'name': dirname}));
+      var result = await HttpHelper.postToServer(
+          "ApiCreatForder", jsonEncode({'box': box, 'parentid': parentkey, 'name': dirname}));
       if (result["code"] == 0 && result["file_id"] != "") {
         return "success";
       }
@@ -122,10 +124,10 @@ class AliFile {
     return "error";
   }
 
-  static Future<String> apiRename(String key, String newname) async {
+  static Future<String> apiRename(String box, String key, String newname) async {
     try {
-      print('apiRename');
-      var result = await HttpHelper.postToServer("ApiRename", jsonEncode({'file_id': key, 'name': newname}));
+      var result =
+          await HttpHelper.postToServer("ApiRename", jsonEncode({'box': box, 'file_id': key, 'name': newname}));
       if (result["code"] == 0 && result["file_id"] != "") {
         return "success";
       }
@@ -135,10 +137,52 @@ class AliFile {
     return "error";
   }
 
-  static Future<int> apiTrashBatch(List<String> filelist) async {
+  static Future<int> apiRenameBatch(String box, List<String> keylist, List<String> namelist) async {
     try {
-      print('apiTrashBatch');
-      var result = await HttpHelper.postToServer("ApiTrashBatch", jsonEncode({'filelist': filelist}));
+      var result = await HttpHelper.postToServer(
+          "ApiRenameBatch", jsonEncode({'box': box, 'keylist': keylist, "namelist": namelist}));
+      if (result["code"] == 0) {
+        return result["count"];
+      }
+    } catch (e) {
+      print('apiRenameBatch ' + e.toString());
+    }
+    return 0;
+  }
+
+  // ignore: non_constant_identifier_names
+  static Future<List<String>> apiUncompress(String box, String file_id, String target_file_id, String password) async {
+    try {
+      var result = await HttpHelper.postToServer("ApiUncompress",
+          jsonEncode({'box': box, 'file_id': file_id, 'target_file_id': target_file_id, "password": password}));
+      if (result["code"] == 0 && result["file_id"] != "") {
+        return [result["state"], result["task_id"], result["domain_id"], result["file_id"]];
+      } else {
+        return [result["message"]];
+      }
+    } catch (e) {
+      print('apiUncompress ' + e.toString());
+    }
+    return ["error"];
+  }
+
+  // ignore: non_constant_identifier_names
+  static Future<List<String>> apiUncompressCheck(String box, String file_id, String domain_id, String task_id) async {
+    try {
+      var result = await HttpHelper.postToServer("ApiUncompressCheck",
+          jsonEncode({'box': box, 'file_id': file_id, 'domain_id': domain_id, "task_id": task_id}));
+      if (result["code"] == 0 && result["file_id"] != "") {
+        return [result["state"], result["progress"].toString()];
+      }
+    } catch (e) {
+      print('apiUncompressCheck ' + e.toString());
+    }
+    return ["error"];
+  }
+
+  static Future<int> apiTrashBatch(String box, List<String> filelist) async {
+    try {
+      var result = await HttpHelper.postToServer("ApiTrashBatch", jsonEncode({'box': box, 'filelist': filelist}));
       if (result["code"] == 0) {
         return result["count"];
       }
@@ -148,11 +192,10 @@ class AliFile {
     return 0;
   }
 
-  static Future<int> apiMoveBatch(List<String> filelist, String movetoid) async {
+  static Future<int> apiMoveBatch(String box, List<String> filelist, String movetobox, String movetoid) async {
     try {
-      print('apiMoveBatch');
-      var result =
-          await HttpHelper.postToServer("ApiMoveBatch", jsonEncode({'filelist': filelist, "movetoid": movetoid}));
+      var result = await HttpHelper.postToServer(
+          "ApiMoveBatch", jsonEncode({'box': box, 'filelist': filelist, "movetobox": movetobox, "movetoid": movetoid}));
       if (result["code"] == 0) {
         return result["count"];
       }
@@ -162,10 +205,25 @@ class AliFile {
     return 0;
   }
 
-  static Future<int> apiTrashDeleteBatch(List<String> filelist) async {
+  static Future<int> apiCopyBatch(
+      String box, String parentid, List<String> filelist, String copytobox, String copytoid) async {
     try {
-      print('apiTrashDeleteBatch');
-      var result = await HttpHelper.postToServer("ApiTrashDeleteBatch", jsonEncode({'filelist': filelist}));
+      var result = await HttpHelper.postToServer(
+          "ApiCopyBatch",
+          jsonEncode(
+              {'box': box, "parentid": parentid, 'filelist': filelist, "copytobox": copytobox, "copytoid": copytoid}));
+      if (result["code"] == 0) {
+        return result["filecount"];
+      }
+    } catch (e) {
+      print('apiCopyBatch ' + e.toString());
+    }
+    return 0;
+  }
+
+  static Future<int> apiTrashDeleteBatch(String box, List<String> filelist) async {
+    try {
+      var result = await HttpHelper.postToServer("ApiTrashDeleteBatch", jsonEncode({'box': box, 'filelist': filelist}));
       if (result["code"] == 0) {
         return result["count"];
       }
@@ -175,10 +233,10 @@ class AliFile {
     return 0;
   }
 
-  static Future<int> apiTrashRestoreBatch(List<String> filelist) async {
+  static Future<int> apiTrashRestoreBatch(String box, List<String> filelist) async {
     try {
-      print('apiTrashRestoreBatch');
-      var result = await HttpHelper.postToServer("ApiTrashRestoreBatch", jsonEncode({'filelist': filelist}));
+      var result =
+          await HttpHelper.postToServer("ApiTrashRestoreBatch", jsonEncode({'box': box, 'filelist': filelist}));
       if (result["code"] == 0) {
         return result["count"];
       }
@@ -188,11 +246,10 @@ class AliFile {
     return 0;
   }
 
-  static Future<int> apiFavorBatch(bool isfavor, List<String> filelist) async {
+  static Future<int> apiFavorBatch(String box, bool isfavor, List<String> filelist) async {
     try {
-      print('apiFavorBatch');
-      var result =
-          await HttpHelper.postToServer("ApiFavorBatch", jsonEncode({"isfavor": isfavor, 'filelist': filelist}));
+      var result = await HttpHelper.postToServer(
+          "ApiFavorBatch", jsonEncode({'box': box, "isfavor": isfavor, 'filelist': filelist}));
       if (result["code"] == 0) {
         return result["count"];
       }

@@ -21,6 +21,7 @@ type UploadSelectModel struct {
 	Name     string `json:"name"`
 	IsDir    bool   `json:"IsDir"`
 	ParentID string `json:"ParentID"`
+	BoxID    string `json:"BoxID"`
 }
 
 //UploadingList 上传中文件列表(显示小->大)
@@ -124,7 +125,7 @@ func UploadList() string {
 }
 
 //UploadFile 上传一堆文件(只有文件)
-func UploadFile(ParentID string, fileList []string) string {
+func UploadFile(boxid string, ParentID string, fileList []string) string {
 
 	if ParentID == "" {
 		ParentID = "root"
@@ -145,6 +146,7 @@ func UploadFile(ParentID string, fileList []string) string {
 				Path:     fileList[m],
 				Name:     fi.Name(),
 				ParentID: ParentID,
+				BoxID:    boxid,
 			}
 			SelectFileList = append(SelectFileList, &m)
 		}
@@ -153,7 +155,7 @@ func UploadFile(ParentID string, fileList []string) string {
 }
 
 //UploadDir 上传一个文件夹（只有一个）
-func UploadDir(ParentID string, DirPath string) string {
+func UploadDir(boxid string, ParentID string, DirPath string) string {
 
 	if ParentID == "" {
 		ParentID = "root"
@@ -166,12 +168,12 @@ func UploadDir(ParentID string, DirPath string) string {
 	var SelectFileList = make([]*UploadSelectModel, 0, 100)
 	fi, err := os.Stat(DirPath)
 	if err == nil && fi != nil && fi.IsDir() == true {
-		DirID, err3 := aliyun.UploadCreatForder(ParentID, fi.Name())
+		DirID, err3 := aliyun.UploadCreatForder(boxid, ParentID, fi.Name())
 		if err3 != nil {
 			return utils.ToErrorMessageJSON("网盘创建路径失败：" + fi.Name())
 		}
 		//遍历文件夹，获取文件树，并在网盘里创建对应的文件夹
-		SelectFileList, err = GetFilesWithDir(DirID, DirPath)
+		SelectFileList, err = GetFilesWithDir(boxid, DirID, DirPath)
 		if err != nil {
 			return utils.ToErrorMessageJSON(err.Error())
 		}
@@ -181,6 +183,50 @@ func UploadDir(ParentID string, DirPath string) string {
 
 	return UploadSelectFile(UserID, ParentID, SelectFileList)
 }
+
+func UploadFileAndDir(boxid string, ParentID string, fileList []string) string {
+
+	if ParentID == "" {
+		ParentID = "root"
+	}
+	UserID := aliyun.GetUserID()
+	if UserID == "" {
+		return utils.ToErrorMessageJSON("还没有登录阿里云盘账号")
+	}
+
+	var SelectFileList = make([]*UploadSelectModel, 0, 100)
+
+	LEN := len(fileList)
+	for m := 0; m < LEN; m++ {
+		fi, err := os.Stat(fileList[m])
+		if err == nil && fi != nil {
+			if fi.IsDir() == false {
+				m := UploadSelectModel{
+					Size:     fi.Size(),
+					Path:     fileList[m],
+					Name:     fi.Name(),
+					ParentID: ParentID,
+					BoxID:    boxid,
+				}
+				SelectFileList = append(SelectFileList, &m)
+			} else {
+				DirID, err3 := aliyun.UploadCreatForder(boxid, ParentID, fi.Name())
+				if err3 != nil {
+					return utils.ToErrorMessageJSON("网盘创建路径失败：" + fi.Name())
+				}
+				//遍历文件夹，获取文件树，并在网盘里创建对应的文件夹
+				clist, err := GetFilesWithDir(boxid, DirID, fileList[m])
+				if err != nil {
+					return utils.ToErrorMessageJSON(err.Error())
+				}
+				SelectFileList = append(SelectFileList, clist...)
+			}
+		}
+	}
+
+	return UploadSelectFile(UserID, ParentID, SelectFileList)
+}
+
 func UploadSelectFile(UserID string, ParentID string, SelectFileList []*UploadSelectModel) string {
 	LEN := len(SelectFileList)
 	if LEN == 0 {
@@ -192,7 +238,7 @@ func UploadSelectFile(UserID string, ParentID string, SelectFileList []*UploadSe
 	uploadinglist := make([]*UploadFileModel, 0, LEN)
 	for i := 0; i < LEN; i++ {
 		item := SelectFileList[i]
-		uploading, err := UploadingAdd(UserID, item.Path, item.Name, item.ParentID, item.Size, item.IsDir, dtime)
+		uploading, err := UploadingAdd(UserID, item.Path, item.Name, item.BoxID, item.ParentID, item.Size, item.IsDir, dtime)
 		if err == nil {
 			uploadinglist = append(uploadinglist, uploading)
 			filecount++
@@ -223,7 +269,7 @@ func UploadSelectFile(UserID string, ParentID string, SelectFileList []*UploadSe
 }
 
 // GetFilesWithDir 获取指定目录下的所有文件和目录
-func GetFilesWithDir(ParentID, DirPath string) (files []*UploadSelectModel, err error) {
+func GetFilesWithDir(boxid string, ParentID, DirPath string) (files []*UploadSelectModel, err error) {
 	dir, err := ioutil.ReadDir(DirPath)
 	if err != nil {
 		return nil, err
@@ -237,6 +283,7 @@ func GetFilesWithDir(ParentID, DirPath string) (files []*UploadSelectModel, err 
 			Path:     filepath.Join(DirPath, fi.Name()),
 			Name:     fi.Name(),
 			ParentID: ParentID,
+			BoxID:    boxid,
 		}
 		if fi.IsDir() {
 			m.IsDir = true

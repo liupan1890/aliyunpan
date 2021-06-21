@@ -3,13 +3,15 @@ import 'package:json_annotation/json_annotation.dart';
 @JsonSerializable(explicitToJson: true)
 class FileItem {
   FileItem();
-  static FileItem newFileItem(String key, String parentkey, String name) {
+  static FileItem newFileItem(String box, String key, String parentkey, String name) {
     return FileItem()
+      ..box = box
       ..key = key
       ..parentkey = parentkey
       ..name = name;
   }
 
+  String box = "";
   String key = "";
   String parentkey = "";
   String name = "";
@@ -30,8 +32,9 @@ class FileItem {
   bool get isWeiFa => status == "illegal";
   List<FileItem> children = [];
 
-  factory FileItem.fromJson(Map<String, dynamic> json) {
+  factory FileItem.fromJson(String box, Map<String, dynamic> json) {
     var model = FileItem();
+    model.box = box;
     var item = json['key'];
     model.key = item == null ? "" : item as String;
     item = json['name'];
@@ -57,7 +60,7 @@ class FileItem {
 
     var cdlist = json["children"];
     if (cdlist != null && cdlist.length > 0) {
-      model.children = cdlist.map((m) => new FileItem.fromJson(m)).toList();
+      model.children = cdlist.map((m) => new FileItem.fromJson(box, m)).toList();
     }
     return model;
   }

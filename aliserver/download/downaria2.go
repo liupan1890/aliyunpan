@@ -31,7 +31,10 @@ func MakeDownloadAria(item *DownFileModel) {
 }
 
 func openSaveFile(item *DownFileModel) (isexist bool, issame bool, err error) {
-	FileSave := filepath.Join(item.DownSavePath, item.Name)
+	if utils.IsWindows() && item.Name == "." {
+		return false, false, errors.New("windows不允许文件名.") //未下载，路径错误
+	}
+	FileSave := utils.JoinFilePath(item.DownSavePath, item.Name)
 	if utils.IsDir(FileSave) {
 		return false, false, errors.New("SaveFile cannot be dir") //未下载，路径错误
 	}
@@ -67,6 +70,9 @@ func openSaveFile(item *DownFileModel) (isexist bool, issame bool, err error) {
 //StartDownAsync StartDownAsync
 func StartDownAsync(item *DownFileModel, threadcount int) {
 	item.AutoGID = -1 //标识，不需要刷新进度,在下面Aria2Rpc.AddURI成功后UpdateStateDowning时会置0
+	if item.BoxID == "" {
+		item.BoxID = aliyun.GetUserBoxID() //修正旧版本升级
+	}
 
 	//处理文件夹
 	if item.Hash == "dir" {
@@ -74,7 +80,7 @@ func StartDownAsync(item *DownFileModel, threadcount int) {
 		os.MkdirAll(SavePathFull, 0777)
 		UserID := aliyun.GetUserID()
 		//遍历子文件，添加到下载队列，保存为已完成
-		clist, cerr := aliyun.ApiFileListAllForDown(item.Identity, "", false) //列出文件夹下的所有文件
+		clist, cerr := aliyun.ApiFileListAllForDown(item.BoxID, item.Identity, "", false) //列出文件夹下的所有文件
 		if cerr != nil {
 			UpdateStateError(item, "解析文件夹失败:"+cerr.Error())
 			return
@@ -101,7 +107,7 @@ func StartDownAsync(item *DownFileModel, threadcount int) {
 	url := ""
 	//无法访问资源，可能需要登录
 	for i := 0; i < 3; i++ {
-		downurl, _, err := aliyun.ApiFileDownloadUrl(item.Identity, 60*60*2)
+		downurl, _, err := aliyun.ApiFileDownloadUrl(item.BoxID, item.Identity, 60*60*2)
 		if err != nil {
 			fmt.Println("DownloadAddress", err)
 			time.Sleep(time.Duration(2) * time.Second)
@@ -124,6 +130,15 @@ func StartDownAsync(item *DownFileModel, threadcount int) {
 		_, ed := Aria2Rpc.TellStatus(item.GID)
 		if ed == nil {
 			Aria2Rpc.Remove(item.GID)
+		} else {
+			if !strings.Contains(ed.Error(), "is not found") {
+				log.Println("aria2cerror4", ed) //GID 8d3ccdcde3c2e241 is not found
+			}
+			if strings.Contains(ed.Error(), "timeout awaiting response headers") {
+				//aria2c正忙，稍后再重试
+				UpdateStateError(item, "aria2c正忙稍后重试")
+				return
+			}
 		}
 	}
 
@@ -141,11 +156,19 @@ func StartDownAsync(item *DownFileModel, threadcount int) {
 	optionData["referer"] = data.Config.AliDownReferer
 	optionData["user-agent"] = data.Config.AliDownAgent
 	optionData["check-certificate"] = "false"
+	optionData["file-allocation"] = "trunc"
 	if data.Setting.DownSha1Check && item.Hash != "" {
 		optionData["checksum"] = "sha-1=" + item.Hash
 	}
 
-	infos, _ := Aria2Rpc.TellActive("gid", "status", "totalLength", "completedLength", "downloadSpeed")
+	infos, ed2 := Aria2Rpc.TellActive("gid", "status", "totalLength", "completedLength", "downloadSpeed")
+
+	if ed2 != nil {
+		log.Println("aria2cerror5", ed2)
+		UpdateStateError(item, "aria2c正忙稍后重试")
+		return
+	}
+
 	for j := 0; j < len(infos); j++ {
 		if infos[j].Gid[0:10] == item.GID[0:10] {
 			Aria2Rpc.Remove(infos[j].Gid)
@@ -156,14 +179,10 @@ func StartDownAsync(item *DownFileModel, threadcount int) {
 	_, erradd := Aria2Rpc.AddURI(uriData, optionData)
 
 	if erradd != nil {
+		log.Println("aria2cerroradd", erradd)
 		msg := "创建aria任务失败:" + erradd.Error()
 		if strings.Contains(msg, "No URI to") {
 			msg = "创建aria任务失败，稍后自动重试"
-		}
-		if strings.Contains(msg, "Post ") {
-			log.Println("aria2Rpc.AddURI: ", msg, erradd)
-			Aria2Rpc.ForceShutdown()
-			msg = "链接到aria失败，稍后自动重试 " + msg
 		}
 		UpdateStateError(item, msg)
 		return

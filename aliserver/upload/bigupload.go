@@ -127,7 +127,7 @@ func (worker *BigUploadWorker) StartUploadSync() {
 
 	if worker.UploadInfo.FileFullPath == "miaochuan" {
 		//单独执行秒传
-		same, _, _, err := aliyun.UploadCreatFile(worker.UploadInfo.ParentID, worker.UploadInfo.FileName, worker.UploadInfo.FileSize, worker.UploadInfo.FileHash)
+		same, _, _, _, err := aliyun.UploadCreatFile(worker.UploadInfo.BoxID, worker.UploadInfo.ParentID, worker.UploadInfo.FileName, worker.UploadInfo.FileSize, worker.UploadInfo.FileHash)
 		if err != nil {
 			worker._UpdateStateError(err.Error())
 		} else if same {
@@ -141,13 +141,13 @@ func (worker *BigUploadWorker) StartUploadSync() {
 
 	if worker.UploadInfo.FileHash == "dir" {
 		//单独执行文件夹
-		DirID, err3 := aliyun.UploadCreatForder(worker.UploadInfo.ParentID, worker.UploadInfo.FileName)
+		DirID, err3 := aliyun.UploadCreatForder(worker.UploadInfo.BoxID, worker.UploadInfo.ParentID, worker.UploadInfo.FileName)
 		if err3 != nil {
 			worker._UpdateStateError("云盘创建路径失败：" + worker.UploadInfo.FileName)
 			return
 		}
 		//遍历文件夹，获取文件树，并在网盘里创建对应的文件夹
-		SelectFileList, err := GetFilesWithDir(DirID, worker.UploadInfo.FileFullPath)
+		SelectFileList, err := GetFilesWithDir(worker.UploadInfo.BoxID, DirID, worker.UploadInfo.FileFullPath)
 		if err != nil {
 			worker._UpdateStateError(err.Error())
 			return
@@ -204,7 +204,7 @@ func (worker *BigUploadWorker) StartUploadSync() {
 	}
 	//这里是，联网获取阿里的UploadID，检测是否能秒传
 	if worker.UploadInfo.UploadID == "" {
-		same, uploadid, fileid, err := aliyun.UploadCreatFile(worker.UploadInfo.ParentID, worker.UploadInfo.FileName, worker.UploadInfo.FileSize, worker.UploadInfo.FileHash)
+		same, uploadid, fileid, _, err := aliyun.UploadCreatFile(worker.UploadInfo.BoxID, worker.UploadInfo.ParentID, worker.UploadInfo.FileName, worker.UploadInfo.FileSize, worker.UploadInfo.FileHash)
 		if err != nil {
 			worker._UpdateStateError(err.Error())
 			worker.finishUpload()
@@ -302,7 +302,7 @@ func (worker *BigUploadWorker) finishUpload() {
 
 	if worker.IsCompleted && worker.IsMakeFile == false { //合并文件
 		worker.FailedMessage = "正在合并文件"
-		errmk := aliyun.UploadFileComplete(worker.UploadInfo.ParentID, worker.UploadInfo.FileName, worker.UploadInfo.FileID, worker.UploadInfo.UploadID)
+		errmk := aliyun.UploadFileComplete(worker.UploadInfo.BoxID, worker.UploadInfo.ParentID, worker.UploadInfo.FileName, worker.UploadInfo.FileID, worker.UploadInfo.UploadID)
 		worker.FailedMessage = ""
 		//fmt.Println(time.Now(), "MakeFile", errmk)
 		if errmk != nil {
@@ -412,7 +412,7 @@ func blockWorkerUpload(worker *BigUploadWorker, blockIndex int) (err error) {
 		return errors.New("upload Read Buff From File Error")
 	}
 	//联网读取url
-	uploadurl, err := aliyun.UploadFilePartUrl(worker.UploadInfo.ParentID, worker.UploadInfo.FileName, worker.UploadInfo.FileID, worker.UploadInfo.UploadID, blockIndex+1, blockSize)
+	uploadurl, err := aliyun.UploadFilePartUrl(worker.UploadInfo.BoxID, worker.UploadInfo.ParentID, worker.UploadInfo.FileName, worker.UploadInfo.FileID, worker.UploadInfo.UploadID, blockIndex+1, blockSize)
 	if err != nil {
 		return err
 	}

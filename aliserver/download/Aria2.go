@@ -7,6 +7,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"strings"
 	"time"
 )
 
@@ -53,7 +54,7 @@ func Aria2Connect() error {
 			option["max-overall-download-limit"] = 0
 		}
 		Aria2Rpc.ChangeGlobalOption(option)
-		log.Println("connectTo", Aria2Server, version.Version)
+		log.Println("connectSuccess", Aria2Server, version.Version)
 
 		go ariaDisconnectionMonitoring()
 	}
@@ -87,8 +88,12 @@ func ariaDisconnectionMonitoring() {
 		time.Sleep(time.Second * time.Duration(2))
 
 		_, terr := Aria2Rpc.GetVersion()
+		if terr != nil && strings.Index(terr.Error(), "timeout awaiting response headers") > 0 {
+			//aria正忙(分配硬盘空间)
+			terr = nil
+		}
 		if terr != nil {
-			log.Println("ariaDisconnect")
+			log.Println("ariaDisconnect", terr.Error())
 			fmt.Println("ariaDisconnect")
 			Aria2Rpc.Close()
 			LaunchAria2c()

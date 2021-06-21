@@ -47,9 +47,10 @@ class GoServer {
             hideCloseButton: true,
             duration: null);
       } else {
-        Global.userState.loadUser();
+        Global.userState.loadUser(true);
         Global.pageDownState.runTimer();
         Global.panFileState.runTimer();
+        Global.xiangceFileState.runTimer();
         Global.pageRssMiaoChuanState.refreshLink();
       }
       return true;

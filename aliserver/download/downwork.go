@@ -6,7 +6,6 @@ import (
 	"aliserver/utils"
 	"encoding/json"
 	"errors"
-	"fmt"
 	"log"
 	"os"
 	"path/filepath"
@@ -119,7 +118,7 @@ func DownedAdd(Item *DownFileModel) error {
 }
 
 //DowningAdd 创建一个下载任务
-func DowningAdd(userid, savepath, identity, name, path, hash string, size int64, dtime int64) (downing *DownFileModel, err error) {
+func DowningAdd(userid, savepath, boxid string, identity, name, path, hash string, size int64, dtime int64) (downing *DownFileModel, err error) {
 	defer func() {
 		if errr := recover(); errr != nil {
 			log.Println("DowningAddError ", " error=", errr)
@@ -151,6 +150,7 @@ func DowningAdd(userid, savepath, identity, name, path, hash string, size int64,
 
 		Name:     name,
 		Size:     size,
+		BoxID:    boxid,
 		Identity: identity,
 		//Path:     path,
 		Hash: hash,
@@ -304,8 +304,18 @@ func downingMakeDowning(TaskCountMax int, DowningCount int) {
 func downingUpdateProgress() {
 
 	//1. 读取tellActive获得list
-	infos, _ := Aria2Rpc.TellActive("gid", "status", "totalLength", "completedLength", "downloadSpeed", "errorCode", "errorMessage")
-	infos2, _ := Aria2Rpc.TellStopped(0, 100, "gid", "status", "totalLength", "completedLength", "downloadSpeed", "errorCode", "errorMessage")
+	infos, e1 := Aria2Rpc.TellActive("gid", "status", "totalLength", "completedLength", "downloadSpeed", "errorCode", "errorMessage")
+	infos2, e2 := Aria2Rpc.TellStopped(0, 100, "gid", "status", "totalLength", "completedLength", "downloadSpeed", "errorCode", "errorMessage")
+
+	if e1 != nil {
+		log.Println("aria2cerror1", e1, infos)
+	}
+	if e2 != nil {
+		log.Println("aria2cerror2", e2, infos2)
+	}
+	if e1 != nil || e2 != nil {
+		return //出错了跳过更新
+	}
 	infos = append(infos, infos2...)
 	//2. 遍历队列，对downing的item，匹配list更新下载速度，不存在就tellStatus(失败、已完成)
 	DataDowningList := DataDowningReadCopy()
@@ -328,6 +338,9 @@ func downingUpdateProgress() {
 				if err2 == nil && info.Gid == item.GID {
 					isFind = true
 					UpdateStateTell(item, info)
+				}
+				if err2 != nil {
+					log.Println("aria2cerror3", err2, info)
 				}
 			}
 
@@ -356,11 +369,11 @@ func UpdateStateTellStatus(GID string, Status string) {
 
 	if Status == "error" {
 		info2, err2 := Aria2Rpc.TellStatus(GID, "gid", "status", "totalLength", "completedLength", "downloadSpeed", "errorCode", "errorMessage")
-		fmt.Println("error", info2)
 		if err2 == nil {
 			info.ErrorCode = info2.ErrorCode
 			info.ErrorMessage = info2.ErrorMessage
 		} else {
+			log.Println("aria2cerror6", err2, info2)
 			info.ErrorCode = "-1"
 			info.ErrorMessage = "下载失败，稍后自动重试"
 		}
@@ -513,7 +526,7 @@ func oncomplete(item *DownFileModel) {
 	item.AutoGID = -1 //标识，不需要刷新进度
 	fileSaveTD := filepath.Join(item.DownSavePath, item.Name+".td")
 	fileSaveAria := fileSaveTD + ".aria2"
-	fileSave := filepath.Join(item.DownSavePath, item.Name)
+	fileSave := utils.JoinFilePath(item.DownSavePath, item.Name) //修正文件名.
 	if !utils.PathExists(fileSave) {
 		err := os.Rename(fileSaveTD, fileSave)
 		if err != nil { //移动文件时出错

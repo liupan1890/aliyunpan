@@ -51,7 +51,7 @@ class PageDownState extends ChangeNotifier {
   Future<bool> refreshDownByTimer(bool isTimer) async {
     try {
       if (isTimer) {
-        if (Global.userState.userNavPageIndex != 2) return false;
+        if (Global.userState.userNavPageIndex != 3) return false;
         if (!Global.userState.isLogin) return false;
         double subtime = DateTime.now().millisecondsSinceEpoch / 1000 - pageRefreshTime; //相差几秒
         if (getPageName == 'downing') {
@@ -64,8 +64,6 @@ class PageDownState extends ChangeNotifier {
           return false; //已上传2秒刷新一次
         }
       }
-      var dt1 = DateTime.now().millisecondsSinceEpoch;
-      print('refreshDownByTimer ' + dt1.toString());
       var downdata = PageRightDownModel();
       //联网加载
       if (getPageName == 'downing') {

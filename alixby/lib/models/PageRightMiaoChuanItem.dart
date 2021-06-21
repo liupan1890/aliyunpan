@@ -21,7 +21,7 @@ class PageRightMiaoChuanItem {
     m.logTime = json['LogTime'] as int;
     var dt2 = new DateTime.fromMillisecondsSinceEpoch(m.logTime * 1000);
     m.logTimeStr =
-        "${dt2.year.toString()}-${dt2.month.toString().padLeft(2, '0')}-${dt2.day.toString().padLeft(2, '0')} ${dt2.hour.toString().padLeft(2, '0')}:${dt2.minute.toString().padLeft(2, '0')}:${dt2.second.toString().padLeft(2, '0')}";
+        "${dt2.year.toString()}-${dt2.month.toString().padLeft(2, '0')}-${dt2.day.toString().padLeft(2, '0')}\n${dt2.hour.toString().padLeft(2, '0')}:${dt2.minute.toString().padLeft(2, '0')}:${dt2.second.toString().padLeft(2, '0')}";
     return m;
   }
 }

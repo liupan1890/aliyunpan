@@ -444,6 +444,10 @@ class MIcons {
         return ui;
       case 'weifa':
         return weifa;
+      case 'safebox':
+        return safebox;
+      case 'xuanzhuan':
+        return xuanzhuan;
     }
 
     return file_file;
@@ -740,4 +744,6 @@ class MIcons {
   static const IconData file_xsl = IconData(0xe657, fontFamily: 'iconfont');
   static const IconData ui = IconData(0xe600, fontFamily: 'iconfont');
   static const IconData weifa = IconData(0xe601, fontFamily: 'iconfont');
+  static const IconData safebox = IconData(0xe634, fontFamily: 'iconfont');
+  static const IconData xuanzhuan = IconData(0xe68a, fontFamily: 'iconfont');
 }

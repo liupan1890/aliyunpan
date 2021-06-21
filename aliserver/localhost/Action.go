@@ -111,77 +111,131 @@ func HookAction(url string, postdata string) (ishook bool, hookresult string) {
 		refreshToken := gjson.Get(postdata, "refreshToken").String()
 		return true, aliyun.ApiTokenRefresh(refreshToken)
 	case "ApiFileList":
+		boxid := GetBoxID(gjson.Get(postdata, "box").String())
 		parentid := gjson.Get(postdata, "parentid").String()
 		marker := gjson.Get(postdata, "marker").String()
-		return true, HookActionFileList(parentid, marker)
+		return true, HookActionFileList(boxid, parentid, marker)
 	case "ApiDirList":
+		boxid := GetBoxID(gjson.Get(postdata, "box").String())
 		parentid := gjson.Get(postdata, "parentid").String()
-		return true, aliyun.ApiDirList(parentid)
+		return true, aliyun.ApiDirList(boxid, parentid)
 	case "ApiCreatForder":
+		boxid := GetBoxID(gjson.Get(postdata, "box").String())
 		parentid := gjson.Get(postdata, "parentid").String()
 		name := gjson.Get(postdata, "name").String()
-		return true, aliyun.ApiCreatForder(parentid, name)
+		return true, aliyun.ApiCreatForder(boxid, parentid, name)
 	case "ApiRename":
+		boxid := GetBoxID(gjson.Get(postdata, "box").String())
 		file_id := gjson.Get(postdata, "file_id").String()
 		name := gjson.Get(postdata, "name").String()
-		return true, aliyun.ApiRename(file_id, name)
-	case "ApiMoveBatch": //移动文件功能还没做
+		return true, aliyun.ApiRename(boxid, file_id, name)
+	case "ApiRenameBatch":
+		boxid := GetBoxID(gjson.Get(postdata, "box").String())
+		keylist := gjson.Get(postdata, "keylist").Array()
+		keylist2 := make([]string, len(keylist))
+		for i := 0; i < len(keylist); i++ {
+			keylist2[i] = keylist[i].String()
+		}
+		namelist := gjson.Get(postdata, "namelist").Array()
+		namelist2 := make([]string, len(namelist))
+		for i := 0; i < len(namelist); i++ {
+			namelist2[i] = namelist[i].String()
+		}
+		return true, aliyun.ApiRenameBatch(boxid, keylist2, namelist2)
+
+	case "ApiUncompress":
+		boxid := GetBoxID(gjson.Get(postdata, "box").String())
+		file_id := gjson.Get(postdata, "file_id").String()
+		target_file_id := gjson.Get(postdata, "target_file_id").String()
+		password := gjson.Get(postdata, "password").String()
+		return true, aliyun.ApiUncompress(boxid, file_id, target_file_id, password)
+	case "ApiUncompressCheck":
+		boxid := GetBoxID(gjson.Get(postdata, "box").String())
+		file_id := gjson.Get(postdata, "file_id").String()
+		domain_id := gjson.Get(postdata, "domain_id").String()
+		task_id := gjson.Get(postdata, "task_id").String()
+		return true, aliyun.ApiUncompressCheck(boxid, domain_id, file_id, task_id)
+	case "ApiMoveBatch":
+		boxid := GetBoxID(gjson.Get(postdata, "box").String())
+		movetobox := GetBoxID(gjson.Get(postdata, "movetobox").String())
 		movetoid := gjson.Get(postdata, "movetoid").String()
 		filelist := gjson.Get(postdata, "filelist").Array()
 		list := make([]string, len(filelist))
 		for i := 0; i < len(filelist); i++ {
 			list[i] = filelist[i].String()
 		}
-		return true, aliyun.ApiMoveBatch(movetoid, list)
+		return true, aliyun.ApiMoveBatch(boxid, list, movetobox, movetoid)
+	case "ApiCopyBatch":
+		boxid := GetBoxID(gjson.Get(postdata, "box").String())
+		copytobox := GetBoxID(gjson.Get(postdata, "copytobox").String())
+		copytoid := gjson.Get(postdata, "copytoid").String()
+		parentid := gjson.Get(postdata, "parentid").String()
+		filelist := gjson.Get(postdata, "filelist").Array()
+		list := make([]string, len(filelist))
+		for i := 0; i < len(filelist); i++ {
+			list[i] = filelist[i].String()
+		}
+		return true, link.GoCopyCreat(boxid, parentid, list, copytobox, copytoid)
 	case "ApiTrashBatch":
+		boxid := GetBoxID(gjson.Get(postdata, "box").String())
 		filelist := gjson.Get(postdata, "filelist").Array()
 		list := make([]string, len(filelist))
 		for i := 0; i < len(filelist); i++ {
 			list[i] = filelist[i].String()
 		}
-		return true, aliyun.ApiTrashBatch(list)
+		return true, aliyun.ApiTrashBatch(boxid, list)
 	case "ApiTrashDeleteBatch":
+		boxid := GetBoxID(gjson.Get(postdata, "box").String())
 		filelist := gjson.Get(postdata, "filelist").Array()
 		list := make([]string, len(filelist))
 		for i := 0; i < len(filelist); i++ {
 			list[i] = filelist[i].String()
 		}
-		return true, aliyun.ApiTrashDeleteBatch(list)
+		return true, aliyun.ApiTrashDeleteBatch(boxid, list)
 	case "ApiTrashRestoreBatch":
+		boxid := GetBoxID(gjson.Get(postdata, "box").String())
 		filelist := gjson.Get(postdata, "filelist").Array()
 		list := make([]string, len(filelist))
 		for i := 0; i < len(filelist); i++ {
 			list[i] = filelist[i].String()
 		}
-		return true, aliyun.ApiTrashRestoreBatch(list)
+		return true, aliyun.ApiTrashRestoreBatch(boxid, list)
 	case "ApiTrashFileList":
+		boxid := GetBoxID(gjson.Get(postdata, "box").String())
 		marker := gjson.Get(postdata, "marker").String()
-		return true, aliyun.ApiTrashFileList(marker)
+		return true, aliyun.ApiTrashFileList(boxid, marker)
 	case "ApiFavorFileList":
+		boxid := GetBoxID(gjson.Get(postdata, "box").String())
 		marker := gjson.Get(postdata, "marker").String()
-		return true, aliyun.ApiFavorFileList(marker)
+		return true, aliyun.ApiFavorFileList(boxid, marker)
 	case "ApiFavor":
+		boxid := GetBoxID(gjson.Get(postdata, "box").String())
 		file_id := gjson.Get(postdata, "file_id").String()
 		isfavor := gjson.Get(postdata, "isfavor").Bool()
-		return true, aliyun.ApiFavor(file_id, isfavor)
+		return true, aliyun.ApiFavor(boxid, file_id, isfavor)
 	case "ApiFavorBatch":
+		boxid := GetBoxID(gjson.Get(postdata, "box").String())
 		filelist := gjson.Get(postdata, "filelist").Array()
 		list := make([]string, len(filelist))
 		for i := 0; i < len(filelist); i++ {
 			list[i] = filelist[i].String()
 		}
 		isfavor := gjson.Get(postdata, "isfavor").Bool()
-		return true, aliyun.ApiFavorBatch(list, isfavor)
+		return true, aliyun.ApiFavorBatch(boxid, list, isfavor)
 	case "GoPlay":
+		boxid := GetBoxID(gjson.Get(postdata, "box").String())
 		file_id := gjson.Get(postdata, "file_id").String()
-		return true, aliyun.ApiPlay(file_id)
+		return true, aliyun.ApiPlay(boxid, file_id)
 	case "GoImage":
+		boxid := GetBoxID(gjson.Get(postdata, "box").String())
 		file_id := gjson.Get(postdata, "file_id").String()
-		return true, aliyun.ApiImage(file_id)
+		return true, aliyun.ApiImage(boxid, file_id)
 	case "GoText":
+		boxid := GetBoxID(gjson.Get(postdata, "box").String())
 		file_id := gjson.Get(postdata, "file_id").String()
-		return true, aliyun.ApiText(file_id)
+		return true, aliyun.ApiText(boxid, file_id)
 	case "GoDownFile":
+		boxid := GetBoxID(gjson.Get(postdata, "box").String())
 		filelist := gjson.Get(postdata, "filelist").Array()
 		list := make([]string, len(filelist))
 		for i := 0; i < len(filelist); i++ {
@@ -189,7 +243,7 @@ func HookAction(url string, postdata string) (ishook bool, hookresult string) {
 		}
 		savepath := gjson.Get(postdata, "savepath").String() //DownSavePath+RootPath 下载保存位置+该文件相对root的路径
 		parentid := gjson.Get(postdata, "parentid").String() //D:\Down\     +新建文件夹\002\    + filelist[name]
-		return true, download.DownFileMutil(parentid, savepath, list)
+		return true, download.DownFileMutil(boxid, parentid, savepath, list)
 	case "GoDowningList":
 		return true, download.DowningList()
 	case "GoDownedList":
@@ -227,17 +281,28 @@ func HookAction(url string, postdata string) (ishook bool, hookresult string) {
 		return true, download.DownedForder(downid)
 
 	case "GoUploadFile":
+		boxid := GetBoxID(gjson.Get(postdata, "box").String())
 		filelist := gjson.Get(postdata, "filelist").Array()
 		list := make([]string, len(filelist))
 		for i := 0; i < len(filelist); i++ {
 			list[i] = filelist[i].String()
 		}
 		parentid := gjson.Get(postdata, "parentid").String()
-		return true, upload.UploadFile(parentid, list)
+		return true, upload.UploadFile(boxid, parentid, list)
 	case "GoUploadDir":
+		boxid := GetBoxID(gjson.Get(postdata, "box").String())
 		parentid := gjson.Get(postdata, "parentid").String()
 		dirpath := gjson.Get(postdata, "dirpath").String()
-		return true, upload.UploadDir(parentid, dirpath)
+		return true, upload.UploadDir(boxid, parentid, dirpath)
+	case "GoUploadFileAndDir":
+		boxid := GetBoxID(gjson.Get(postdata, "box").String())
+		filelist := gjson.Get(postdata, "filelist").Array()
+		list := make([]string, len(filelist))
+		for i := 0; i < len(filelist); i++ {
+			list[i] = filelist[i].String()
+		}
+		parentid := gjson.Get(postdata, "parentid").String()
+		return true, upload.UploadFileAndDir(boxid, parentid, list)
 	case "GoUploadingList":
 		return true, upload.UploadingList()
 	case "GoUploadList":
@@ -283,44 +348,56 @@ func HookAction(url string, postdata string) (ishook bool, hookresult string) {
 	case "GoLinkDelete":
 		linkstr := gjson.Get(postdata, "link").String()
 		return true, link.GoLinkDelete(linkstr)
-	case "GoLinkCreat":
-		ispublic := gjson.Get(postdata, "ispublic").Bool()
+	case "GoLinkCreatFile":
+		boxid := GetBoxID(gjson.Get(postdata, "box").String())
+		filename := gjson.Get(postdata, "filename").String()
 		jianjie := gjson.Get(postdata, "jianjie").String()
-		password := gjson.Get(postdata, "password").String()
-		outday := gjson.Get(postdata, "outday").String()
-		outsave := gjson.Get(postdata, "outsave").String()
 		parentid := gjson.Get(postdata, "parentid").String()
 		filelist := gjson.Get(postdata, "filelist").Array()
 		list := make([]string, len(filelist))
 		for i := 0; i < len(filelist); i++ {
 			list[i] = filelist[i].String()
 		}
-		return true, link.GoLinkCreat(jianjie, ispublic, password, outday, outsave, parentid, list)
+		return true, link.GoLinkCreatFile(filename, jianjie, boxid, parentid, list)
 
 	case "GoLinkParse":
 		linkstr := gjson.Get(postdata, "link").String()
 		password := gjson.Get(postdata, "password").String()
-		return true, link.GoLinkParse(linkstr, password)
+		ispublic := gjson.Get(postdata, "ispublic").Bool()
+		return true, link.GoLinkParse(linkstr, password, ispublic)
 
 	case "GoLinkUpload":
+		boxid := GetBoxID(gjson.Get(postdata, "box").String())
 		parentid := gjson.Get(postdata, "parentid").String()
 		linkstr := gjson.Get(postdata, "linkstr").String()
-		return true, link.GoLinkUpload(parentid, linkstr)
+		return true, link.GoLinkUpload(boxid, parentid, linkstr)
+
+	case "GoLinkSearch":
+		search := gjson.Get(postdata, "search").String()
+		pageindex := gjson.Get(postdata, "pageindex").Int()
+		return true, link.GoLinkSearch(search, pageindex)
+
 	}
 	return false, ""
 }
 
 //HookActionFileList 特殊处理 1.识别回收站、收藏夹、保险箱、最近访问 2.出错自动重试3次
-func HookActionFileList(parentid string, marker string) string {
+func HookActionFileList(boxid, parentid string, marker string) string {
 	jsonstr := ""
 	for i := 0; i < 3; i++ {
 		if parentid == "trash" {
-			jsonstr = aliyun.ApiTrashFileList(marker)
+			jsonstr = aliyun.ApiTrashFileList(boxid, marker)
 			if len(jsonstr) > 60 {
 				break
 			}
 		} else if parentid == "favorite" {
-			jsonstr = aliyun.ApiFavorFileList(marker)
+			jsonstr = aliyun.ApiFavorFileList(boxid, marker)
+			if len(jsonstr) > 60 {
+				break
+			}
+		} else if strings.HasPrefix(parentid, "xiangce:") {
+			parentid = parentid[len("xiangce:"):]
+			jsonstr = aliyun.ApiFileList(boxid, parentid, marker)
 			if len(jsonstr) > 60 {
 				break
 			}
@@ -331,11 +408,22 @@ func HookActionFileList(parentid string, marker string) string {
 			jsonstr = `{"code":0,"message":"success","next_marker":"","items":[]}`
 			break
 		} else {
-			jsonstr = aliyun.ApiFileList(parentid, marker)
+			jsonstr = aliyun.ApiFileList(boxid, parentid, marker)
 			if len(jsonstr) > 60 {
 				break
 			}
 		}
 	}
 	return jsonstr
+}
+
+func GetBoxID(box string) string {
+	if box == "box" {
+		return aliyun.GetUserBoxID()
+	} else if box == "sbox" {
+		return aliyun.GetUserSBoxID()
+	} else if box == "xiangce" {
+		return aliyun.GetUserXiangCeID()
+	}
+	return ""
 }

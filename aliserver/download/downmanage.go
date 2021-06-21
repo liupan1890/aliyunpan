@@ -112,7 +112,7 @@ func DownedList() string {
 //DownFileMutil 下载一堆文件
 //SavePath= DownSavePath+RootPath 下载保存位置 + 该文件相对root的路径 + filelist里每个文件名
 //RealPath= D:\Down\    +新建文件夹\002\    + filelist[name]
-func DownFileMutil(ParentID string, SavePath string, keylist []string) string {
+func DownFileMutil(boxid string, ParentID string, SavePath string, keylist []string) string {
 	if SavePath == "" {
 		return utils.ToErrorMessageJSON("没有提供下载保存位置")
 	}
@@ -136,7 +136,7 @@ func DownFileMutil(ParentID string, SavePath string, keylist []string) string {
 			if fileid != "" {
 				wg.Add(1)
 				go func(fileid string) {
-					finfo, ferr := aliyun.ApiFileGetUrl(fileid, "")
+					finfo, ferr := aliyun.ApiFileGetUrl(boxid, fileid, "")
 					if ferr != nil {
 						errnum++
 					} else {
@@ -154,7 +154,7 @@ func DownFileMutil(ParentID string, SavePath string, keylist []string) string {
 		}
 	} else {
 		//文件数量较多，批量读取文件信息
-		flist, ferr := aliyun.ApiFileListAllForDown(ParentID, "", false)
+		flist, ferr := aliyun.ApiFileListAllForDown(boxid, ParentID, "", false)
 		if ferr != nil {
 			return utils.ToErrorMessageJSON("列出文件信息时出错")
 		}
@@ -195,7 +195,7 @@ func _DownFileAddList(UserID string, SavePath string, list []*aliyun.FileUrlMode
 			hash = "dir"
 			size = 0
 		}
-		downing, err := DowningAdd(UserID, SavePath, info.P_file_id, name, path, hash, size, dtime)
+		downing, err := DowningAdd(UserID, SavePath, info.P_drive_id, info.P_file_id, name, path, hash, size, dtime)
 		if err == nil {
 			downinglist = append(downinglist, downing)
 			filecount++

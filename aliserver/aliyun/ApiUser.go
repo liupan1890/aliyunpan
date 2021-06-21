@@ -20,10 +20,22 @@ func CheckUserID(userid string) bool {
 	return _user.UserID == userid
 }
 
+func GetUserBoxID() string {
+	return _user.UserToken.P_default_drive_id
+}
+func GetUserSBoxID() string {
+	return _user.UserToken.P_default_sbox_drive_id
+}
+func GetUserXiangCeID() string {
+	return _user.UserXiangCeID
+}
+
 var _user = data.UserLoginModel{
 	UserLoginType:    "",
 	UserID:           "",
 	UserName:         "",
+	UserFace:         "",
+	UserXiangCeID:    "",
 	UserAccessToken:  "",
 	UserRefreshToken: "",
 	UserToken:        data.UserTokenModel{},
@@ -34,7 +46,9 @@ func SetUserToken(logintype string, token data.UserTokenModel) {
 	var userLogin = data.UserLoginModel{
 		UserLoginType:    logintype,
 		UserID:           token.P_user_id,
-		UserName:         token.P_user_name,
+		UserName:         token.P_nick_name, //昵称
+		UserFace:         token.P_avatar,    //头像
+		UserXiangCeID:    "",                //相册ID
 		UserAccessToken:  token.P_access_token,
 		UserRefreshToken: token.P_refresh_token,
 		UserToken:        token,
@@ -43,13 +57,16 @@ func SetUserToken(logintype string, token data.UserTokenModel) {
 	if _user.UserID == token.P_user_id {
 		userLogin.UserInfo = _user.UserInfo
 	}
-	_user = userLogin
+	_user = userLogin                        //先登录
+	_user.UserXiangCeID = ApiUserXiangCeID() //后相册
+
 	b, _ := json.Marshal(_user)
 	data.SetUser(_user.UserID, string(b))
 }
 
 func GetAuthorization() string {
 	return "User-Agent: Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/86.0.4240.198 Safari/537.36\n" +
+		"Origin: https://www.aliyundrive.com\n" +
 		"Referer: https://www.aliyundrive.com/\n" +
 		"Authorization: " + _user.UserToken.P_token_type + " " + _user.UserToken.P_access_token
 }
@@ -102,9 +119,73 @@ func ApiUserInfo() (retjsonstr string) {
 		data.SetUser(_user.UserID, string(b))
 	}
 
+	if _user.UserXiangCeID == "" {
+		_user.UserXiangCeID = ApiUserXiangCeID()
+	}
+
 	var infostr = `{"userID":"` + _user.UserID + `","userName":"` + utils.ToJSONString(_user.UserName) + `","panUsed":"` + _user.UserInfo.P_used_size + `","panTotal":"` + _user.UserInfo.P_total_size + `",`
-	infostr = infostr + `"drive_size":"` + _user.UserInfo.P_drive_size + `","safe_box_size":"` + _user.UserInfo.P_safe_box_size + `","upload_size":"` + _user.UserInfo.P_upload_size + `"}`
+	infostr = infostr + `"drive_size":"` + _user.UserInfo.P_drive_size + `","safe_box_size":"` + _user.UserInfo.P_safe_box_size + `","upload_size":"` + _user.UserInfo.P_upload_size + `","userFace":"` + utils.ToJSONString(_user.UserFace) + `"}`
 	return utils.ToSuccessJSON("info", infostr)
+}
+
+func ApiUserXiangCeID() (driveId string) {
+
+	defer func() {
+		if errr := recover(); errr != nil {
+			log.Println("ApiUserXiangCeIDError ", " error=", errr)
+			driveId = ""
+		}
+	}()
+
+	if _user.UserID == "" {
+		return ""
+	}
+	var apiurl = "https://api.aliyundrive.com/adrive/v1/user/albums_info"
+	//{"code":"200","message":"success","data":{"driveId":"","driveName":"alibum"},"resultCode":"200"}
+	code, _, body := utils.PostHTTPString(apiurl, GetAuthorization(), "{}")
+	if code == 401 {
+		//UserAccessToken 失效了，尝试刷新一次
+		ApiTokenRefresh("")
+		//刷新完了，重新尝试一遍
+		code, _, body = utils.PostHTTPString(apiurl, GetAuthorization(), "{}")
+	}
+
+	if code != 200 || !gjson.Valid(body) {
+		return ""
+	}
+	var info = gjson.Parse(body)
+	driveId = info.Get("data.driveId").String()
+	return driveId
+}
+
+func ApiUserSboxID() (driveId string) {
+
+	defer func() {
+		if errr := recover(); errr != nil {
+			log.Println("ApiUserSboxError ", " error=", errr)
+			driveId = ""
+		}
+	}()
+
+	if _user.UserID == "" {
+		return ""
+	}
+	var apiurl = "https://api.aliyundrive.com/v2/sbox/get"
+	//{"drive_id":"","sbox_used_size":5725023,"sbox_total_size":53687091200,"recommend_vip":"svip","pin_setup":true,"locked":false,"insurance_enabled":false}
+	code, _, body := utils.PostHTTPString(apiurl, GetAuthorization(), "{}")
+	if code == 401 {
+		//UserAccessToken 失效了，尝试刷新一次
+		ApiTokenRefresh("")
+		//刷新完了，重新尝试一遍
+		code, _, body = utils.PostHTTPString(apiurl, GetAuthorization(), "{}")
+	}
+
+	if code != 200 || !gjson.Valid(body) {
+		return ""
+	}
+	var info = gjson.Parse(body)
+	driveId = info.Get("drive_id").String()
+	return driveId
 }
 
 func ApiUserLogoff() string {

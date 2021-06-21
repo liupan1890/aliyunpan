@@ -1,9 +1,9 @@
-import '../utils/MIcons.dart';
+import 'package:alixby/utils/MIcons.dart';
 
-import '../utils/MColors.dart';
+import 'package:alixby/utils/MColors.dart';
 import 'package:hovering/hovering.dart';
 
-import '../models/PageLeftRowItem.dart';
+import 'package:alixby/models/PageLeftRowItem.dart';
 import 'package:flutter/material.dart';
 
 class PageLeftSetting extends StatefulWidget {
@@ -27,7 +27,6 @@ class _PageLeftSettingState extends State<PageLeftSetting> with AutomaticKeepAli
   @override
   void initState() {
     super.initState();
-    print('_PageLeftSettingState initState');
   }
 
   @override
@@ -45,7 +44,7 @@ class _PageLeftSettingState extends State<PageLeftSetting> with AutomaticKeepAli
                     alignment: Alignment.centerLeft,
                     child: Text(
                       "APP设置",
-                      style: TextStyle(fontSize: 13, color: MColors.pageLeftRowHeadColor),
+                      style: TextStyle(fontSize: 13, color: MColors.pageLeftRowHeadColor, fontFamily: "opposans"),
                     )),
                 Expanded(
                     child: ListView.builder(
@@ -83,7 +82,8 @@ class _PageLeftSettingState extends State<PageLeftSetting> with AutomaticKeepAli
                         item.title,
                         style: TextStyle(
                             color:
-                                selectedKey == item.key ? MColors.userNavMenuIconHover : MColors.pageLeftRowItemColor),
+                                selectedKey == item.key ? MColors.userNavMenuIconHover : MColors.pageLeftRowItemColor,
+                            fontFamily: "opposans"),
                       )
                     ])))),
       );

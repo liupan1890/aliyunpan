@@ -13,24 +13,38 @@ type LinkFileModel struct {
 	FileList []string         `json:"FileList"`
 	Name     string           `json:"Name"`
 	Size     int64            `json:"Size"`
-	Message  string
+	Message  string           `json:"-"`
 }
 
-func (b LinkFileModel) GetDirCount() int {
+type LinkSearchModel struct {
+	Count    int64                  `json:"Count"`
+	FileList []*LinkSearchFileModel `json:"FileList"`
+}
+
+type LinkSearchFileModel struct {
+	Key  string `json:"Key"`
+	Name string `json:"Name"`
+	Size int64  `json:"Size"`
+	Hash string `json:"Hash"`
+	Time int64  `json:"Time"`
+	Icon string
+}
+
+func (b *LinkFileModel) GetDirCount() int {
 	count := len(b.DirList)
 	for i := 0; i < len(b.DirList); i++ {
 		count += b.DirList[i].GetDirCount()
 	}
 	return count
 }
-func (b LinkFileModel) GetFileCount() int {
+func (b *LinkFileModel) GetFileCount() int {
 	count := len(b.FileList)
 	for i := 0; i < len(b.DirList); i++ {
 		count += b.DirList[i].GetFileCount()
 	}
 	return count
 }
-func (b LinkFileModel) GetTotalSize() int64 {
+func (b *LinkFileModel) GetTotalSize() int64 {
 	count := b.Size
 	for i := 0; i < len(b.DirList); i++ {
 		count += b.DirList[i].GetTotalSize()
@@ -38,10 +52,19 @@ func (b LinkFileModel) GetTotalSize() int64 {
 	return count
 }
 
+func (b *LinkFileModel) GetAliyun() []string {
+	var list = make([]string, 0, len(b.FileList))
+	list = append(list, b.FileList...)
+	for i := 0; i < len(b.DirList); i++ {
+		list = append(list, b.DirList[i].GetAliyun()...)
+	}
+	return list
+}
+
 //ApiFileListAllForLink 读取一个文件夹的信息(文件列表)(遍历子文件夹)
-func ApiFileListAllForLink(file_id string, name string) (link *LinkFileModel, err error) {
+func ApiFileListAllForLink(boxid string, file_id string, name string) (link *LinkFileModel, err error) {
 	for i := 0; i < 3; i++ {
-		link, err = _ApiFileListAllForLink(file_id, name)
+		link, err = _ApiFileListAllForLink(boxid, file_id, name)
 		if err == nil {
 			return link, nil
 		}
@@ -50,7 +73,7 @@ func ApiFileListAllForLink(file_id string, name string) (link *LinkFileModel, er
 }
 
 //_ApiFileListAllForLink  读取一个文件夹的信息(文件列表)(遍历子文件夹)
-func _ApiFileListAllForLink(file_id string, name string) (link *LinkFileModel, err error) {
+func _ApiFileListAllForLink(boxid string, file_id string, name string) (link *LinkFileModel, err error) {
 	defer func() {
 		if errr := recover(); errr != nil {
 			log.Println("_ApiFileListAllForLinkError ", " error=", errr)
@@ -60,7 +83,7 @@ func _ApiFileListAllForLink(file_id string, name string) (link *LinkFileModel, e
 	var marker = ""
 	var list = []*FileUrlModel{}
 	for {
-		flist, next, ferr := ApiFileListUrl(file_id, name, marker)
+		flist, next, ferr := ApiFileListUrl(boxid, file_id, name, marker)
 		if ferr != nil {
 			return nil, errors.New("error") //有错误直接退出
 		}
@@ -88,7 +111,7 @@ func _ApiFileListAllForLink(file_id string, name string) (link *LinkFileModel, e
 		if item.IsDir {
 			wg.Add(1)
 			go func(item *FileUrlModel) {
-				dir, derr := ApiFileListAllForLink(item.P_file_id, item.P_file_name)
+				dir, derr := ApiFileListAllForLink(boxid, item.P_file_id, item.P_file_name)
 				//注意这里，如果子文件夹遍历时出错了，直接退出，确保要么全部成功，要么全部失败，不丢失
 				if derr != nil {
 					errnum++
@@ -118,12 +141,18 @@ func ApiPostLinkToServer(urldata string, postdata *[]byte) (link string) {
 			link = "error"
 		}
 	}()
-	//出于服务器数据安全考虑，此处已被屏蔽
+
 	return "error"
 }
 
 func ApiParseLinkToServer(urldata string, postdata *[]byte) (link *LinkFileModel, xbylink string) {
-
+	defer func() {
+		if errr := recover(); errr != nil {
+			log.Println("ApiPostLinkToServerError ", " error=", errr)
+			xbylink = ""
+			link.Message = "error"
+		}
+	}()
 	link = &LinkFileModel{
 		DirList:  []*LinkFileModel{},
 		FileList: []string{},
@@ -132,6 +161,19 @@ func ApiParseLinkToServer(urldata string, postdata *[]byte) (link *LinkFileModel
 		Size:     0,
 	}
 
-	//出于服务器数据安全考虑，此处已被屏蔽
 	return link, ""
+}
+
+func ApiSearchLinkToServer(urldata string, postdata *[]byte) (LinkSearchModel, error) {
+	defer func() {
+		if errr := recover(); errr != nil {
+			log.Println("ApiPostLinkToServerError ", " error=", errr)
+		}
+	}()
+	var result = LinkSearchModel{
+		Count:    0,
+		FileList: []*LinkSearchFileModel{},
+	}
+
+	return result, errors.New("error")
 }

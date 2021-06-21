@@ -44,6 +44,8 @@ type UserLoginModel struct {
 	UserLoginType    string         `json:"UserLoginType"`
 	UserID           string         `json:"UserID"`
 	UserName         string         `json:"UserName"`
+	UserFace         string         `json:"UserFace"`
+	UserXiangCeID    string         `json:"UserXiangCeID"`
 	UserAccessToken  string         `json:"UserAccessToken"`
 	UserRefreshToken string         `json:"UserRefreshToken"`
 	UserToken        UserTokenModel `json:"UserToken"`

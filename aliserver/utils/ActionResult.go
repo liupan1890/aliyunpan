@@ -94,9 +94,11 @@ func ToJSONString(str string) string {
 	if str == "" {
 		return ""
 	}
-	str = strings.Replace(str, `\`, `\\`, -1)
-	str = strings.Replace(str, `"`, `\"`, -1)
-	str = strings.Replace(str, `\r`, `\\r`, -1)
-	str = strings.Replace(str, `\n`, `\\n`, -1)
-	return str
+	mapInstance := make(map[string]interface{})
+	mapInstance["message"] = str
+	jsonStr, _ := json.Marshal(mapInstance)
+	js := string(jsonStr)
+
+	js = js[12 : len(js)-2]
+	return js
 }

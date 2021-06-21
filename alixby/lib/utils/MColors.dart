@@ -57,6 +57,7 @@ class MColors {
   static get iconFile => mcolor.iconFile;
   static get iconVideo => mcolor.iconVideo;
   static get iconAudio => mcolor.iconAudio;
+  static get iconZip => mcolor.iconZip;
   static get iconImage => mcolor.iconImage;
   static get iconTxt => mcolor.iconTxt;
   static get iconWeiFa => mcolor.iconWeiFa;
@@ -78,6 +79,8 @@ class MColors {
   static get trackColor => mcolor.trackColor;
   static get trackBorderColor => mcolor.trackBorderColor;
   static get textColor => mcolor.textColor;
+  static get textColorGray => mcolor.textColorGray;
+  static get textColorRed => mcolor.textColorRed;
 }
 
 class MColorsLight {
@@ -126,6 +129,7 @@ class MColorsLight {
   Color iconFile = Color(0xffbcb3b3);
   Color iconVideo = Color(0xff3482F0);
   Color iconAudio = Color(0xff474DE2);
+  Color iconZip = Color(0xff8D51DB);
   Color iconImage = Color(0xffE03450);
   Color iconTxt = Color(0xff8BC755);
   Color iconWeiFa = Color(0xffd81e06);
@@ -146,6 +150,8 @@ class MColorsLight {
   Color trackColor = Color(0x66e0e0e0);
   Color trackBorderColor = Color(0x99e0e0e0);
   Color textColor = Color(0xee000000);
+  Color textColorGray = Color(0xaa333333);
+  Color textColorRed = Color(0xffeb8381);
 }
 
 class MColorsDark extends MColorsLight {
@@ -195,6 +201,7 @@ class MColorsDark extends MColorsLight {
   Color iconFile = Color(0xffbcb3b3);
   Color iconVideo = Color(0xff3482F0);
   Color iconAudio = Color(0xff474DE2);
+  Color iconZip = Color(0xff8D51DB);
   Color iconImage = Color(0xffE03450);
   Color iconTxt = Color(0xff8BC755);
   Color iconWeiFa = Color(0xffd81e06);
@@ -215,4 +222,6 @@ class MColorsDark extends MColorsLight {
   Color trackColor = Color(0x99e0e0e0);
   Color trackBorderColor = Color(0x99e0e0e0);
   Color textColor = Colors.white;
+  Color textColorGray = Color(0x99ffffff);
+  Color textColorRed = Color(0xffeb8381);
 }

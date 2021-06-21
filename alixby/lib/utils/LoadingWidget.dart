@@ -63,7 +63,7 @@ class _LoadingWidgetState extends State<LoadingWidget> with SingleTickerProvider
                 ),
                 Expanded(
                     child: Text(widget.title,
-                        style: TextStyle(fontSize: 15, color: MColors.textColor),
+                        style: TextStyle(fontSize: 15, color: MColors.textColor, fontFamily: "opposans"),
                         textAlign: TextAlign.left,
                         softWrap: false,
                         maxLines: 10,

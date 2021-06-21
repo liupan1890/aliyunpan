@@ -70,7 +70,7 @@ class _APILoadingWidgetState extends State<APILoadingWidget> with SingleTickerPr
                     width: 200,
                     height: 18,
                     child: Text(widget.title,
-                        style: TextStyle(fontSize: 14, color: MColors.textColor),
+                        style: TextStyle(fontSize: 14, color: MColors.textColor, fontFamily: "opposans"),
                         textAlign: TextAlign.left,
                         softWrap: false,
                         maxLines: 1,

@@ -2,11 +2,11 @@ import 'package:alixby/states/Global.dart';
 import 'package:alixby/states/UserState.dart';
 
 import 'package:provider/provider.dart';
-import '../utils/MColors.dart';
+import 'package:alixby/utils/MColors.dart';
 import 'package:flutter/material.dart';
-import 'PageRightRss.dart';
-import 'PageRightPan.dart';
-import 'PageRightDown.dart';
+import 'package:alixby/pagerss/PageRightRss.dart';
+import 'package:alixby/pagepan/PageRightPan.dart';
+import 'package:alixby/pagedown/PageRightDown.dart';
 import 'PageRightSetting.dart';
 
 class PageRight extends StatefulWidget {
@@ -18,11 +18,10 @@ class _PageRightState extends State<PageRight> {
   @override
   void initState() {
     super.initState();
-    print('_PageRightState initState');
   }
 
   final PageController _pageController = PageController(initialPage: 0, keepPage: true);
-  final bodyList = [PageRightRss(), PageRightPan(), PageRightDown(), PageRightSetting()];
+  final bodyList = [PageRightRss(), PageRightPan("box"), PageRightPan("xiangce"), PageRightDown(), PageRightSetting()];
   final focusnode = FocusNode();
   @override
   Widget build(BuildContext context) {

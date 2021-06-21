@@ -3,7 +3,7 @@ import 'package:alixby/states/Global.dart';
 import 'package:alixby/utils/MColors.dart';
 import 'package:bot_toast/bot_toast.dart';
 
-import '../models/Setting.dart';
+import 'package:alixby/models/Setting.dart';
 import 'package:flutter/material.dart';
 
 class SettingState extends ChangeNotifier {
@@ -67,13 +67,13 @@ class SettingState extends ChangeNotifier {
   Future<void> loadSetting() async {
     setting = await GoServer.goSetting("load", "");
     MColors.setTheme(setting.theme);
-    Global.panTreeState.pageInitByTheme();
+    Global.pageInitByTheme();
     savePathController.text = setting.savePath;
     downSpeedController.text = setting.downSpeed;
 
     if (Setting.UIVER != setting.serverVer) {
       //提示版本升级
-      BotToast.showText(text: "检测到新版本 (" + setting.serverVer + ") 请升级!", align: Alignment(0, 0), duration: null);
+      BotToast.showText(text: "检测到新版本 (" + setting.serverVer + ") 请升级!", duration: null);
     }
 
     notifyListeners();

@@ -74,7 +74,7 @@ func RunAria() (bool, error) {
 	}
 
 	pid := strconv.Itoa(os.Getpid())
-	args := []string{"--conf-path=aria2.conf", "--stop-with-process=" + pid}
+	args := []string{"--conf-path=aria2.conf", "--stop-with-process=" + pid, "-D"}
 
 	cmd := exec.Command(aria2c, args...)
 	cmd.Dir = dir
@@ -91,7 +91,6 @@ func ProcessCheck() bool {
 	if err != nil {
 		return true
 	}
-	log.Println(string(result))
 	var index = strings.Index(string(result), "/Contents/MacOS/alixby")
 	return index > 0
 }

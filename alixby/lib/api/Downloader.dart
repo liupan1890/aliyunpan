@@ -6,11 +6,10 @@ import 'HttpHelper.dart';
 
 class Downloader {
   //创建下载任务
-  static Future<int> goDownFile(String parentid, String savepath, List<String> filelist) async {
+  static Future<int> goDownFile(String box, String parentid, String savepath, List<String> filelist) async {
     try {
-      print('goDownFile');
       var result = await HttpHelper.postToServer(
-          "GoDownFile", jsonEncode({"parentid": parentid, "savepath": savepath, 'filelist': filelist}));
+          "GoDownFile", jsonEncode({'box': box, "parentid": parentid, "savepath": savepath, 'filelist': filelist}));
       if (result["code"] == 0) {
         return result["filecount"];
       }
@@ -24,7 +23,6 @@ class Downloader {
   static Future<PageRightDownModel> goDowningList() async {
     var downdata = PageRightDownModel();
     try {
-      print('goDowningList');
       var result = await HttpHelper.postToServer("GoDowningList", "");
       if (result["code"] == 0) {
         downdata.filecount = result["filecount"];
@@ -45,7 +43,6 @@ class Downloader {
   //查询当前已下载的任务
   static Future<PageRightDownModel> goDownedList() async {
     try {
-      print('goDownedList ');
       var result = await HttpHelper.postToServer("GoDownedList", "");
       if (result["code"] == 0) {
         var downdata = PageRightDownModel();
@@ -66,7 +63,6 @@ class Downloader {
 
   static Future<String> goDowningStart(String downid) async {
     try {
-      print('goDowningStart');
       var result = await HttpHelper.postToServer("GoDowningStart", jsonEncode({"downid": downid}));
       if (result["code"] == 0) {
         return "success";
@@ -79,7 +75,6 @@ class Downloader {
 
   static Future<String> goDowningStop(String downid) async {
     try {
-      print('goDowningStop');
       var result = await HttpHelper.postToServer("GoDowningStop", jsonEncode({"downid": downid}));
       if (result["code"] == 0) {
         return "success";
@@ -92,7 +87,6 @@ class Downloader {
 
   static Future<String> goDowningDelete(String downid) async {
     try {
-      print('goDowningDelete');
       var result = await HttpHelper.postToServer("GoDowningDelete", jsonEncode({"downid": downid}));
       if (result["code"] == 0) {
         return "success";
@@ -105,7 +99,6 @@ class Downloader {
 
   static Future<String> goDowningForder(String downid) async {
     try {
-      print('goDowningForder');
       var result = await HttpHelper.postToServer("GoDowningForder", jsonEncode({"downid": downid}));
       if (result["code"] == 0) {
         return "success";
@@ -118,7 +111,6 @@ class Downloader {
 
   static Future<String> goDownedDelete(String downid) async {
     try {
-      print('goDownedDelete ');
       var result = await HttpHelper.postToServer("GoDownedDelete", jsonEncode({"downid": downid}));
       if (result["code"] == 0) {
         return "success";
@@ -131,7 +123,6 @@ class Downloader {
 
   static Future<String> goDownedForder(String downid) async {
     try {
-      print('goDownedForder');
       var result = await HttpHelper.postToServer("GoDownedForder", jsonEncode({"downid": downid}));
       if (result["code"] == 0) {
         return "success";
@@ -142,10 +133,9 @@ class Downloader {
     return "error";
   }
 
-  static Future<String> goPlay(String key) async {
+  static Future<String> goPlay(String box, String key) async {
     try {
-      print('goPlay');
-      var result = await HttpHelper.postToServer("GoPlay", jsonEncode({"file_id": key}));
+      var result = await HttpHelper.postToServer("GoPlay", jsonEncode({'box': box, "file_id": key}));
       if (result["code"] == 0) {
         return "success";
       }
@@ -155,10 +145,9 @@ class Downloader {
     return "error";
   }
 
-  static Future<String> goImage(String key) async {
+  static Future<String> goImage(String box, String key) async {
     try {
-      print('goImage');
-      var result = await HttpHelper.postToServer("GoImage", jsonEncode({"file_id": key}));
+      var result = await HttpHelper.postToServer("GoImage", jsonEncode({'box': box, "file_id": key}));
       if (result["code"] == 0) {
         return result["url"];
       }
@@ -168,10 +157,9 @@ class Downloader {
     return "error";
   }
 
-  static Future<String> goText(String key) async {
+  static Future<String> goText(String box, String key) async {
     try {
-      print('goText');
-      var result = await HttpHelper.postToServer("GoText", jsonEncode({"file_id": key}));
+      var result = await HttpHelper.postToServer("GoText", jsonEncode({'box': box, "file_id": key}));
       if (result["code"] == 0) {
         return result["text"];
       }

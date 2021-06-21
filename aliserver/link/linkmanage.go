@@ -10,7 +10,6 @@ import (
 	"encoding/json"
 	"errors"
 	"log"
-	"net/url"
 	"strconv"
 	"strings"
 	"sync"
@@ -49,7 +48,7 @@ func GoLinkDelete(link string) string {
 	return utils.ToSuccessJSON("link", link)
 }
 
-func GoLinkCreat(jianjie string, ispublic bool, password, outday, outsave, parentid string, keylist []string) string {
+func GoLinkCreatFile(filename, jianjie string, boxid string, parentid string, keylist []string) string {
 
 	UserID := aliyun.GetUserID()
 	if UserID == "" {
@@ -66,7 +65,7 @@ func GoLinkCreat(jianjie string, ispublic bool, password, outday, outsave, paren
 			if fileid != "" {
 				wg.Add(1)
 				go func(fileid string) {
-					finfo, ferr := aliyun.ApiFileGetUrl(fileid, "")
+					finfo, ferr := aliyun.ApiFileGetUrl(boxid, fileid, "")
 					if ferr != nil {
 						errnum++
 					} else {
@@ -84,7 +83,7 @@ func GoLinkCreat(jianjie string, ispublic bool, password, outday, outsave, paren
 		}
 	} else {
 		//文件数量较多，批量读取文件信息
-		flist, ferr := aliyun.ApiFileListAllForDown(parentid, "", false)
+		flist, ferr := aliyun.ApiFileListAllForDown(boxid, parentid, "", false)
 		if ferr != nil {
 			return utils.ToErrorMessageJSON("列出文件信息时出错")
 		}
@@ -99,9 +98,6 @@ func GoLinkCreat(jianjie string, ispublic bool, password, outday, outsave, paren
 				}
 			}
 		}
-	}
-	if jianjie == "" {
-		jianjie = "无"
 	}
 
 	link := aliyun.LinkFileModel{
@@ -119,7 +115,7 @@ func GoLinkCreat(jianjie string, ispublic bool, password, outday, outsave, paren
 		if item.IsDir {
 			wg.Add(1)
 			go func(m int) {
-				dir, derr := aliyun.ApiFileListAllForLink(item.P_file_id, item.P_file_name)
+				dir, derr := aliyun.ApiFileListAllForLink(boxid, item.P_file_id, item.P_file_name)
 				if derr != nil {
 					errnum++
 				} else {
@@ -142,40 +138,35 @@ func GoLinkCreat(jianjie string, ispublic bool, password, outday, outsave, paren
 	if link.GetFileCount() == 0 {
 		return utils.ToErrorMessageJSON("短链接内不包含任何文件")
 	}
-
-	b, _ := json.Marshal(link)
-	var buf bytes.Buffer
-	zw := gzip.NewWriter(&buf)
-	zw.Write(b)
-	err := zw.Close()
-	if err != nil {
-		log.Println("zw.Close", err)
-		return utils.ToErrorMessageJSON("gzip时出错")
+	/*不需要了
+	var outlist = link.GetAliyun()
+	var builder strings.Builder
+	builder.Grow(100 * (len(outlist) + 1))
+	for o := 0; o < len(outlist); o++ {
+		oitem := strings.Split(outlist[o], "|")
+		builder.WriteString("aliyunpan://" + oitem[0] + "|" + oitem[2] + "|" + oitem[1] + "|\r\n")
 	}
-	bs := buf.Bytes()
-
-	urldata := "password=" + password + "&outday=" + outday + "&outsave=" + outsave + "&filecount=" + strconv.FormatInt(int64(link.GetFileCount()), 10) + "&dircount=" + strconv.FormatInt(int64(link.GetDirCount()), 10)
-	urldata += "&totalsize=" + strconv.FormatInt(int64(link.GetTotalSize()), 10)
-	urldata += "&ispublic=" + strconv.FormatBool(ispublic) + "&jianjie=" + url.QueryEscape(jianjie)
-	linkstr := aliyun.ApiPostLinkToServer(urldata, &bs)
-	if linkstr != "error" {
-		if linkstr != "" {
-			linklog := LinkLogModel{
-				Link:      linkstr,
-				LogTime:   time.Now().Unix(),
-				IsCreater: true,
-			}
-			b, _ := json.Marshal(linklog)
-			data.SetLink("Link:"+linkstr, string(b))
+	var outstring = builder.String()
+	builder.Reset()
+	*/
+	infostr := strconv.FormatInt(int64(link.GetFileCount()), 10) + "个文件 " + utils.FormateSizeString(link.GetTotalSize())
+	b, err := json.Marshal(link) //需要把文件数据上传
+	for i := 0; i < 3; i++ {
+		err = aliyun.MemUpload(boxid, parentid, filename, &b)
+		if err == nil {
+			break
 		}
-		return utils.ToSuccessJSON("link", linkstr)
+	}
+	//执行上传操作
+	if err == nil {
+		return utils.ToSuccessJSON2("info", infostr, "aliyun", "")
 	} else {
 		log.Println("postlink", err)
-		return utils.ToErrorMessageJSON("上传数据时出错")
+		return utils.ToErrorMessageJSON("向网盘内创建文件" + filename + "时出错")
 	}
 }
 
-func GoLinkParse(linkstr string, password string) string {
+func GoLinkParse(linkstr string, password string, ispublic bool) string {
 
 	UserID := aliyun.GetUserID()
 	if UserID == "" {
@@ -192,7 +183,7 @@ func GoLinkParse(linkstr string, password string) string {
 	}
 	bs := buf.Bytes()
 
-	urldata := "password=" + password
+	urldata := "password=" + password + "&ispublic=" + strconv.FormatBool(ispublic)
 	link, xbylink := aliyun.ApiParseLinkToServer(urldata, &bs)
 	if link.Message == "" {
 		if xbylink != "" {
@@ -204,13 +195,14 @@ func GoLinkParse(linkstr string, password string) string {
 			b, _ := json.Marshal(linklog)
 			data.SetLink("Link:"+xbylink, string(b))
 		}
-		return utils.ToSuccessJSON2("xbylink", xbylink, "link", link)
+		infostr := strconv.FormatInt(int64(link.GetFileCount()), 10) + "个文件 " + utils.FormateSizeString(link.GetTotalSize())
+		return utils.ToSuccessJSON3("xbylink", xbylink, "info", infostr, "link", link)
 	} else {
 		log.Println("parselink", err)
 		return utils.ToErrorMessageJSON(link.Message)
 	}
 }
-func GoLinkUpload(ParentID string, linkstr string) string {
+func GoLinkUpload(boxid string, ParentID string, linkstr string) string {
 	if ParentID == "" {
 		ParentID = "root"
 	}
@@ -233,13 +225,13 @@ func GoLinkUpload(ParentID string, linkstr string) string {
 	}
 
 	//生成SelectFileList []*UploadSelectModel
-	SelectFileList, err := GetFilesWithDir(ParentID, &link)
+	SelectFileList, err := GetFilesWithDir(boxid, ParentID, &link)
 	if err != nil {
 		return utils.ToErrorMessageJSON("创建保存路径失败")
 	}
 	return upload.UploadSelectFile(UserID, ParentID, SelectFileList)
 }
-func GetFilesWithDir(ParentID string, link *aliyun.LinkFileModel) (files []*upload.UploadSelectModel, err error) {
+func GetFilesWithDir(boxid string, ParentID string, link *aliyun.LinkFileModel) (files []*upload.UploadSelectModel, err error) {
 
 	files = make([]*upload.UploadSelectModel, 0, len(link.FileList)+len(link.DirList))
 
@@ -254,6 +246,7 @@ func GetFilesWithDir(ParentID string, link *aliyun.LinkFileModel) (files []*uplo
 		m.Name = str[0:index]
 		m.Path = "miaochuan|" + hash
 		m.ParentID = ParentID
+		m.BoxID = boxid
 		files = append(files, &m)
 	}
 	var wg sync.WaitGroup
@@ -264,12 +257,12 @@ func GetFilesWithDir(ParentID string, link *aliyun.LinkFileModel) (files []*uplo
 		go func(n int) {
 			dir := link.DirList[n]
 			//先在网盘里创建对应的文件夹,获得文件夹ID
-			DirID, err3 := aliyun.UploadCreatForder(ParentID, dir.Name)
+			DirID, err3 := aliyun.UploadCreatForder(boxid, ParentID, dir.Name)
 			if err3 != nil {
 				errnum++
 			} else {
 				// 然后递归遍历
-				childfiles, err2 := GetFilesWithDir(DirID, dir)
+				childfiles, err2 := GetFilesWithDir(boxid, DirID, dir)
 				if err2 != nil {
 					errnum++
 				}
@@ -287,4 +280,33 @@ func GetFilesWithDir(ParentID string, link *aliyun.LinkFileModel) (files []*uplo
 		return nil, errors.New("向网盘内创建路径时出错")
 	}
 	return files, nil
+}
+
+func GoLinkSearch(search string, pageindex int64) string {
+	if search == "" {
+		search = "search"
+	}
+	if pageindex < 1 {
+		pageindex = 1
+	}
+	if pageindex > 9 {
+		pageindex = 9
+	}
+	var buf bytes.Buffer
+	zw := gzip.NewWriter(&buf)
+	zw.Write([]byte(search))
+	err := zw.Close()
+	if err != nil {
+		log.Println("zw.Close", err)
+		return utils.ToErrorMessageJSON("gzip时出错")
+	}
+	bs := buf.Bytes()
+
+	urldata := "pageindex=" + strconv.FormatInt(pageindex, 10)
+	result, err := aliyun.ApiSearchLinkToServer(urldata, &bs)
+	if err != nil {
+		return utils.ToErrorMessageJSON("gzip时出错")
+	}
+	return utils.ToSuccessJSON2("fileCount", result.Count, "items", result.FileList)
+
 }
