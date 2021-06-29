@@ -8,6 +8,8 @@ class PageRightFileItem {
   PageRightFileItem();
   static PageRightFileItem newPageRightFileItem(String box, String key, Icon icon, String title, int fileSize,
       DateTime fileTime, bool isFavor, bool isDir, String filetype) {
+    var ind = title.lastIndexOf(".");
+    var ext = ind > 0 ? title.substring(ind + 1).toLowerCase() : "";
     return PageRightFileItem()
       ..box = box
       ..key = key
@@ -18,6 +20,7 @@ class PageRightFileItem {
       ..filetimestr = "${fileTime.year.toString()}\n${fileTime.month.toString()}-${fileTime.day.toString()}"
       ..title = title
       ..filetype = filetype
+      ..fileext = ext
       ..isFavor = isFavor
       ..isDir = isDir;
   }
@@ -34,6 +37,7 @@ class PageRightFileItem {
   bool isFavor = false;
   bool isDir = false;
   String filetype = "file";
+  String fileext = "";
 /*
   factory PageRightFileItem.fromJson(Map<String, dynamic> json) {
     return PageRightFileItem()

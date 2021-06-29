@@ -366,6 +366,16 @@ func HookAction(url string, postdata string) (ishook bool, hookresult string) {
 		ispublic := gjson.Get(postdata, "ispublic").Bool()
 		return true, link.GoLinkParse(linkstr, password, ispublic)
 
+	case "GoLinkShare":
+		linkstr := gjson.Get(postdata, "link").String()
+		password := gjson.Get(postdata, "password").String()
+		return true, link.GoLinkShare(linkstr, password)
+	case "GoLinkShareUpload":
+		shareid := gjson.Get(postdata, "shareid").String()
+		boxid := GetBoxID(gjson.Get(postdata, "box").String())
+		parentid := gjson.Get(postdata, "parentid").String()
+		linkstr := gjson.Get(postdata, "linkstr").String()
+		return true, link.GoLinkShareUpload(boxid, parentid, shareid, linkstr)
 	case "GoLinkUpload":
 		boxid := GetBoxID(gjson.Get(postdata, "box").String())
 		parentid := gjson.Get(postdata, "parentid").String()

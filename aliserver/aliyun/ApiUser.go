@@ -87,13 +87,9 @@ func ApiUserInfo() (retjsonstr string) {
 	var checktime = time.Now().Unix() - 600 //秒 - 10分钟
 	if _user.UserInfo.P_total_size == "" || _user.UserInfo.M_info_time < checktime {
 		var apiurl = "https://api.aliyundrive.com/v2/databox/get_personal_info"
-		code, _, body := utils.PostHTTPString(apiurl, GetAuthorization(), "")
-		if code == 401 {
-			//UserAccessToken 失效了，尝试刷新一次
-			ApiTokenRefresh("")
-			//刷新完了，重新尝试一遍
-			code, _, body = utils.PostHTTPString(apiurl, GetAuthorization(), "")
-		}
+		postdata := []byte("")
+		code, bodybytes := _APIHTTP(apiurl, &postdata)
+		body := string(*bodybytes)
 
 		if code != 200 || !gjson.Valid(body) {
 			return utils.ToSuccessJSON("info", "")
@@ -142,13 +138,9 @@ func ApiUserXiangCeID() (driveId string) {
 	}
 	var apiurl = "https://api.aliyundrive.com/adrive/v1/user/albums_info"
 	//{"code":"200","message":"success","data":{"driveId":"","driveName":"alibum"},"resultCode":"200"}
-	code, _, body := utils.PostHTTPString(apiurl, GetAuthorization(), "{}")
-	if code == 401 {
-		//UserAccessToken 失效了，尝试刷新一次
-		ApiTokenRefresh("")
-		//刷新完了，重新尝试一遍
-		code, _, body = utils.PostHTTPString(apiurl, GetAuthorization(), "{}")
-	}
+	postdata := []byte("{}")
+	code, bodybytes := _APIHTTP(apiurl, &postdata)
+	body := string(*bodybytes)
 
 	if code != 200 || !gjson.Valid(body) {
 		return ""
@@ -172,13 +164,9 @@ func ApiUserSboxID() (driveId string) {
 	}
 	var apiurl = "https://api.aliyundrive.com/v2/sbox/get"
 	//{"drive_id":"","sbox_used_size":5725023,"sbox_total_size":53687091200,"recommend_vip":"svip","pin_setup":true,"locked":false,"insurance_enabled":false}
-	code, _, body := utils.PostHTTPString(apiurl, GetAuthorization(), "{}")
-	if code == 401 {
-		//UserAccessToken 失效了，尝试刷新一次
-		ApiTokenRefresh("")
-		//刷新完了，重新尝试一遍
-		code, _, body = utils.PostHTTPString(apiurl, GetAuthorization(), "{}")
-	}
+	postdata := []byte("{}")
+	code, bodybytes := _APIHTTP(apiurl, &postdata)
+	body := string(*bodybytes)
 
 	if code != 200 || !gjson.Valid(body) {
 		return ""

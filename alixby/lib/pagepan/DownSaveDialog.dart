@@ -3,6 +3,8 @@ import 'package:alixby/states/Global.dart';
 import 'package:alixby/utils/Loading.dart';
 import 'package:alixby/utils/MColors.dart';
 import 'package:alixby/utils/MIcons.dart';
+import 'package:alixby/utils/SpinKitRing.dart';
+import 'package:argon_buttons_flutter/argon_buttons_flutter.dart';
 import 'package:bot_toast/bot_toast.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
@@ -102,7 +104,7 @@ class _DownSaveDialogState extends State<DownSaveDialog> {
                                   helperText: "默认是保存位置+网盘全路径+文件名，不推荐修改",
                                   helperStyle:
                                       TextStyle(fontSize: 13, color: MColors.textColor, fontFamily: "opposans"),
-                                  contentPadding: EdgeInsets.symmetric(vertical: 4, horizontal: 8),
+                                  contentPadding: EdgeInsets.symmetric(vertical: 8, horizontal: 8),
                                   focusedBorder: OutlineInputBorder(
                                     borderSide: BorderSide(
                                       color: MColors.inputBorderHover,
@@ -122,10 +124,28 @@ class _DownSaveDialogState extends State<DownSaveDialog> {
                               start: 0,
                               child: ConstrainedBox(
                                   constraints: BoxConstraints(minHeight: 31),
-                                  child: ElevatedButton.icon(
-                                      icon: Icon(MIcons.file_folder, size: 16),
-                                      label: Text('选择'),
-                                      onPressed: () => _getDirectoryPath()))),
+                                  child: ArgonButton(
+                                    height: 32,
+                                    width: 80,
+                                    minWidth: 80,
+                                    borderRadius: 3.0,
+                                    roundLoadingShape: false,
+                                    color: MColors.elevatedBtnBG,
+                                    child: Text(
+                                      "选择",
+                                      style: TextStyle(color: MColors.elevatedBtnColor, fontFamily: "opposans"),
+                                    ),
+                                    loader: Container(
+                                      child: SpinKitRing(
+                                        size: 22,
+                                        lineWidth: 3,
+                                        color: Colors.white,
+                                      ),
+                                    ),
+                                    onTap: (startLoading, stopLoading, btnState) {
+                                      _getDirectoryPath();
+                                    },
+                                  ))),
                         ],
                       ),
                     ),

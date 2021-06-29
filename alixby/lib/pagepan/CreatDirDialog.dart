@@ -1,8 +1,9 @@
 import 'package:alixby/api/AliFile.dart';
 import 'package:alixby/states/Global.dart';
-import 'package:alixby/utils/Loading.dart';
 import 'package:alixby/utils/MColors.dart';
 import 'package:alixby/utils/MIcons.dart';
+import 'package:alixby/utils/SpinKitRing.dart';
+import 'package:argon_buttons_flutter/argon_buttons_flutter.dart';
 import 'package:bot_toast/bot_toast.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
@@ -10,30 +11,17 @@ import 'package:provider/provider.dart';
 import 'package:alixby/states/SettingState.dart';
 
 // ignore: must_be_immutable
-class CreatDirDialog extends StatelessWidget {
-  CreatDirDialog({Key? key, required this.box}) : super(key: key);
+class CreatDirDialog extends StatefulWidget {
+  CreatDirDialog({Key? key, required this.box, required this.parentid}) : super(key: key);
   String box = "";
+  String parentid = "";
+
+  @override
+  _CreatDirDialogState createState() => _CreatDirDialogState();
+}
+
+class _CreatDirDialogState extends State<CreatDirDialog> {
   final TextEditingController controller = TextEditingController();
-
-  void onSubmitted(BuildContext context) {
-    String dirname = controller.text;
-    dirname = dirname.replaceAll('"', '').trim();
-
-    var fcHide = Loading.showLoading();
-    var parentid = Global.getFileState(box).pageRightDirKey;
-    AliFile.apiCreatForder(box, parentid, dirname).then((value) {
-      fcHide();
-      if (value == "success") {
-        Future.delayed(Duration(milliseconds: 200), () {
-          Global.getTreeState(box).pageRefreshNode();
-        });
-        BotToast.showText(text: "创建成功");
-        Navigator.of(context).pop('ok');
-      } else {
-        BotToast.showText(text: "创建失败请重试");
-      }
-    });
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -90,7 +78,7 @@ class CreatDirDialog extends StatelessWidget {
                                   helperText: "文件夹名不要有特殊字符：<>!:*?\\/.'\"",
                                   helperStyle:
                                       TextStyle(fontSize: 13, color: MColors.textColor, fontFamily: "opposans"),
-                                  contentPadding: EdgeInsets.symmetric(vertical: 4, horizontal: 8),
+                                  contentPadding: EdgeInsets.symmetric(vertical: 8, horizontal: 8),
                                   focusedBorder: OutlineInputBorder(
                                     borderSide: BorderSide(
                                       color: MColors.inputBorderHover,
@@ -104,19 +92,48 @@ class CreatDirDialog extends StatelessWidget {
                                     ),
                                   ),
                                 ),
-                                onSubmitted: (val) {
-                                  onSubmitted(context);
-                                },
                               )),
                           Positioned.directional(
                               textDirection: TextDirection.rtl,
                               start: 0,
-                              child: ElevatedButton(
-                                onPressed: () {
-                                  onSubmitted(context);
+                              child: ArgonButton(
+                                height: 32,
+                                width: 80,
+                                minWidth: 80,
+                                borderRadius: 3.0,
+                                roundLoadingShape: false,
+                                color: MColors.elevatedBtnBG,
+                                child: Text(
+                                  "创建",
+                                  style: TextStyle(color: MColors.elevatedBtnColor, fontFamily: "opposans"),
+                                ),
+                                loader: Container(
+                                  child: SpinKitRing(
+                                    size: 22,
+                                    lineWidth: 3,
+                                    color: Colors.white,
+                                  ),
+                                ),
+                                onTap: (startLoading, stopLoading, btnState) {
+                                  String dirname = controller.text;
+                                  dirname = dirname.replaceAll('"', '').trim();
+                                  if (btnState == ButtonState.Busy) return;
+                                  startLoading();
+
+                                  AliFile.apiCreatForder(widget.box, widget.parentid, dirname).then((value) {
+                                    // fcHide();
+                                    stopLoading();
+                                    if (value == "success") {
+                                      Future.delayed(Duration(milliseconds: 600), () {
+                                        Global.getTreeState(widget.box).pageRefreshNode();
+                                      });
+                                      BotToast.showText(text: "创建成功");
+                                      Navigator.of(context).pop('ok');
+                                    } else {
+                                      BotToast.showText(text: "创建失败请重试");
+                                    }
+                                  });
                                 },
-                                child: Text("  创建  "),
-                                style: ButtonStyle(minimumSize: MaterialStateProperty.all(Size(0, 36))),
                               )),
                         ],
                       ),

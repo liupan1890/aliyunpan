@@ -1,5 +1,7 @@
 import 'dart:math';
 
+import 'package:flutter/widgets.dart';
+
 class StringUtils {
   StringUtils();
 
@@ -50,6 +52,10 @@ class StringUtils {
       info += lasttime.toStringAsFixed(0).padLeft(2, '0') + '秒';
     }
     return info;
+  }
+
+  static String joinChar(String str) {
+    return Characters(str).replaceAll(Characters(''), Characters('\u{200B}')).toString();
   }
 
   static int sortNumber1(String a, String b) {

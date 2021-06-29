@@ -24,47 +24,19 @@ type FileItemModel struct {
 	P_file_icon    string `json:"file_icon"`
 }
 
-func ApiFileList(boxid string, parentid string, marker string) (retjsonstr string) {
-	defer func() {
-		if errr := recover(); errr != nil {
-			log.Println("ApiFileListError ", " error=", errr)
-			retjsonstr = `{"code":503,"message":"error","next_marker":"","items":[]}`
-		}
-	}()
-
-	var apiurl = "https://api.aliyundrive.com/v2/file/list"
-
-	var postjson = map[string]interface{}{"drive_id": boxid,
-		"parent_file_id":  parentid,
-		"limit":           100,
-		"all":             false,
-		"fields":          "thumbnail",
-		"order_by":        "name",
-		"order_direction": "ASC"}
-	if marker != "" {
-		postjson["marker"] = marker
-	}
-	b, _ := json.Marshal(postjson)
-	postdata := string(b)
-
-	//"image_thumbnail_process":"image/resize,w_160/format,jpeg",
-	//"image_url_process":"image/resize,w_1920/format,jpeg",
-	//"video_thumbnail_process":"video/snapshot,t_0,f_jpg,ar_auto,w_300",
-
-	code, _, body := utils.PostHTTPString(apiurl, GetAuthorization(), postdata)
+func _APIHTTP(apiurl string, postdata *[]byte) (code int, bodybytes *[]byte) {
+	code, _, bodybytes = utils.PostHTTPBytes2(apiurl, GetAuthorization(), postdata)
 	if code == 401 {
 		//UserAccessToken 失效了，尝试刷新一次
 		ApiTokenRefresh("")
 		//刷新完了，重新尝试一遍
-		code, _, body = utils.PostHTTPString(apiurl, GetAuthorization(), postdata)
+		code, _, bodybytes = utils.PostHTTPBytes2(apiurl, GetAuthorization(), postdata)
 	}
-	if code != 200 || !gjson.Valid(body) {
-		return `{"code":503,"message":"error","next_marker":"","items":[]}`
-	}
-	info := gjson.Parse(body)
+	return code, bodybytes
+}
+func _FileListBuilder(builder *strings.Builder, info *gjson.Result) {
 	next_marker := info.Get("next_marker").String()
 	items := info.Get("items").Array()
-	var builder strings.Builder
 	builder.Grow(300 * (len(items) + 1))
 	builder.WriteString(`{"code":0,"message":"success","next_marker":"`)
 	builder.WriteString(next_marker)
@@ -88,12 +60,11 @@ func ApiFileList(boxid string, parentid string, marker string) (retjsonstr strin
 		if value.Get("type").String() != "folder" {
 			file_icon = category
 		}
-
+		ext = value.Get("file_extension").String()
 		if category == "others" || category == "doc" {
-			ext = value.Get("file_extension").String()
 			if strings.Index(";.3gp.3iv.asf.avi.cpk.divx.dv.hdv.fli.flv.f4v.f4p.h264.i263.m2t.m2ts.mts.ts.trp.m4v.mkv.mov.mp2.mp4.mpeg.mpg.mpg2.mpg4.nsv.nut.nuv.rm.rmvb.vcd.vob.webm.wmv.mk3d.hevc.yuv.y4m.iso.", ext) > 0 {
 				file_icon = "video"
-			} else if file_size < 102400 {
+			} else if file_size < 1024*500 {
 				if strings.Index(";.c.cpp.java.htm.html.css.js.vue.php.aspx.shtml.asp.jsp.json.url.txt.md.markdown.xml.md5.ini.nfo.info.config.cfg.bat.sh.cmd.log.debug.go.lrc.", ext) > 0 {
 					file_icon = "txt"
 				}
@@ -140,6 +111,42 @@ func ApiFileList(boxid string, parentid string, marker string) (retjsonstr strin
 		}
 	}
 	builder.WriteString(`]}`)
+}
+
+func ApiFileList(boxid string, parentid string, marker string) (retjsonstr string) {
+	defer func() {
+		if errr := recover(); errr != nil {
+			log.Println("ApiFileListError ", " error=", errr)
+			retjsonstr = `{"code":503,"message":"error","next_marker":"","items":[]}`
+		}
+	}()
+
+	var apiurl = "https://api.aliyundrive.com/v2/file/list"
+
+	var postjson = map[string]interface{}{"drive_id": boxid,
+		"parent_file_id":  parentid,
+		"limit":           100,
+		"all":             false,
+		"fields":          "thumbnail",
+		"order_by":        "name",
+		"order_direction": "ASC"}
+	if marker != "" {
+		postjson["marker"] = marker
+	}
+
+	//"image_thumbnail_process":"image/resize,w_160/format,jpeg",
+	//"image_url_process":"image/resize,w_1920/format,jpeg",
+	//"video_thumbnail_process":"video/snapshot,t_0,f_jpg,ar_auto,w_300",
+	postdata, _ := json.Marshal(postjson)
+	code, bodybytes := _APIHTTP(apiurl, &postdata)
+	body := string(*bodybytes)
+
+	if code != 200 || !gjson.Valid(body) {
+		return `{"code":503,"message":"error","next_marker":"","items":[]}`
+	}
+	info := gjson.Parse(body)
+	var builder strings.Builder
+	_FileListBuilder(&builder, &info)
 	return builder.String()
 }
 
@@ -160,20 +167,14 @@ func ApiDirList(boxid string, parentid string) (retjsonstr string) {
 		"fields":          "thumbnail",
 		"order_by":        "name",
 		"order_direction": "ASC"}
-	b, _ := json.Marshal(postjson)
-	postdata := string(b)
 
 	//"image_thumbnail_process":"image/resize,w_160/format,jpeg",
 	//"image_url_process":"image/resize,w_1920/format,jpeg",
 	//"video_thumbnail_process":"video/snapshot,t_0,f_jpg,ar_auto,w_300",
+	postdata, _ := json.Marshal(postjson)
+	code, bodybytes := _APIHTTP(apiurl, &postdata)
+	body := string(*bodybytes)
 
-	code, _, body := utils.PostHTTPString(apiurl, GetAuthorization(), postdata)
-	if code == 401 {
-		//UserAccessToken 失效了，尝试刷新一次
-		ApiTokenRefresh("")
-		//刷新完了，重新尝试一遍
-		code, _, body = utils.PostHTTPString(apiurl, GetAuthorization(), postdata)
-	}
 	if code != 200 || !gjson.Valid(body) {
 		return `{"code":503,"message":"error","next_marker":"","items":[]}`
 	}
@@ -251,103 +252,20 @@ func ApiFavorFileList(boxid string, marker string) (retjsonstr string) {
 	if marker != "" {
 		postjson["marker"] = marker
 	}
-	b, _ := json.Marshal(postjson)
-	postdata := string(b)
 
 	//"image_thumbnail_process":"image/resize,w_160/format,jpeg",
 	//"image_url_process":"image/resize,w_1920/format,jpeg",
 	//"video_thumbnail_process":"video/snapshot,t_0,f_jpg,ar_auto,w_300",
 
-	code, _, body := utils.PostHTTPString(apiurl, GetAuthorization(), postdata)
-	if code == 401 {
-		//UserAccessToken 失效了，尝试刷新一次
-		ApiTokenRefresh("")
-		//刷新完了，重新尝试一遍
-		code, _, body = utils.PostHTTPString(apiurl, GetAuthorization(), postdata)
-	}
+	postdata, _ := json.Marshal(postjson)
+	code, bodybytes := _APIHTTP(apiurl, &postdata)
+	body := string(*bodybytes)
 	if code != 200 || !gjson.Valid(body) {
 		return `{"code":503,"message":"error","next_marker":"","items":[]}`
 	}
 	info := gjson.Parse(body)
-	next_marker := info.Get("next_marker").String()
-	items := info.Get("items").Array()
 	var builder strings.Builder
-	builder.Grow(300 * (len(items) + 1))
-	builder.WriteString(`{"code":0,"message":"success","next_marker":"`)
-	builder.WriteString(next_marker)
-	builder.WriteString(`","items":[`)
-	var max = len(items)
-	var value = gjson.Result{}
-
-	var file_time = time.Now()
-	var file_size = int64(0)
-	var file_icon = ""
-	var category = ""
-	var ext = ""
-	var status = ""
-	for i := 0; i < max; i++ {
-		value = items[i]
-
-		file_time = value.Get("updated_at").Time()
-		file_size = value.Get("size").Int()
-		category = value.Get("category").String()
-		file_icon = "folder"
-		if value.Get("type").String() != "folder" {
-			file_icon = category
-		}
-
-		if category == "others" || category == "doc" {
-			ext = strings.ToLower(value.Get("file_extension").String())
-			if strings.Index(";.3gp.3iv.asf.avi.cpk.divx.dv.hdv.fli.flv.f4v.f4p.h264.i263.m2t.m2ts.mts.ts.trp.m4v.mkv.mov.mp2.mp4.mpeg.mpg.mpg2.mpg4.nsv.nut.nuv.rm.rmvb.vcd.vob.webm.wmv.mk3d.hevc.yuv.y4m.iso.", ext) > 0 {
-				file_icon = "video"
-			} else if file_size < 102400 {
-				if strings.Index(";.c.cpp.java.htm.html.css.js.vue.php.aspx.shtml.asp.jsp.json.url.txt.md.markdown.xml.md5.ini.nfo.info.config.cfg.bat.sh.cmd.log.debug.go.lrc.", ext) > 0 {
-					file_icon = "txt"
-				}
-			}
-		}
-		if strings.Index(";.zip.rar.", ext) > 0 {
-			file_icon = "zip"
-		}
-		if file_icon != "folder" && file_icon != "image" && file_icon != "video" && file_icon != "audio" && file_icon != "txt" && file_icon != "zip" {
-			file_icon = "file"
-		}
-
-		status = value.Get("status").String()
-		if value.Get("thumbnail").Exists() && strings.Index(value.Get("thumbnail").String(), "illegal_thumbnail") > 0 {
-			status = "illegal"
-		}
-
-		builder.WriteString(`{"key":"`)
-		builder.WriteString(value.Get("file_id").String())
-		builder.WriteString(`","name":"`)
-		builder.WriteString(utils.ToJSONString(value.Get("name").String()))
-		builder.WriteString(`","pid":"`)
-		builder.WriteString(value.Get("parent_file_id").String())
-		builder.WriteString(`","size":`)
-		builder.WriteString(strconv.FormatInt(file_size, 10))
-		builder.WriteString(`,"time":`)
-		builder.WriteString(strconv.FormatInt(file_time.Unix(), 10))
-		builder.WriteString(`,"type":"`)
-		builder.WriteString(value.Get("type").String())
-		builder.WriteString(`","sizestr":"`)
-		builder.WriteString(utils.FormateSizeString(file_size))
-		builder.WriteString(`","timestr":"`)
-		builder.WriteString(file_time.Format("2006 01-02"))
-		builder.WriteString(`","icon":"`)
-		builder.WriteString(file_icon)
-		builder.WriteString(`","starred":`)
-		builder.WriteString(strconv.FormatBool(value.Get("starred").Bool()))
-		builder.WriteString(`,"status":"`)
-		builder.WriteString(status)
-
-		if i >= (max - 1) {
-			builder.WriteString(`"}`)
-		} else {
-			builder.WriteString(`"},`)
-		}
-	}
-	builder.WriteString(`]}`)
+	_FileListBuilder(&builder, &info)
 	return builder.String()
 }
 func ApiTrashFileList(boxid string, marker string) (retjsonstr string) {
@@ -370,102 +288,20 @@ func ApiTrashFileList(boxid string, marker string) (retjsonstr string) {
 	if marker != "" {
 		postjson["marker"] = marker
 	}
-	b, _ := json.Marshal(postjson)
-	postdata := string(b)
 
 	//"image_thumbnail_process":"image/resize,w_160/format,jpeg",
 	//"image_url_process":"image/resize,w_1920/format,jpeg",
 	//"video_thumbnail_process":"video/snapshot,t_0,f_jpg,ar_auto,w_300",
 
-	code, _, body := utils.PostHTTPString(apiurl, GetAuthorization(), postdata)
-	if code == 401 {
-		//UserAccessToken 失效了，尝试刷新一次
-		ApiTokenRefresh("")
-		//刷新完了，重新尝试一遍
-		code, _, body = utils.PostHTTPString(apiurl, GetAuthorization(), postdata)
-	}
+	postdata, _ := json.Marshal(postjson)
+	code, bodybytes := _APIHTTP(apiurl, &postdata)
+	body := string(*bodybytes)
 	if code != 200 || !gjson.Valid(body) {
 		return `{"code":503,"message":"error","next_marker":"","items":[]}`
 	}
 	info := gjson.Parse(body)
-	next_marker := info.Get("next_marker").String()
-	items := info.Get("items").Array()
 	var builder strings.Builder
-	builder.Grow(300 * (len(items) + 1))
-	builder.WriteString(`{"code":0,"message":"success","next_marker":"`)
-	builder.WriteString(next_marker)
-	builder.WriteString(`","items":[`)
-	var max = len(items)
-	var value = gjson.Result{}
-
-	var file_time = time.Now()
-	var file_size = int64(0)
-	var file_icon = ""
-	var category = ""
-	var ext = ""
-	var status = ""
-	for i := 0; i < max; i++ {
-		value = items[i]
-
-		file_time = value.Get("trashed_at").Time()
-		file_size = value.Get("size").Int()
-		category = value.Get("category").String()
-		file_icon = "folder"
-		if value.Get("type").String() != "folder" {
-			file_icon = category
-		}
-		ext = value.Get("file_extension").String()
-		if category == "others" || category == "doc" {
-			if strings.Index(";.3gp.3iv.asf.avi.cpk.divx.dv.hdv.fli.flv.f4v.f4p.h264.i263.m2t.m2ts.mts.ts.trp.m4v.mkv.mov.mp2.mp4.mpeg.mpg.mpg2.mpg4.nsv.nut.nuv.rm.rmvb.vcd.vob.webm.wmv.mk3d.hevc.yuv.y4m.iso.", ext) > 0 {
-				file_icon = "video"
-			} else if file_size < 102400 {
-				if strings.Index(";.c.cpp.java.htm.html.css.js.vue.php.aspx.shtml.asp.jsp.json.url.txt.md.markdown.xml.md5.ini.nfo.info.config.cfg.bat.sh.cmd.log.debug.go.lrc.", ext) > 0 {
-					file_icon = "txt"
-				}
-			}
-		}
-		if strings.Index(";.zip.rar.", ext) > 0 {
-			file_icon = "zip"
-		}
-		if file_icon != "folder" && file_icon != "image" && file_icon != "video" && file_icon != "audio" && file_icon != "txt" && file_icon != "zip" {
-			file_icon = "file"
-		}
-
-		status = value.Get("status").String()
-		if value.Get("thumbnail").Exists() && strings.Index(value.Get("thumbnail").String(), "illegal_thumbnail") > 0 {
-			status = "illegal"
-		}
-
-		builder.WriteString(`{"key":"`)
-		builder.WriteString(value.Get("file_id").String())
-		builder.WriteString(`","name":"`)
-		builder.WriteString(utils.ToJSONString(value.Get("name").String()))
-		builder.WriteString(`","pid":"`)
-		builder.WriteString(value.Get("parent_file_id").String())
-		builder.WriteString(`","size":`)
-		builder.WriteString(strconv.FormatInt(file_size, 10))
-		builder.WriteString(`,"time":`)
-		builder.WriteString(strconv.FormatInt(file_time.Unix(), 10))
-		builder.WriteString(`,"type":"`)
-		builder.WriteString(value.Get("type").String())
-		builder.WriteString(`","sizestr":"`)
-		builder.WriteString(utils.FormateSizeString(file_size))
-		builder.WriteString(`","timestr":"`)
-		builder.WriteString(file_time.Format("2006 01-02"))
-		builder.WriteString(`","icon":"`)
-		builder.WriteString(file_icon)
-		builder.WriteString(`","starred":`)
-		builder.WriteString(strconv.FormatBool(value.Get("starred").Bool()))
-		builder.WriteString(`,"status":"`)
-		builder.WriteString(status)
-
-		if i >= (max - 1) {
-			builder.WriteString(`"}`)
-		} else {
-			builder.WriteString(`"},`)
-		}
-	}
-	builder.WriteString(`]}`)
+	_FileListBuilder(&builder, &info)
 	return builder.String()
 }
 
@@ -484,16 +320,9 @@ func ApiCreatForder(boxid string, parentid string, name string) (retjsonstr stri
 		"check_name_mode": "refuse",
 		"type":            "folder"}
 
-	b, _ := json.Marshal(postjson)
-	postdata := string(b)
-
-	code, _, body := utils.PostHTTPString(apiurl, GetAuthorization(), postdata)
-	if code == 401 {
-		//UserAccessToken 失效了，尝试刷新一次
-		ApiTokenRefresh("")
-		//刷新完了，重新尝试一遍
-		code, _, body = utils.PostHTTPString(apiurl, GetAuthorization(), postdata)
-	}
+	postdata, _ := json.Marshal(postjson)
+	code, bodybytes := _APIHTTP(apiurl, &postdata)
+	body := string(*bodybytes)
 	if code != 201 || !gjson.Valid(body) { //注意这里是201
 		return utils.ToErrorMessageJSON("创建文件夹失败")
 	}
@@ -519,16 +348,9 @@ func ApiUncompress(boxid string, file_id string, target_file_id string, password
 	var postjson = map[string]interface{}{"drive_id": boxid,
 		"file_id": file_id}
 
-	b, _ := json.Marshal(postjson)
-	postdata := string(b)
-
-	code, _, body := utils.PostHTTPString(apiurl, GetAuthorization(), postdata)
-	if code == 401 {
-		//UserAccessToken 失效了，尝试刷新一次
-		ApiTokenRefresh("")
-		//刷新完了，重新尝试一遍
-		code, _, body = utils.PostHTTPString(apiurl, GetAuthorization(), postdata)
-	}
+	postdata, _ := json.Marshal(postjson)
+	code, bodybytes := _APIHTTP(apiurl, &postdata)
+	body := string(*bodybytes)
 	if code != 200 || !gjson.Valid(body) {
 		return utils.ToErrorMessageJSON("获取文件信息失败")
 	}
@@ -549,16 +371,9 @@ func ApiUncompress(boxid string, file_id string, target_file_id string, password
 	if password != "" {
 		postjson["password"] = password
 	}
-	b, _ = json.Marshal(postjson)
-	postdata = string(b)
-
-	code, _, body = utils.PostHTTPString(apiurl, GetAuthorization(), postdata)
-	if code == 401 {
-		//UserAccessToken 失效了，尝试刷新一次
-		ApiTokenRefresh("")
-		//刷新完了，重新尝试一遍
-		code, _, body = utils.PostHTTPString(apiurl, GetAuthorization(), postdata)
-	}
+	postdata, _ = json.Marshal(postjson)
+	code, bodybytes = _APIHTTP(apiurl, &postdata)
+	body = string(*bodybytes)
 	if code != 202 && code != 400 && code != 500 || !gjson.Valid(body) { //注意这里是202
 		return utils.ToErrorMessageJSON("创建解压缩任务失败")
 	}
@@ -600,16 +415,9 @@ func ApiUncompressCheck(boxid string, domain_id, file_id, task_id string) (retjs
 		"task_id":   task_id,
 	}
 
-	b, _ := json.Marshal(postjson)
-	postdata := string(b)
-
-	code, _, body := utils.PostHTTPString(apiurl, GetAuthorization(), postdata)
-	if code == 401 {
-		//UserAccessToken 失效了，尝试刷新一次
-		ApiTokenRefresh("")
-		//刷新完了，重新尝试一遍
-		code, _, body = utils.PostHTTPString(apiurl, GetAuthorization(), postdata)
-	}
+	postdata, _ := json.Marshal(postjson)
+	code, bodybytes := _APIHTTP(apiurl, &postdata)
+	body := string(*bodybytes)
 	if code != 200 && code != 400 && code != 500 || !gjson.Valid(body) {
 		return utils.ToErrorMessageJSON("获取解压缩进度失败")
 	}
@@ -649,16 +457,9 @@ func ApiRename(boxid string, file_id string, name string) (retjsonstr string) {
 		"name":            name,
 		"check_name_mode": "refuse"}
 
-	b, _ := json.Marshal(postjson)
-	postdata := string(b)
-
-	code, _, body := utils.PostHTTPString(apiurl, GetAuthorization(), postdata)
-	if code == 401 {
-		//UserAccessToken 失效了，尝试刷新一次
-		ApiTokenRefresh("")
-		//刷新完了，重新尝试一遍
-		code, _, body = utils.PostHTTPString(apiurl, GetAuthorization(), postdata)
-	}
+	postdata, _ := json.Marshal(postjson)
+	code, bodybytes := _APIHTTP(apiurl, &postdata)
+	body := string(*bodybytes)
 	if code != 200 || !gjson.Valid(body) {
 		return utils.ToErrorMessageJSON("重命名失败")
 	}
@@ -674,7 +475,7 @@ func ApiRenameBatch(boxid string, keylist []string, namelist []string) (retjsons
 	defer func() {
 		if errr := recover(); errr != nil {
 			log.Println("ApiRenameBatchError ", " error=", errr)
-			retjsonstr = utils.ToSuccessJSON2("count", 0, "error", len(keylist))
+			retjsonstr = utils.ToSuccessJSON2("filecount", 0, "error", len(keylist))
 		}
 	}()
 	//https://api.aliyundrive.com/v2/recyclebin/trash   {"drive_id":"9999999","file_id":"60a92692849dfed0c585482fa71aecd2e790ba64"}
@@ -703,7 +504,7 @@ func ApiRenameBatch(boxid string, keylist []string, namelist []string) (retjsons
 	blist = append(blist, postdata)
 	count := _RunBatch(blist)
 
-	return utils.ToSuccessJSON2("count", count, "error", len(keylist)-int(count))
+	return utils.ToSuccessJSON2("filecount", count, "error", len(keylist)-int(count))
 }
 
 func ApiFavor(boxid string, file_id string, isfavor bool) (retjsonstr string) {
@@ -730,16 +531,9 @@ func ApiFavor(boxid string, file_id string, isfavor bool) (retjsonstr string) {
 			"starred":          false}
 	}
 
-	b, _ := json.Marshal(postjson)
-	postdata := string(b)
-
-	code, _, body := utils.PostHTTPString(apiurl, GetAuthorization(), postdata)
-	if code == 401 {
-		//UserAccessToken 失效了，尝试刷新一次
-		ApiTokenRefresh("")
-		//刷新完了，重新尝试一遍
-		code, _, body = utils.PostHTTPString(apiurl, GetAuthorization(), postdata)
-	}
+	postdata, _ := json.Marshal(postjson)
+	code, bodybytes := _APIHTTP(apiurl, &postdata)
+	body := string(*bodybytes)
 	if code != 200 || !gjson.Valid(body) {
 		return utils.ToErrorMessageJSON("收藏失败")
 	}
@@ -755,7 +549,7 @@ func ApiTrashBatch(boxid string, filelist []string) (retjsonstr string) {
 	defer func() {
 		if errr := recover(); errr != nil {
 			log.Println("ApiTrashBatchError ", " error=", errr)
-			retjsonstr = utils.ToSuccessJSON2("count", 0, "error", len(filelist))
+			retjsonstr = utils.ToSuccessJSON2("filecount", 0, "error", len(filelist))
 		}
 	}()
 	//https://api.aliyundrive.com/v2/recyclebin/trash   {"drive_id":"9999999","file_id":"60a92692849dfed0c585482fa71aecd2e790ba64"}
@@ -784,14 +578,14 @@ func ApiTrashBatch(boxid string, filelist []string) (retjsonstr string) {
 	blist = append(blist, postdata)
 	count := _RunBatch(blist)
 
-	return utils.ToSuccessJSON2("count", count, "error", len(filelist)-int(count))
+	return utils.ToSuccessJSON2("filecount", count, "error", len(filelist)-int(count))
 }
 
 func ApiFavorBatch(boxid string, filelist []string, isfavor bool) (retjsonstr string) {
 	defer func() {
 		if errr := recover(); errr != nil {
 			log.Println("ApiFavorBatchError ", " error=", errr)
-			retjsonstr = utils.ToSuccessJSON2("count", 0, "error", len(filelist))
+			retjsonstr = utils.ToSuccessJSON2("filecount", 0, "error", len(filelist))
 		}
 	}()
 	//https://api.aliyundrive.com/v2/recyclebin/trash   {"drive_id":"9999999","file_id":"60a92692849dfed0c585482fa71aecd2e790ba64"}
@@ -825,14 +619,14 @@ func ApiFavorBatch(boxid string, filelist []string, isfavor bool) (retjsonstr st
 	blist = append(blist, postdata)
 	count := _RunBatch(blist)
 
-	return utils.ToSuccessJSON2("count", count, "error", len(filelist)-int(count))
+	return utils.ToSuccessJSON2("filecount", count, "error", len(filelist)-int(count))
 }
 
 func ApiMoveBatch(boxid string, filelist []string, movetobox, movetoid string) (retjsonstr string) {
 	defer func() {
 		if errr := recover(); errr != nil {
 			log.Println("ApiMoveBatchError ", " error=", errr)
-			retjsonstr = utils.ToSuccessJSON2("count", 0, "error", len(filelist))
+			retjsonstr = utils.ToSuccessJSON2("filecount", 0, "error", len(filelist))
 		}
 	}()
 	//https://api.aliyundrive.com/v2/batch
@@ -865,14 +659,14 @@ func ApiMoveBatch(boxid string, filelist []string, movetobox, movetoid string) (
 	blist = append(blist, postdata)
 	count := _RunBatch(blist)
 
-	return utils.ToSuccessJSON2("count", count, "error", len(filelist)-int(count))
+	return utils.ToSuccessJSON2("filecount", count, "error", len(filelist)-int(count))
 }
 
 func ApiTrashDeleteBatch(boxid string, filelist []string) (retjsonstr string) {
 	defer func() {
 		if errr := recover(); errr != nil {
 			log.Println("ApiTrashDeleteBatchError ", " error=", errr)
-			retjsonstr = utils.ToSuccessJSON2("count", 0, "error", len(filelist))
+			retjsonstr = utils.ToSuccessJSON2("filecount", 0, "error", len(filelist))
 		}
 	}()
 	//{"requests":[{"body":{"drive_id":"9999999","file_id":"60a5bb43bf60766feada4eca9d0da23a501eb7c8"},"headers":{"Content-Type":"application/json"},"id":"60a5bb43bf60766feada4eca9d0da23a501eb7c8","method":"POST","url":"/file/delete"}],"resource":"file"}
@@ -900,13 +694,13 @@ func ApiTrashDeleteBatch(boxid string, filelist []string) (retjsonstr string) {
 	blist = append(blist, postdata)
 	count := _RunBatch(blist)
 
-	return utils.ToSuccessJSON2("count", count, "error", len(filelist)-int(count))
+	return utils.ToSuccessJSON2("filecount", count, "error", len(filelist)-int(count))
 }
 func ApiTrashRestoreBatch(boxid string, filelist []string) (retjsonstr string) {
 	defer func() {
 		if errr := recover(); errr != nil {
 			log.Println("ApiTrashRestoreBatchError ", " error=", errr)
-			retjsonstr = utils.ToSuccessJSON2("count", 0, "error", len(filelist))
+			retjsonstr = utils.ToSuccessJSON2("filecount", 0, "error", len(filelist))
 		}
 	}()
 	//{"requests":[{"body":{"drive_id":"9999999","file_id":"60a5bb4394b2ad243fb84509a576506afc890397"},"headers":{"Content-Type":"application/json"},"id":"60a5bb4394b2ad243fb84509a576506afc890397","method":"POST","url":"/recyclebin/restore"}],"resource":"file"}
@@ -934,7 +728,7 @@ func ApiTrashRestoreBatch(boxid string, filelist []string) (retjsonstr string) {
 	blist = append(blist, postdata)
 	count := _RunBatch(blist)
 
-	return utils.ToSuccessJSON2("count", count, "error", len(filelist)-int(count))
+	return utils.ToSuccessJSON2("filecount", count, "error", len(filelist)-int(count))
 }
 
 func _RunBatch(blist []string) (count int32) {
@@ -963,13 +757,10 @@ func _Batch(postdata string) (count int32) {
 	}()
 	HTTPTOTAL <- struct{}{} //写入，如果已经写入了5次，就会在这里阻塞住
 	var apiurl = "https://api.aliyundrive.com/v2/batch"
-	code, _, body := utils.PostHTTPString(apiurl, GetAuthorization(), postdata)
-	if code == 401 {
-		//UserAccessToken 失效了，尝试刷新一次
-		ApiTokenRefresh("")
-		//刷新完了，重新尝试一遍
-		code, _, body = utils.PostHTTPString(apiurl, GetAuthorization(), postdata)
-	}
+	var postdatabytes = []byte(postdata)
+	code, bodybytes := _APIHTTP(apiurl, &postdatabytes)
+	body := string(*bodybytes)
+
 	if code != 200 || !gjson.Valid(body) {
 		return 0
 	}

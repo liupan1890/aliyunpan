@@ -84,7 +84,7 @@ type IConfigModel struct {
 }
 
 //LocalExeVer 文件版本
-const LocalExeVer = "1.6.21.0"
+const LocalExeVer = "1.6.29.0"
 
 //Config 全局，serverconfig
 var Config = IConfigModel{

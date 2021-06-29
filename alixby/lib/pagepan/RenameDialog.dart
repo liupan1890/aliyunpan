@@ -1,8 +1,9 @@
 import 'package:alixby/api/AliFile.dart';
 import 'package:alixby/states/Global.dart';
-import 'package:alixby/utils/Loading.dart';
 import 'package:alixby/utils/MColors.dart';
 import 'package:alixby/utils/MIcons.dart';
+import 'package:alixby/utils/SpinKitRing.dart';
+import 'package:argon_buttons_flutter/argon_buttons_flutter.dart';
 import 'package:bot_toast/bot_toast.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
@@ -12,33 +13,15 @@ import 'package:alixby/states/SettingState.dart';
 // ignore: must_be_immutable
 class RenameDialog extends StatelessWidget {
   // ignore: non_constant_identifier_names
-  RenameDialog({Key? key, required this.box, required this.fileid, required String filename}) : super(key: key) {
+  RenameDialog({Key? key, required this.box, required this.fileid, required this.filename}) : super(key: key) {
     controller.text = filename;
   }
 
   String box = "";
   String fileid = "";
+  String filename = "";
 
   final TextEditingController controller = TextEditingController();
-
-  void onSubmitted(BuildContext context) {
-    String dirname = controller.text;
-    dirname = dirname.replaceAll('"', '').trim();
-    var fcHide = Loading.showLoading();
-
-    AliFile.apiRename(box, fileid, dirname).then((value) {
-      fcHide();
-      if (value == "success") {
-        BotToast.showText(text: "重命名成功");
-        Navigator.of(context).pop('ok');
-        Future.delayed(Duration(milliseconds: 200), () {
-          Global.getTreeState(box).pageRefreshNode();
-        });
-      } else {
-        BotToast.showText(text: "重命名失败请重试");
-      }
-    });
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -52,7 +35,7 @@ class RenameDialog extends StatelessWidget {
               style: TextStyle(color: MColors.textColor, fontFamily: "opposans"),
               child: Center(
                   child: Container(
-                height: 200,
+                height: 240,
                 width: 460,
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(8),
@@ -78,25 +61,26 @@ class RenameDialog extends StatelessWidget {
                     Container(padding: EdgeInsets.only(top: 20)),
                     Container(
                       width: 380,
-                      padding: EdgeInsets.only(top: 20),
-                      child: Stack(
+                      padding: EdgeInsets.only(top: 8),
+                      child: Column(
                         children: [
                           ConstrainedBox(
-                              constraints: BoxConstraints(maxHeight: 60, maxWidth: 375),
+                              constraints: BoxConstraints(maxWidth: 380),
                               child: TextField(
                                 controller: controller,
-                                maxLines: 1,
+                                minLines: 1,
+                                maxLines: 4,
+                                scrollPhysics: NeverScrollableScrollPhysics(),
                                 autocorrect: false,
                                 enableSuggestions: false,
-                                style: TextStyle(
-                                    fontSize: 14, color: MColors.textColor, fontFamily: "opposans", height: 1),
+                                style: TextStyle(fontSize: 14, color: MColors.textColor, fontFamily: "opposans"),
                                 cursorColor: MColors.inputBorderHover,
                                 autofocus: true,
                                 decoration: InputDecoration(
                                   helperText: "文件名不要有特殊字符：<>!:*?\\/.'\"",
                                   helperStyle:
                                       TextStyle(fontSize: 13, color: MColors.textColor, fontFamily: "opposans"),
-                                  contentPadding: EdgeInsets.symmetric(vertical: 4, horizontal: 8),
+                                  contentPadding: EdgeInsets.symmetric(vertical: 8, horizontal: 8),
                                   focusedBorder: OutlineInputBorder(
                                     borderSide: BorderSide(
                                       color: MColors.inputBorderHover,
@@ -110,19 +94,51 @@ class RenameDialog extends StatelessWidget {
                                     ),
                                   ),
                                 ),
-                                onSubmitted: (value) {
-                                  onSubmitted(context);
-                                },
                               )),
-                          Positioned.directional(
-                              textDirection: TextDirection.rtl,
-                              start: 0,
-                              child: ElevatedButton(
-                                onPressed: () {
-                                  onSubmitted(context);
+                          Container(
+                              alignment: Alignment.bottomRight,
+                              child: ArgonButton(
+                                height: 32,
+                                width: 90,
+                                minWidth: 90,
+                                borderRadius: 3.0,
+                                roundLoadingShape: false,
+                                color: MColors.elevatedBtnBG,
+                                child: Text(
+                                  "重命名",
+                                  style: TextStyle(color: MColors.elevatedBtnColor, fontFamily: "opposans"),
+                                ),
+                                loader: Container(
+                                  child: SpinKitRing(
+                                    size: 22,
+                                    lineWidth: 3,
+                                    color: Colors.white,
+                                  ),
+                                ),
+                                onTap: (startLoading, stopLoading, btnState) {
+                                  String dirname = controller.text;
+                                  dirname =
+                                      dirname.replaceAll('"', '').replaceAll('\r', '').replaceAll('\n', '').trim();
+                                  controller.text = dirname;
+                                  if (dirname == filename) {
+                                    BotToast.showText(text: "新的文件名不能与旧名完全相同");
+                                    return;
+                                  }
+                                  if (btnState == ButtonState.Busy) return;
+                                  startLoading();
+                                  AliFile.apiRename(box, fileid, dirname).then((value) {
+                                    stopLoading();
+                                    if (value == "success") {
+                                      BotToast.showText(text: "重命名成功");
+                                      Navigator.of(context).pop('ok');
+                                      Future.delayed(Duration(milliseconds: 600), () {
+                                        Global.getTreeState(box).pageRefreshNode();
+                                      });
+                                    } else {
+                                      BotToast.showText(text: "重命名失败请重试");
+                                    }
+                                  });
                                 },
-                                child: Text("  重命名  "),
-                                style: ButtonStyle(minimumSize: MaterialStateProperty.all(Size(0, 36))),
                               )),
                         ],
                       ),

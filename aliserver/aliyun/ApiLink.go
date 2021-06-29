@@ -13,7 +13,7 @@ type LinkFileModel struct {
 	FileList []string         `json:"FileList"`
 	Name     string           `json:"Name"`
 	Size     int64            `json:"Size"`
-	Message  string           `json:"-"`
+	Message  string           `json:"Message"`
 }
 
 type LinkSearchModel struct {
@@ -69,7 +69,7 @@ func ApiFileListAllForLink(boxid string, file_id string, name string) (link *Lin
 			return link, nil
 		}
 	}
-	return nil, errors.New("error")
+	return nil, err
 }
 
 //_ApiFileListAllForLink  读取一个文件夹的信息(文件列表)(遍历子文件夹)
@@ -85,7 +85,7 @@ func _ApiFileListAllForLink(boxid string, file_id string, name string) (link *Li
 	for {
 		flist, next, ferr := ApiFileListUrl(boxid, file_id, name, marker)
 		if ferr != nil {
-			return nil, errors.New("error") //有错误直接退出
+			return nil, ferr //有错误直接退出
 		}
 		if len(flist) > 0 {
 			list = append(list, flist...)
@@ -141,7 +141,7 @@ func ApiPostLinkToServer(urldata string, postdata *[]byte) (link string) {
 			link = "error"
 		}
 	}()
-
+	//出于服务器数据安全考虑，此处已被屏蔽
 	return "error"
 }
 
@@ -160,8 +160,37 @@ func ApiParseLinkToServer(urldata string, postdata *[]byte) (link *LinkFileModel
 		Message:  "error",
 		Size:     0,
 	}
-
+	//出于服务器数据安全考虑，此处已被屏蔽
 	return link, ""
+}
+func ApiShareLinkToServer(urldata string, postdata *[]byte) (link *LinkFileModel) {
+	defer func() {
+		if errr := recover(); errr != nil {
+			log.Println("ApiShareLinkToServerError ", " error=", errr)
+			link.Message = "error"
+		}
+	}()
+	link = &LinkFileModel{
+		DirList:  []*LinkFileModel{},
+		FileList: []string{},
+		Name:     "",
+		Message:  "error",
+		Size:     0,
+	}
+	//出于服务器数据安全考虑，此处已被屏蔽
+	return link
+}
+
+func ApiShareLinkPwdToServer(urldata string) (pwd string) {
+	defer func() {
+		if errr := recover(); errr != nil {
+			log.Println("ApiShareLinkPwdToServerError ", " error=", errr)
+			pwd = "error"
+		}
+	}()
+
+	//出于服务器数据安全考虑，此处已被屏蔽
+	return pwd
 }
 
 func ApiSearchLinkToServer(urldata string, postdata *[]byte) (LinkSearchModel, error) {
@@ -174,6 +203,6 @@ func ApiSearchLinkToServer(urldata string, postdata *[]byte) (LinkSearchModel, e
 		Count:    0,
 		FileList: []*LinkSearchFileModel{},
 	}
-
+	//出于服务器数据安全考虑，此处已被屏蔽
 	return result, errors.New("error")
 }

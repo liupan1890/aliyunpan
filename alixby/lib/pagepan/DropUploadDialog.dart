@@ -3,9 +3,11 @@ import 'dart:io';
 import 'package:alixby/api/Uploader.dart';
 import 'package:alixby/models/PageRightFileItem.dart';
 import 'package:alixby/states/Global.dart';
-import 'package:alixby/utils/Loading.dart';
 import 'package:alixby/utils/MColors.dart';
 import 'package:alixby/utils/MIcons.dart';
+import 'package:alixby/utils/SpinKitRing.dart';
+import 'package:alixby/utils/StringUtils.dart';
+import 'package:argon_buttons_flutter/argon_buttons_flutter.dart';
 import 'package:bot_toast/bot_toast.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
@@ -101,7 +103,7 @@ class _DropUploadDialogState extends State<DropUploadDialog> {
               child: Center(
                   child: Container(
                 height: 520,
-                width: 500,
+                width: 520,
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(8),
                   color: MColors.dialogBgColor,
@@ -211,7 +213,7 @@ class _DropUploadDialogState extends State<DropUploadDialog> {
                 padding2,
                 Expanded(
                     child: Text(
-                  item.title,
+                  StringUtils.joinChar(item.title),
                   style: textStyle,
                   softWrap: false,
                   overflow: TextOverflow.ellipsis,
@@ -242,15 +244,33 @@ class _DropUploadDialogState extends State<DropUploadDialog> {
             style: ButtonStyle(minimumSize: MaterialStateProperty.all(Size(0, 36))),
           ),
           Padding(padding: EdgeInsets.only(left: 24)),
-          ElevatedButton(
-            onPressed: () {
-              var fcHide = Loading.showLoading();
+          ArgonButton(
+            height: 32,
+            width: 80,
+            minWidth: 80,
+            borderRadius: 3.0,
+            roundLoadingShape: false,
+            color: MColors.elevatedBtnBG,
+            child: Text(
+              "上传",
+              style: TextStyle(color: MColors.elevatedBtnColor, fontFamily: "opposans"),
+            ),
+            loader: Container(
+              child: SpinKitRing(
+                size: 22,
+                lineWidth: 3,
+                color: Colors.white,
+              ),
+            ),
+            onTap: (startLoading, stopLoading, btnState) {
+              if (btnState == ButtonState.Busy) return;
+              startLoading();
               Uploader.goUploadFileAndDir(widget.box, widget.parentid, widget.fileuplist).then((value) {
-                fcHide();
+                stopLoading();
                 if (value > 0) {
                   BotToast.showText(text: "成功创建" + value.toString() + "个上传任务");
                   BotToast.remove(widget.ukey, "upload");
-                  Future.delayed(Duration(milliseconds: 500), () {
+                  Future.delayed(Duration(milliseconds: 600), () {
                     Global.getTreeState(widget.box).pageRefreshNode();
                   });
                 } else {
@@ -258,8 +278,6 @@ class _DropUploadDialogState extends State<DropUploadDialog> {
                 }
               });
             },
-            child: Text("  上传  "),
-            style: ButtonStyle(minimumSize: MaterialStateProperty.all(Size(0, 36))),
           ),
         ],
       ),

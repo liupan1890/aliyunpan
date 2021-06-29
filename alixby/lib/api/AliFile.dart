@@ -142,7 +142,7 @@ class AliFile {
       var result = await HttpHelper.postToServer(
           "ApiRenameBatch", jsonEncode({'box': box, 'keylist': keylist, "namelist": namelist}));
       if (result["code"] == 0) {
-        return result["count"];
+        return result["filecount"];
       }
     } catch (e) {
       print('apiRenameBatch ' + e.toString());
@@ -184,7 +184,7 @@ class AliFile {
     try {
       var result = await HttpHelper.postToServer("ApiTrashBatch", jsonEncode({'box': box, 'filelist': filelist}));
       if (result["code"] == 0) {
-        return result["count"];
+        return result["filecount"];
       }
     } catch (e) {
       print('apiTrashBatch ' + e.toString());
@@ -197,7 +197,7 @@ class AliFile {
       var result = await HttpHelper.postToServer(
           "ApiMoveBatch", jsonEncode({'box': box, 'filelist': filelist, "movetobox": movetobox, "movetoid": movetoid}));
       if (result["code"] == 0) {
-        return result["count"];
+        return result["filecount"];
       }
     } catch (e) {
       print('apiMoveBatch ' + e.toString());
@@ -225,7 +225,7 @@ class AliFile {
     try {
       var result = await HttpHelper.postToServer("ApiTrashDeleteBatch", jsonEncode({'box': box, 'filelist': filelist}));
       if (result["code"] == 0) {
-        return result["count"];
+        return result["filecount"];
       }
     } catch (e) {
       print('apiTrashDeleteBatch ' + e.toString());
@@ -238,7 +238,7 @@ class AliFile {
       var result =
           await HttpHelper.postToServer("ApiTrashRestoreBatch", jsonEncode({'box': box, 'filelist': filelist}));
       if (result["code"] == 0) {
-        return result["count"];
+        return result["filecount"];
       }
     } catch (e) {
       print('apiTrashRestoreBatch ' + e.toString());
@@ -251,7 +251,7 @@ class AliFile {
       var result = await HttpHelper.postToServer(
           "ApiFavorBatch", jsonEncode({'box': box, "isfavor": isfavor, 'filelist': filelist}));
       if (result["code"] == 0) {
-        return result["count"];
+        return result["filecount"];
       }
     } catch (e) {
       print('apiFavorBatch ' + e.toString());

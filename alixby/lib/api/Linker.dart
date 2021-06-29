@@ -25,6 +25,7 @@ class LinkFileModel {
   int size = 0;
   int leve = 0;
   bool isdir = false;
+  String shareid = ""; //分享链接 特殊
   List<LinkFileModel> children = [];
   String fulljson = "";
 
@@ -151,6 +152,42 @@ class Linker {
       print('goLinkParse ' + e.toString());
     }
     return parse;
+  }
+
+  static Future<LinkFileModel> goLinkShare(String link, String password, bool ispublic) async {
+    LinkFileModel parse = LinkFileModel.newFileItem("", 0, "error", true);
+    try {
+      var result = await HttpHelper.postToServer(
+          "GoLinkShare", jsonEncode({"link": link, "password": password, "ispublic": ispublic}));
+      if (result["code"] == 0) {
+        //正确返回文件列表
+        parse = LinkFileModel.fromJson(result["link"]);
+        parse.fulljson = json.encode(result["link"]);
+        parse.name = result["info"] + "  " + parse.name;
+        if (link.toLowerCase().contains("aliyundrive.com/s/")) {
+          parse.shareid = result["shareid"];
+        }
+      } else if (result["code"] == 503) {
+        parse.hash = result["message"];
+      }
+    } catch (e) {
+      print('goLinkParse ' + e.toString());
+    }
+    return parse;
+  }
+
+  static Future<int> goLinkShareUpload(String box, String parentid, String shareid, String linkstr) async {
+    try {
+      var result = await HttpHelper.postToServer(
+          "GoLinkShareUpload", jsonEncode({'box': box, "parentid": parentid, "shareid": shareid, "linkstr": linkstr}));
+      if (result["code"] == 0) {
+        //正确返回文件列表
+        return result["filecount"];
+      }
+    } catch (e) {
+      print('goLinkUpload ' + e.toString());
+    }
+    return 0;
   }
 
   static Future<int> goLinkUpload(String box, String parentid, String linkstr) async {

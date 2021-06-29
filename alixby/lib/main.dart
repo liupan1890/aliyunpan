@@ -41,7 +41,7 @@ void main() async {
     ),
   ));
   //980
-  Future.delayed(Duration(milliseconds: 200), () {
+  Future.delayed(Duration(milliseconds: 300), () {
     GoServer.connServer();
   });
 
@@ -58,7 +58,7 @@ void main() async {
         if (upload != null) {
           BotToast.remove(upload!, "upload");
         }
-        Future.delayed(Duration(milliseconds: 100), () {
+        Future.delayed(Duration(milliseconds: 200), () {
           var key = UniqueKey();
           upload = key;
           BotToast.showEnhancedWidget(
@@ -171,9 +171,14 @@ class MyApp extends StatelessWidget {
   }
 }
 
-class MyHomePage extends StatelessWidget {
+class MyHomePage extends StatefulWidget {
   MyHomePage({required Key key}) : super(key: key);
 
+  @override
+  _MyHomePageState createState() => _MyHomePageState();
+}
+
+class _MyHomePageState extends State<MyHomePage> {
   @override
   Widget build(BuildContext context) {
     var screenWidth = MediaQuery.of(context).size.width;

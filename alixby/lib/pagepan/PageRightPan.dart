@@ -67,7 +67,7 @@ class _PageRightPanState extends State<PageRightPan> with AutomaticKeepAliveClie
               Padding(padding: EdgeInsets.only(left: 8)),
               Text(filestate.pageRightFileSelectedDes),
               Expanded(child: Container()),
-              Container(child: Icon(MIcons.sort, color: Color(0xff637dff), size: 28)),
+              Container(child: Icon(MIcons.sort, color: Color(0xff637dff), size: 22)),
               Container(child: _buildSortMenu(filestate)),
               Padding(padding: EdgeInsets.only(left: 12)),
             ])),
@@ -108,7 +108,7 @@ class _PageRightPanState extends State<PageRightPan> with AutomaticKeepAliveClie
       tooltip: '选择排序方式',
       padding: EdgeInsets.all(0),
       child: Text("按 " + filestate.pageRightFileOrderBy + " 排序",
-          style: TextStyle(fontSize: 14, color: Color(0xff637dff), fontFamily: "opposans")),
+          style: TextStyle(fontSize: 13, color: Color(0xff637dff), fontFamily: "opposans")),
       itemBuilder: (context) {
         return <PopupMenuEntry<String>>[
           PopupMenuItem<String>(
@@ -122,6 +122,12 @@ class _PageRightPanState extends State<PageRightPan> with AutomaticKeepAliveClie
             height: 32,
             value: '文件名 从大到小',
             child: Text('文件名 从大到小'),
+          ),
+          PopupMenuItem<String>(
+            textStyle: TextStyle(color: MColors.userNavBtnColor, fontSize: 14, fontFamily: "opposans"),
+            height: 32,
+            value: '文件类型',
+            child: Text('文件类型'),
           ),
           PopupMenuItem<String>(
             textStyle: TextStyle(color: MColors.userNavBtnColor, fontSize: 14, fontFamily: "opposans"),

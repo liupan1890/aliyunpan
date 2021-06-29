@@ -2,9 +2,11 @@ import 'package:alixby/api/AliFile.dart';
 import 'package:alixby/api/Linker.dart';
 import 'package:alixby/models/PageRightFileItem.dart';
 import 'package:alixby/states/PanData.dart';
-import 'package:alixby/utils/Loading.dart';
 import 'package:alixby/utils/MColors.dart';
 import 'package:alixby/utils/MIcons.dart';
+import 'package:alixby/utils/SpinKitRing.dart';
+import 'package:alixby/utils/StringUtils.dart';
+import 'package:argon_buttons_flutter/argon_buttons_flutter.dart';
 import 'package:bot_toast/bot_toast.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
@@ -61,7 +63,7 @@ class _ZhuanCunDialogState extends State<ZhuanCunDialog> {
               child: Center(
                   child: Container(
                 height: 500,
-                width: 500,
+                width: 520,
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(8),
                   color: MColors.dialogBgColor,
@@ -85,7 +87,7 @@ class _ZhuanCunDialogState extends State<ZhuanCunDialog> {
                                 TextStyle(fontSize: 20, color: MColors.textColor, height: 0, fontFamily: "opposans"))),
                     Container(padding: EdgeInsets.only(top: 20)),
                     Container(
-                        width: 440,
+                        width: 480,
                         height: 370,
                         alignment: Alignment.topLeft,
                         decoration: BoxDecoration(
@@ -132,7 +134,7 @@ class _ZhuanCunDialogState extends State<ZhuanCunDialog> {
                                   )),
                             ))),
                     Container(
-                      width: 440,
+                      width: 480,
                       padding: EdgeInsets.only(top: 12),
                       child: Row(mainAxisAlignment: MainAxisAlignment.end, children: [
                         UnconstrainedBox(
@@ -182,8 +184,25 @@ class _ZhuanCunDialogState extends State<ZhuanCunDialog> {
                           style: ButtonStyle(minimumSize: MaterialStateProperty.all(Size(0, 36))),
                         ),
                         Padding(padding: EdgeInsets.only(left: 24)),
-                        ElevatedButton(
-                          onPressed: () {
+                        ArgonButton(
+                          height: 32,
+                          width: 220,
+                          minWidth: 220,
+                          borderRadius: 3.0,
+                          roundLoadingShape: false,
+                          color: MColors.elevatedBtnBG,
+                          child: Text(
+                            "转存到选中的文件夹内",
+                            style: TextStyle(color: MColors.elevatedBtnColor, fontFamily: "opposans"),
+                          ),
+                          loader: Container(
+                            child: SpinKitRing(
+                              size: 22,
+                              lineWidth: 3,
+                              color: Colors.white,
+                            ),
+                          ),
+                          onTap: (startLoading, stopLoading, btnState) {
                             var linkstr = '{"DirList":[],"FileList":[';
                             int totalsize = 0;
                             bool isadd = false;
@@ -204,10 +223,11 @@ class _ZhuanCunDialogState extends State<ZhuanCunDialog> {
                               totalsize += item.fileSize;
                             }
                             linkstr += '],"Name":"无","Size":' + totalsize.toString() + ',"Message":""}';
-                            var fcHide = Loading.showLoading();
+                            if (btnState == ButtonState.Busy) return;
+                            startLoading();
                             Linker.goLinkUpload(movetobox, selectKey, linkstr).then((value) {
-                              fcHide();
-                              Future.delayed(Duration(milliseconds: 500), () {
+                              stopLoading();
+                              Future.delayed(Duration(milliseconds: 600), () {
                                 PanData.loadFileList(movetobox, selectKey, "zhuancun"); //触发联网加载
                               });
 
@@ -216,8 +236,6 @@ class _ZhuanCunDialogState extends State<ZhuanCunDialog> {
                               BotToast.showText(text: "成功转存" + value.toString() + "个文件");
                             });
                           },
-                          child: Text("转存到选中的文件夹内"),
-                          style: ButtonStyle(minimumSize: MaterialStateProperty.all(Size(0, 36))),
                         ),
                       ]),
                     ),
@@ -321,7 +339,7 @@ class DirNode2 {
                 hoverDecoration: hoverDecoration,
                 child: Container(
                     key: Key("pdt_zhuan_rchc_" + key),
-                    width: 400 - leve * 20,
+                    width: 440 - leve * 20,
                     height: 24,
                     padding: padding,
                     child: Row(key: Key("pdt_zhuan_rchcr_" + key), children: [
@@ -329,7 +347,7 @@ class DirNode2 {
                       padding2,
                       Expanded(
                           child: Text(
-                        label,
+                        StringUtils.joinChar(label),
                         key: Key("pdt_zhuan_rchcrt_" + key),
                         style: style,
                         maxLines: 1,
@@ -352,7 +370,7 @@ class DirNode2 {
                 hoverDecoration: hoverDecorations,
                 child: Container(
                     key: Key("pdt_zhuan_rchc_" + key),
-                    width: 400 - leve * 20,
+                    width: 440 - leve * 20,
                     height: 24,
                     padding: padding,
                     child: Row(key: Key("pdt_zhuan_rchcr_" + key), children: [
@@ -360,7 +378,7 @@ class DirNode2 {
                       padding2,
                       Expanded(
                           child: Text(
-                        label,
+                        StringUtils.joinChar(label),
                         key: Key("pdt_zhuan_rchcrt_" + key),
                         style: styles,
                         maxLines: 1,

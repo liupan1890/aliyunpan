@@ -344,7 +344,7 @@ class FileState extends ChangeNotifier {
       var box = boxs[i];
       var fileid = ids[i];
 
-      if (name.length > 11) name = name.substring(0, 4) + "..." + name.substring(name.length - 4);
+      if (name.length > 15) name = name.substring(0, 6) + "..." + name.substring(name.length - 6);
 
       var link = WidgetSpan(
           child: Linkify(
@@ -449,6 +449,10 @@ class FileState extends ChangeNotifier {
     } else if (pageRightFileOrderBy == "上传时间 从大到小") {
       pageRightFileList.sort((a, b) => b.fileTime.compareTo(a.fileTime));
       filelist.sort((a, b) => b.fileTime.compareTo(a.fileTime));
+    } else if (pageRightFileOrderBy == "文件类型") {
+      pageRightFileList.sort((a, b) => StringUtils.sortNumber1(a.title, b.title));
+      filelist.sort((a, b) => StringUtils.sortNumber1(a.title, b.title));
+      filelist.sort((a, b) => a.fileext.compareTo(b.fileext));
     }
     pageRightFileList.addAll(filelist);
   }

@@ -291,6 +291,7 @@ class _PageRightSettingState extends State<PageRightSetting> with AutomaticKeepA
                       label: Text('保存'),
                       onPressed: () {
                         Global.settingState.downSpeed(Global.settingState.downSpeedController.text);
+                        BotToast.showText(text: "设置已保存");
                       }))),
         ],
       ),

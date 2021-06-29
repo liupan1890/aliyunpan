@@ -43,19 +43,12 @@ func ApiFileDownloadUrl(boxid string, file_id string, expire_sec int) (downurl s
 		"file_id":    file_id,
 		"expire_sec": expire_sec,
 	}
+	postdata, _ := json.Marshal(postjson)
+	code, bodybytes := _APIHTTP(apiurl, &postdata)
+	body := string(*bodybytes)
 
-	b, _ := json.Marshal(postjson)
-	postdata := string(b)
-
-	code, _, body := utils.PostHTTPString(apiurl, GetAuthorization(), postdata)
 	if code == 401 {
-		//UserAccessToken 失效了，尝试刷新一次
-		ApiTokenRefresh("")
-		//刷新完了，重新尝试一遍
-		code, _, body = utils.PostHTTPString(apiurl, GetAuthorization(), postdata)
-		if code == 401 {
-			return "", 0, errors.New("401")
-		}
+		return "", 0, errors.New("401")
 	}
 	if code != 200 || !gjson.Valid(body) {
 		return "", 0, errors.New("error")
@@ -84,19 +77,12 @@ func ApiFileGetUrl(boxid string, file_id string, parentpath string) (urlinfo Fil
 	var postjson = map[string]interface{}{"drive_id": boxid,
 		"file_id": file_id}
 
-	b, _ := json.Marshal(postjson)
-	postdata := string(b)
-
-	code, _, body := utils.PostHTTPString(apiurl, GetAuthorization(), postdata)
+	postdata, _ := json.Marshal(postjson)
+	code, bodybytes := _APIHTTP(apiurl, &postdata)
 	if code == 401 {
-		//UserAccessToken 失效了，尝试刷新一次
-		ApiTokenRefresh("")
-		//刷新完了，重新尝试一遍
-		code, _, body = utils.PostHTTPString(apiurl, GetAuthorization(), postdata)
-		if code == 401 {
-			return urlinfo, errors.New("401")
-		}
+		return urlinfo, errors.New("401")
 	}
+	body := string(*bodybytes)
 	if code != 200 || !gjson.Valid(body) {
 		return urlinfo, errors.New("error")
 	}
@@ -136,7 +122,7 @@ func ApiFileListAllForDown(boxid string, parentid string, parentpath string, isf
 			return list, nil
 		}
 	}
-	return nil, errors.New("error")
+	return nil, err
 }
 
 //_ApiFileListAllForDown 读取一个文件夹包含的文件列表 isfull==true时遍历所有子文件夹
@@ -151,7 +137,7 @@ func _ApiFileListAllForDown(boxid string, parentid string, parentpath string, is
 	for {
 		flist, next, ferr := ApiFileListUrl(boxid, parentid, parentpath, marker)
 		if ferr != nil {
-			return nil, errors.New("error") //有错误直接退出
+			return nil, ferr //有错误直接退出
 		}
 		if len(flist) > 0 {
 			list = append(list, flist...)
@@ -205,20 +191,14 @@ func ApiFileListUrl(boxid string, parentid string, parentpath string, marker str
 	if marker != "" {
 		postjson["marker"] = marker
 	}
-	b, _ := json.Marshal(postjson)
-	postdata := string(b)
 
 	//"image_thumbnail_process":"image/resize,w_160/format,jpeg",
 	//"image_url_process":"image/resize,w_1920/format,jpeg",
 	//"video_thumbnail_process":"video/snapshot,t_0,f_jpg,ar_auto,w_300",
 
-	code, _, body := utils.PostHTTPString(apiurl, GetAuthorization(), postdata)
-	if code == 401 {
-		//UserAccessToken 失效了，尝试刷新一次
-		ApiTokenRefresh("")
-		//刷新完了，重新尝试一遍
-		code, _, body = utils.PostHTTPString(apiurl, GetAuthorization(), postdata)
-	}
+	postdata, _ := json.Marshal(postjson)
+	code, bodybytes := _APIHTTP(apiurl, &postdata)
+	body := string(*bodybytes)
 	if code != 200 || !gjson.Valid(body) {
 		return nil, "", errors.New("error")
 	}
@@ -233,7 +213,7 @@ func ApiFileListUrl(boxid string, parentid string, parentpath string, marker str
 		file_id := info.Get("file_id").String()
 		name := utils.ClearFileName(info.Get("name").String(), true)
 		if name == "" {
-			return nil, "", errors.New("error")
+			return nil, "", errors.New("nameerror")
 		}
 		if filetype == "file" {
 			//url := info.Get("url").String()
@@ -309,19 +289,10 @@ func ApiImage(boxid string, file_id string) string {
 	var postjson = map[string]interface{}{"drive_id": boxid,
 		"file_id": file_id}
 
-	b, _ := json.Marshal(postjson)
-	postdata := string(b)
+	postdata, _ := json.Marshal(postjson)
+	code, bodybytes := _APIHTTP(apiurl, &postdata)
+	body := string(*bodybytes)
 
-	code, _, body := utils.PostHTTPString(apiurl, GetAuthorization(), postdata)
-	if code == 401 {
-		//UserAccessToken 失效了，尝试刷新一次
-		ApiTokenRefresh("")
-		//刷新完了，重新尝试一遍
-		code, _, body = utils.PostHTTPString(apiurl, GetAuthorization(), postdata)
-		if code == 401 {
-			return utils.ToErrorMessageJSON("获取图片链接失败")
-		}
-	}
 	if code != 200 || !gjson.Valid(body) {
 		return utils.ToErrorMessageJSON("获取图片链接失败")
 	}
@@ -350,19 +321,10 @@ func ApiText(boxid string, file_id string) string {
 	var postjson = map[string]interface{}{"drive_id": boxid,
 		"file_id": file_id}
 
-	b, _ := json.Marshal(postjson)
-	postdata := string(b)
+	postdata, _ := json.Marshal(postjson)
+	code, bodybytes := _APIHTTP(apiurl, &postdata)
+	body := string(*bodybytes)
 
-	code, _, body := utils.PostHTTPString(apiurl, GetAuthorization(), postdata)
-	if code == 401 {
-		//UserAccessToken 失效了，尝试刷新一次
-		ApiTokenRefresh("")
-		//刷新完了，重新尝试一遍
-		code, _, body = utils.PostHTTPString(apiurl, GetAuthorization(), postdata)
-		if code == 401 {
-			return utils.ToErrorMessageJSON("获取文本链接失败")
-		}
-	}
 	if code != 200 || !gjson.Valid(body) {
 		return utils.ToErrorMessageJSON("获取文本链接失败")
 	}
@@ -412,8 +374,8 @@ func ApiText(boxid string, file_id string) string {
 	text := string(bodybs)
 	temp := []rune(text)
 	length4 := len(temp)
-	if length4 > 1024*100 { //1万字
-		text = string(temp[0:1024*100]) + "\n\n\n\n剩余" + strconv.FormatInt(int64(length4-1024*100), 10) + "字被省略.....\n\n\n\n"
+	if length4 > 1024*500 { //1万字
+		text = string(temp[0:1024*500]) + "\n\n\n\n剩余" + strconv.FormatInt(int64(length4-1024*500), 10) + "字被省略.....\n\n\n\n"
 	}
 	text = strings.ReplaceAll(text, "	", " ")
 	if text == "" {

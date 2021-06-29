@@ -3,6 +3,9 @@ import 'package:alixby/states/pageRssSearchState.dart';
 import 'package:alixby/utils/MColors.dart';
 import 'package:alixby/utils/MIcons.dart';
 import 'package:alixby/pagerss/ZhuanCunDialog.dart';
+import 'package:alixby/utils/SpinKitRing.dart';
+import 'package:argon_buttons_flutter/argon_buttons_flutter.dart';
+import 'package:bot_toast/bot_toast.dart';
 import 'package:flutter/material.dart';
 import 'package:hovering/hovering.dart';
 import 'package:provider/provider.dart';
@@ -17,17 +20,15 @@ class _PageRightRssSearchState extends State<PageRightRssSearch> {
   void initState() {
     super.initState();
     Global.pageRssSearchState.searchcontroller.addListener(() {
-      print(Global.pageRssSearchState.searchcontroller.text);
+      //print(Global.pageRssSearchState.searchcontroller.text);
     });
   }
 
   @override
   void dispose() {
-    verticalScroll.dispose();
     super.dispose();
   }
 
-  final verticalScroll = ScrollController();
   @override
   // ignore: must_call_super
   Widget build(BuildContext context) {
@@ -36,17 +37,17 @@ class _PageRightRssSearchState extends State<PageRightRssSearch> {
     return Column(
       children: [
         Container(
-          height: 52,
+          height: 46,
           width: double.infinity,
           alignment: Alignment.center,
           child: Stack(
             children: [
               ConstrainedBox(
-                  constraints: BoxConstraints(maxHeight: 60, maxWidth: 275),
+                  constraints: BoxConstraints(maxHeight: 60, maxWidth: 375),
                   child: TextField(
                     controller: Global.pageRssSearchState.searchcontroller,
                     onSubmitted: (val) {
-                      Global.pageRssSearchState.pageSearch(1);
+                      Global.pageRssSearchState.pageSearch(1, null);
                     },
                     maxLines: 1,
                     autocorrect: false,
@@ -75,29 +76,50 @@ class _PageRightRssSearchState extends State<PageRightRssSearch> {
               Positioned.directional(
                   textDirection: TextDirection.rtl,
                   start: 0,
-                  child: ElevatedButton(
-                    onPressed: () {
-                      Global.pageRssSearchState.pageSearch(1);
+                  child: ArgonButton(
+                    height: 32,
+                    width: 80,
+                    minWidth: 80,
+                    borderRadius: 3.0,
+                    roundLoadingShape: false,
+                    color: MColors.elevatedBtnBG,
+                    child: Text(
+                      "搜索",
+                      style: TextStyle(color: MColors.elevatedBtnColor, fontFamily: "opposans"),
+                    ),
+                    loader: Container(
+                      child: SpinKitRing(
+                        size: 22,
+                        lineWidth: 3,
+                        color: Colors.white,
+                      ),
+                    ),
+                    onTap: (startLoading, stopLoading, btnState) {
+                      if (btnState == ButtonState.Busy) return;
+                      startLoading();
+                      Global.pageRssSearchState.pageSearch(1, stopLoading);
                     },
-                    child: Text("  搜索  "),
-                    style: ButtonStyle(minimumSize: MaterialStateProperty.all(Size(0, 36))),
                   )),
             ],
           ),
         ),
         Container(
-            height: 34,
+            height: 40,
             width: double.infinity,
             child: Row(
               children: [
                 Container(
-                    width: 166,
+                    width: 324,
                     child: Row(children: [
                       OutlinedButton.icon(
                           icon: Icon(MIcons.chuanshu, size: 16),
                           label: Text('转存选中项'),
                           onPressed: () {
                             var filelist = Global.pageRssSearchState.getSelectedFiles();
+                            if (filelist.length == 0) {
+                              BotToast.showText(text: "请先选中要转存的文件");
+                              return;
+                            }
                             showDialog(
                                 barrierDismissible: true, //表示点击灰色背景的时候是否消失弹出框
                                 context: context,
@@ -107,7 +129,44 @@ class _PageRightRssSearchState extends State<PageRightRssSearch> {
                                       child: ZhuanCunDialog(filelist: filelist));
                                 });
                           }),
-                      Expanded(child: Container()),
+                      Padding(padding: EdgeInsets.only(left: 12)),
+                      Expanded(
+                          child: RichText(
+                              textAlign: TextAlign.left,
+                              text: TextSpan(
+                                  style: TextStyle(fontSize: 12, color: MColors.textColor, fontFamily: "opposans"),
+                                  children: [
+                                    TextSpan(
+                                        text: "搜索", style: TextStyle(color: MColors.textColor, fontFamily: "opposans")),
+                                    TextSpan(
+                                        text: " a空格b ",
+                                        style: TextStyle(
+                                            fontSize: 12, color: MColors.textColorRed, fontFamily: "opposans")),
+                                    TextSpan(
+                                        text: "是搜索包含",
+                                        style: TextStyle(color: MColors.textColor, fontFamily: "opposans")),
+                                    TextSpan(
+                                        text: "a 或者 b",
+                                        style: TextStyle(
+                                            fontSize: 12, color: MColors.textColorRed, fontFamily: "opposans")),
+                                    TextSpan(
+                                        text: "\n搜索",
+                                        style: TextStyle(color: MColors.textColor, fontFamily: "opposans")),
+                                    TextSpan(
+                                        text: " a+b ",
+                                        style: TextStyle(
+                                            fontSize: 12, color: MColors.textColorRed, fontFamily: "opposans")),
+                                    TextSpan(
+                                        text: "是搜索包含a ",
+                                        style: TextStyle(color: MColors.textColor, fontFamily: "opposans")),
+                                    TextSpan(
+                                        text: "并且",
+                                        style: TextStyle(
+                                            fontSize: 12, color: MColors.textColorRed, fontFamily: "opposans")),
+                                    TextSpan(
+                                        text: " 包含b",
+                                        style: TextStyle(color: MColors.textColor, fontFamily: "opposans")),
+                                  ]))),
                     ])),
                 Expanded(child: context.watch<PageRssSearchState>().navBtns),
               ],
@@ -151,13 +210,13 @@ class _PageRightRssSearchState extends State<PageRightRssSearch> {
           decoration: BoxDecoration(border: Border(top: BorderSide(width: 1, color: MColors.pageRightBorderColor))),
           alignment: Alignment.topLeft,
           child: Scrollbar(
-              controller: verticalScroll,
+              controller: Global.pageRssSearchState.verticalScroll,
               isAlwaysShown: true,
               showTrackOnHover: true,
               thickness: 9,
               hoverThickness: 9,
               child: ListView.builder(
-                controller: verticalScroll,
+                controller: Global.pageRssSearchState.verticalScroll,
                 shrinkWrap: false,
                 primary: false,
                 addSemanticIndexes: false,

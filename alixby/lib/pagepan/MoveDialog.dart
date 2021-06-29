@@ -1,8 +1,10 @@
 import 'package:alixby/api/AliFile.dart';
 import 'package:alixby/states/PanData.dart';
-import 'package:alixby/utils/Loading.dart';
 import 'package:alixby/utils/MColors.dart';
 import 'package:alixby/utils/MIcons.dart';
+import 'package:alixby/utils/SpinKitRing.dart';
+import 'package:alixby/utils/StringUtils.dart';
+import 'package:argon_buttons_flutter/argon_buttons_flutter.dart';
 import 'package:bot_toast/bot_toast.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
@@ -68,7 +70,7 @@ class _MoveDialogState extends State<MoveDialog> {
               child: Center(
                   child: Container(
                 height: 500,
-                width: 500,
+                width: 520,
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(8),
                   color: MColors.dialogBgColor,
@@ -92,7 +94,7 @@ class _MoveDialogState extends State<MoveDialog> {
                                 TextStyle(fontSize: 20, color: MColors.textColor, height: 0, fontFamily: "opposans"))),
                     Container(padding: EdgeInsets.only(top: 20)),
                     Container(
-                        width: 440,
+                        width: 480,
                         height: 370,
                         alignment: Alignment.topLeft,
                         decoration: BoxDecoration(
@@ -139,7 +141,7 @@ class _MoveDialogState extends State<MoveDialog> {
                                   )),
                             ))),
                     Container(
-                      width: 440,
+                      width: 480,
                       padding: EdgeInsets.only(top: 12),
                       child: Row(mainAxisAlignment: MainAxisAlignment.end, children: [
                         UnconstrainedBox(
@@ -189,50 +191,66 @@ class _MoveDialogState extends State<MoveDialog> {
                           style: ButtonStyle(minimumSize: MaterialStateProperty.all(Size(0, 36))),
                         ),
                         Padding(padding: EdgeInsets.only(left: 24)),
-                        ElevatedButton(
-                          onPressed: () {
-                            if (widget.parentid == selectKey && widget.box == movetobox) {
-                              BotToast.showText(text: "不能" + widget.pagetitle + "到原位置");
-                              return;
-                            }
-                            if (widget.filelist.length > 0) {
-                              var fcHide = Loading.showLoading();
-
-                              if (widget.iscopy) {
-                                AliFile.apiCopyBatch(widget.box, widget.parentid, widget.filelist, movetobox, selectKey)
-                                    .then((value) {
-                                  fcHide();
-                                  Future.delayed(Duration(milliseconds: 600), () {
-                                    PanData.loadFileList(widget.box, widget.parentid, "copy"); //触发联网加载
-                                  });
-                                  Future.delayed(Duration(milliseconds: 700), () {
-                                    PanData.loadFileList(movetobox, selectKey, "copy"); //触发联网加载
-                                  });
-
-                                  pageExpandedNode("root", true);
-                                  Navigator.of(context).pop('ok');
-                                  BotToast.showText(text: "成功" + widget.pagetitle + value.toString() + "个文件");
-                                });
-                              } else {
-                                AliFile.apiMoveBatch(widget.box, widget.filelist, movetobox, selectKey).then((value) {
-                                  fcHide();
-                                  Future.delayed(Duration(milliseconds: 600), () {
-                                    PanData.loadFileList(widget.box, widget.parentid, "move"); //触发联网加载
-                                  });
-                                  Future.delayed(Duration(milliseconds: 700), () {
-                                    PanData.loadFileList(movetobox, selectKey, "move"); //触发联网加载
-                                  });
-
-                                  pageExpandedNode("root", true);
-                                  Navigator.of(context).pop('ok');
-                                  BotToast.showText(text: "成功" + widget.pagetitle + value.toString() + "个文件");
-                                });
+                        ArgonButton(
+                            height: 32,
+                            width: 200,
+                            minWidth: 200,
+                            borderRadius: 3.0,
+                            roundLoadingShape: false,
+                            color: MColors.elevatedBtnBG,
+                            child: Text(
+                              widget.pagetitle + "到选中的文件夹内",
+                              style: TextStyle(color: MColors.elevatedBtnColor, fontFamily: "opposans"),
+                            ),
+                            loader: Container(
+                              child: SpinKitRing(
+                                size: 22,
+                                lineWidth: 3,
+                                color: Colors.white,
+                              ),
+                            ),
+                            onTap: (startLoading, stopLoading, btnState) {
+                              if (widget.parentid == selectKey && widget.box == movetobox) {
+                                BotToast.showText(text: "不能" + widget.pagetitle + "到原位置");
+                                return;
                               }
-                            }
-                          },
-                          child: Text(widget.pagetitle + "到选中的文件夹内"),
-                          style: ButtonStyle(minimumSize: MaterialStateProperty.all(Size(0, 36))),
-                        ),
+                              if (widget.filelist.length > 0) {
+                                if (btnState == ButtonState.Busy) return;
+                                startLoading();
+
+                                if (widget.iscopy) {
+                                  AliFile.apiCopyBatch(
+                                          widget.box, widget.parentid, widget.filelist, movetobox, selectKey)
+                                      .then((value) {
+                                    stopLoading();
+                                    Future.delayed(Duration(milliseconds: 600), () {
+                                      PanData.loadFileList(widget.box, widget.parentid, "copy"); //触发联网加载
+                                    });
+                                    Future.delayed(Duration(milliseconds: 700), () {
+                                      PanData.loadFileList(movetobox, selectKey, "copy"); //触发联网加载
+                                    });
+
+                                    pageExpandedNode("root", true);
+                                    Navigator.of(context).pop('ok');
+                                    BotToast.showText(text: "成功" + widget.pagetitle + value.toString() + "个文件");
+                                  });
+                                } else {
+                                  AliFile.apiMoveBatch(widget.box, widget.filelist, movetobox, selectKey).then((value) {
+                                    stopLoading();
+                                    Future.delayed(Duration(milliseconds: 600), () {
+                                      PanData.loadFileList(widget.box, widget.parentid, "move"); //触发联网加载
+                                    });
+                                    Future.delayed(Duration(milliseconds: 700), () {
+                                      PanData.loadFileList(movetobox, selectKey, "move"); //触发联网加载
+                                    });
+
+                                    pageExpandedNode("root", true);
+                                    Navigator.of(context).pop('ok');
+                                    BotToast.showText(text: "成功" + widget.pagetitle + value.toString() + "个文件");
+                                  });
+                                }
+                              }
+                            }),
                       ]),
                     ),
                   ],
@@ -336,7 +354,7 @@ class DirNode2 {
                 hoverDecoration: hoverDecoration,
                 child: Container(
                     key: Key("pdt_move_rchc_" + key),
-                    width: 400 - leve * 20,
+                    width: 440 - leve * 20,
                     height: 24,
                     padding: padding,
                     child: Row(key: Key("pdt_move_rchcr_" + key), children: [
@@ -344,7 +362,7 @@ class DirNode2 {
                       padding2,
                       Expanded(
                           child: Text(
-                        label,
+                        StringUtils.joinChar(label),
                         key: Key("pdt_move_rchcrt_" + key),
                         style: style,
                         maxLines: 1,
@@ -367,7 +385,7 @@ class DirNode2 {
                 hoverDecoration: hoverDecorations,
                 child: Container(
                     key: Key("pdt_move_rchc_" + key),
-                    width: 400 - leve * 20,
+                    width: 440 - leve * 20,
                     height: 24,
                     padding: padding,
                     child: Row(key: Key("pdt_move_rchcr_" + key), children: [
@@ -375,7 +393,7 @@ class DirNode2 {
                       padding2,
                       Expanded(
                           child: Text(
-                        label,
+                        StringUtils.joinChar(label),
                         key: Key("pdt_move_rchcrt_" + key),
                         style: styles,
                         maxLines: 1,

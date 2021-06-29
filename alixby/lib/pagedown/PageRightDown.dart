@@ -106,11 +106,11 @@ class _PageRightDownState extends State<PageRightDown> with AutomaticKeepAliveCl
                         icon: Icon(MIcons.pause, size: 16), label: Text('全部暂停'), onPressed: () => onTapBtn('stop')),
                     Padding(padding: EdgeInsets.only(left: 12)),
                     OutlinedButton.icon(
-                        icon: Icon(MIcons.delete, size: 16), label: Text('全部删除'), onPressed: () => onTapBtn('delete')),
+                        icon: Icon(MIcons.delete, size: 16), label: Text('全部清除'), onPressed: () => onTapBtn('delete')),
                   ])
                 : Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
                     OutlinedButton.icon(
-                        icon: Icon(MIcons.delete, size: 16), label: Text('全部删除'), onPressed: () => onTapBtn('delete')),
+                        icon: Icon(MIcons.delete, size: 16), label: Text('全部清除'), onPressed: () => onTapBtn('delete')),
                   ])),
         Container(height: 1, width: double.infinity, color: MColors.pageRightBorderColor),
         Container(

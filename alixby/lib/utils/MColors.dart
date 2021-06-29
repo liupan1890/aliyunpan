@@ -81,6 +81,7 @@ class MColors {
   static get textColor => mcolor.textColor;
   static get textColorGray => mcolor.textColorGray;
   static get textColorRed => mcolor.textColorRed;
+  static get textColorYellow => mcolor.textColorYellow;
 }
 
 class MColorsLight {
@@ -152,6 +153,7 @@ class MColorsLight {
   Color textColor = Color(0xee000000);
   Color textColorGray = Color(0xaa333333);
   Color textColorRed = Color(0xffeb8381);
+  Color textColorYellow = Color(0xfffc5531);
 }
 
 class MColorsDark extends MColorsLight {
@@ -224,4 +226,5 @@ class MColorsDark extends MColorsLight {
   Color textColor = Colors.white;
   Color textColorGray = Color(0x99ffffff);
   Color textColorRed = Color(0xffeb8381);
+  Color textColorYellow = Color(0xfffbc02d);
 }

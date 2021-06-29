@@ -1,9 +1,10 @@
 import 'package:alixby/api/AliFile.dart';
 import 'package:alixby/models/PageRightFileItem.dart';
 import 'package:alixby/states/Global.dart';
-import 'package:alixby/utils/Loading.dart';
 import 'package:alixby/utils/MColors.dart';
 import 'package:alixby/utils/MIcons.dart';
+import 'package:alixby/utils/SpinKitRing.dart';
+import 'package:argon_buttons_flutter/argon_buttons_flutter.dart';
 import 'package:bot_toast/bot_toast.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
@@ -94,7 +95,7 @@ class _RenameMutlDialogState extends State<RenameMutlDialog> {
               child: Center(
                   child: Container(
                 height: 540,
-                width: 500,
+                width: 520,
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(8),
                   color: MColors.dialogBgColor,
@@ -118,7 +119,7 @@ class _RenameMutlDialogState extends State<RenameMutlDialog> {
                                 TextStyle(fontSize: 20, color: MColors.textColor, height: 0, fontFamily: "opposans"))),
                     Container(padding: EdgeInsets.only(top: 20)),
                     Container(
-                        width: 440,
+                        width: 480,
                         height: 370,
                         alignment: Alignment.topLeft,
                         decoration: BoxDecoration(
@@ -144,7 +145,7 @@ class _RenameMutlDialogState extends State<RenameMutlDialog> {
                               itemBuilder: _buildList,
                             ))),
                     Container(
-                      width: 440,
+                      width: 480,
                       padding: EdgeInsets.only(top: 8),
                       child: Row(mainAxisAlignment: MainAxisAlignment.end, children: [
                         Expanded(
@@ -157,7 +158,7 @@ class _RenameMutlDialogState extends State<RenameMutlDialog> {
                           cursorColor: MColors.inputBorderHover,
                           autofocus: false,
                           decoration: InputDecoration(
-                            contentPadding: EdgeInsets.symmetric(vertical: 4, horizontal: 8),
+                            contentPadding: EdgeInsets.symmetric(vertical: 8, horizontal: 8),
                             focusedBorder: OutlineInputBorder(
                               borderSide: BorderSide(
                                 color: MColors.inputBorderHover,
@@ -185,7 +186,7 @@ class _RenameMutlDialogState extends State<RenameMutlDialog> {
                           cursorColor: MColors.inputBorderHover,
                           autofocus: false,
                           decoration: InputDecoration(
-                            contentPadding: EdgeInsets.symmetric(vertical: 4, horizontal: 8),
+                            contentPadding: EdgeInsets.symmetric(vertical: 8, horizontal: 8),
                             focusedBorder: OutlineInputBorder(
                               borderSide: BorderSide(
                                 color: MColors.inputBorderHover,
@@ -203,7 +204,7 @@ class _RenameMutlDialogState extends State<RenameMutlDialog> {
                       ]),
                     ),
                     Container(
-                      width: 440,
+                      width: 480,
                       padding: EdgeInsets.only(top: 8),
                       child: Row(mainAxisAlignment: MainAxisAlignment.end, children: [
                         Expanded(
@@ -220,8 +221,25 @@ class _RenameMutlDialogState extends State<RenameMutlDialog> {
                           style: ButtonStyle(minimumSize: MaterialStateProperty.all(Size(0, 36))),
                         ),
                         Padding(padding: EdgeInsets.only(left: 24)),
-                        ElevatedButton(
-                          onPressed: () {
+                        ArgonButton(
+                          height: 32,
+                          width: 90,
+                          minWidth: 90,
+                          borderRadius: 3.0,
+                          roundLoadingShape: false,
+                          color: MColors.elevatedBtnBG,
+                          child: Text(
+                            "重命名",
+                            style: TextStyle(color: MColors.elevatedBtnColor, fontFamily: "opposans"),
+                          ),
+                          loader: Container(
+                            child: SpinKitRing(
+                              size: 22,
+                              lineWidth: 3,
+                              color: Colors.white,
+                            ),
+                          ),
+                          onTap: (startLoading, stopLoading, btnState) {
                             List<String> keyList = [];
                             List<String> nameList = [];
                             for (var i = 0; i < widget.filelist.length; i++) {
@@ -250,13 +268,14 @@ class _RenameMutlDialogState extends State<RenameMutlDialog> {
                               BotToast.showText(text: "没有需要重命名的文件");
                               return;
                             }
-                            var fcHide = Loading.showLoading();
+                            if (btnState == ButtonState.Busy) return;
+                            startLoading();
 
                             AliFile.apiRenameBatch(widget.box, keyList, nameList).then((value) {
-                              fcHide();
+                              stopLoading();
                               if (value > 0) {
                                 Navigator.of(context).pop('ok');
-                                Future.delayed(Duration(milliseconds: 200), () {
+                                Future.delayed(Duration(milliseconds: 600), () {
                                   Global.getTreeState(widget.box).pageRefreshNode();
                                 });
                                 BotToast.showText(text: "成功重命名 " + value.toString() + " 个文件");
@@ -265,8 +284,6 @@ class _RenameMutlDialogState extends State<RenameMutlDialog> {
                               }
                             });
                           },
-                          child: Text("重命名"),
-                          style: ButtonStyle(minimumSize: MaterialStateProperty.all(Size(0, 36))),
                         ),
                       ]),
                     ),

@@ -10,6 +10,7 @@ import (
 	"encoding/json"
 	"errors"
 	"log"
+	"net/url"
 	"strconv"
 	"strings"
 	"sync"
@@ -201,6 +202,133 @@ func GoLinkParse(linkstr string, password string, ispublic bool) string {
 		log.Println("parselink", err)
 		return utils.ToErrorMessageJSON(link.Message)
 	}
+}
+
+func GoLinkShare(linkstr string, password string) string {
+
+	UserID := aliyun.GetUserID()
+	if UserID == "" {
+		return utils.ToErrorMessageJSON("还没有登录阿里云盘账号")
+	}
+	if strings.Contains(linkstr, " ") {
+		linkstr = linkstr[0:strings.Index(linkstr, " ")]
+	}
+	if strings.Contains(linkstr, "\t") {
+		linkstr = linkstr[0:strings.Index(linkstr, "\t")]
+	}
+	if strings.Contains(linkstr, "\n") {
+		linkstr = linkstr[0:strings.Index(linkstr, "\n")]
+	}
+	if strings.Contains(linkstr, "?") {
+		linkstr = linkstr[0:strings.Index(linkstr, "?")]
+	}
+	if strings.Contains(linkstr, "#") {
+		linkstr = linkstr[0:strings.Index(linkstr, "#")]
+	}
+	//根据link解析出文件列表
+	linkfile := ""
+	linkstate := "success"
+	linksid := ""
+	if strings.Contains(linkstr, "115.com/s/") {
+		linkstr = GetLinkStr115(linkstr)
+		if linkstr == "" {
+			return utils.ToErrorMessageJSON("错误的115链接格式")
+		}
+		linksid = GetLinkStr115SID(linkstr)
+		if linksid == "" {
+			return utils.ToErrorMessageJSON("错误的115链接格式")
+		}
+		link, err := GetLinkFiles115(linksid, password)
+		if err != nil {
+			linkstate = "error"
+			linkfile = err.Error()
+		} else {
+			b, _ := json.Marshal(link)
+			linkfile = string(b)
+		}
+	} else if strings.Contains(linkstr, "aliyundrive.com/s/") {
+		linkstr = GetLinkStrAli(linkstr)
+		if linkstr == "" {
+			return utils.ToErrorMessageJSON("错误的阿里云盘链接格式")
+		}
+		linksid = GetLinkStrAliSID(linkstr)
+		if linksid == "" {
+			return utils.ToErrorMessageJSON("错误的阿里云盘链接格式")
+		}
+		link, err := GetLinkFilesAli(linksid, password)
+		if err != nil {
+			linkstate = "error"
+			linkfile = err.Error()
+		} else {
+			b, _ := json.Marshal(link)
+			linkfile = string(b)
+		}
+	} else {
+		return utils.ToErrorMessageJSON("错误的链接格式")
+	}
+
+	var buf bytes.Buffer
+	zw := gzip.NewWriter(&buf)
+	zw.Write([]byte(linkfile))
+	err := zw.Close()
+	if err != nil {
+		log.Println("zw.Close", err)
+		return utils.ToErrorMessageJSON("gzip时出错")
+	}
+	bs := buf.Bytes()
+
+	urldata := "password=" + password + "&linkstr=" + url.QueryEscape(linkstr) + "&linkstate=" + url.QueryEscape(linkstate)
+	link := aliyun.ApiShareLinkToServer(urldata, &bs)
+	if link.Message == "" {
+		xbylink := linkstr
+		if password != "" {
+			xbylink = xbylink + " 密码：" + password
+		}
+		linklog := LinkLogModel{
+			Link:      xbylink,
+			LogTime:   time.Now().Unix(),
+			IsCreater: false,
+		}
+		b, _ := json.Marshal(linklog)
+		data.SetLink("Link:"+linkstr, string(b))
+		infostr := strconv.FormatInt(int64(link.GetFileCount()), 10) + "个文件 " + utils.FormateSizeString(link.GetTotalSize())
+		return utils.ToSuccessJSON4("shareid", linksid, "xbylink", xbylink, "info", infostr, "link", link)
+	} else {
+		log.Println("sharelink", err)
+		return utils.ToErrorMessageJSON(link.Message)
+	}
+}
+func GoLinkShareUpload(boxid string, parentid string, shareid, linkstr string) string {
+	if parentid == "" {
+		parentid = "root"
+	}
+
+	UserID := aliyun.GetUserID()
+	if UserID == "" {
+		return utils.ToErrorMessageJSON("还没有登录阿里云盘账号")
+	}
+	link := aliyun.LinkFileModel{
+		DirList:  []*aliyun.LinkFileModel{},
+		FileList: []string{},
+		Name:     "",
+		Size:     0,
+		Message:  "",
+	}
+
+	err := json.Unmarshal([]byte(linkstr), &link)
+	if err != nil {
+		return utils.ToErrorMessageJSON("json格式化失败")
+	}
+	//当前阿里云盘只开放了文件分享
+
+	filelist := make([]string, len(link.FileList))
+
+	for i := 0; i < len(link.FileList); i++ {
+		var item = link.FileList[i]
+		filelist[i] = item[strings.LastIndex(item, "|")+1:]
+	}
+
+	return aliyun.ApiSaveShareFilesBatch(shareid, boxid, parentid, filelist)
 }
 func GoLinkUpload(boxid string, ParentID string, linkstr string) string {
 	if ParentID == "" {

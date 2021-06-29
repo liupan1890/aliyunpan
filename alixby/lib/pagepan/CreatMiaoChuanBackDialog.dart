@@ -1,5 +1,6 @@
 import 'package:alixby/utils/MColors.dart';
 import 'package:alixby/utils/MIcons.dart';
+import 'package:alixby/utils/StringUtils.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
@@ -9,7 +10,7 @@ import 'package:alixby/states/SettingState.dart';
 // ignore: must_be_immutable
 class CreatMiaoChuanBackDialog extends StatelessWidget {
   CreatMiaoChuanBackDialog({Key? key, required this.filename, required this.info}) : super(key: key) {
-    controller.text = filename;
+    controller.text = StringUtils.joinChar(filename);
   }
   String filename = "";
   String info = "";
@@ -27,7 +28,7 @@ class CreatMiaoChuanBackDialog extends StatelessWidget {
               style: TextStyle(color: MColors.textColor, fontFamily: "opposans"),
               child: Center(
                   child: Container(
-                height: 160,
+                height: 200,
                 width: 460,
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(8),
@@ -57,12 +58,13 @@ class CreatMiaoChuanBackDialog extends StatelessWidget {
                         children: [
                           TextField(
                             controller: controller,
-                            maxLines: 2,
+                            maxLines: 4,
                             autocorrect: false,
                             enableSuggestions: false,
                             style: TextStyle(fontSize: 14, color: MColors.textColor, fontFamily: "opposans"),
                             cursorColor: MColors.inputBorderHover,
                             autofocus: false,
+                            readOnly: true,
                             decoration: InputDecoration(
                               helperText: "创建成功，以后可以粘贴此txt的内容，导入恢复文件",
                               helperStyle: TextStyle(fontSize: 13, color: MColors.textColor, fontFamily: "opposans"),
@@ -84,7 +86,7 @@ class CreatMiaoChuanBackDialog extends StatelessWidget {
                           Positioned.directional(
                               textDirection: TextDirection.rtl,
                               start: 0,
-                              top: 22,
+                              top: 64,
                               child: Text(
                                 info.toUpperCase() + " ",
                                 style: TextStyle(fontSize: 13, color: MColors.textColorGray, fontFamily: "opposans"),

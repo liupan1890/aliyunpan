@@ -77,13 +77,13 @@ func FormateSizeString(size int64) string {
 	case size < 1024*1024: // KB
 		s = size / 1024
 		if s > 99 {
-			return strconv.FormatInt(s, 10) + "kb"
+			return strconv.FormatInt(s, 10) + "KB"
 		}
 		return fmt.Sprintf("%.1fKB", float64(size)/float64(1024))
 	case size < 1024*1024*1024: // MB
 		s = size / 1024 / 1024
 		if s > 99 {
-			return strconv.FormatInt(s, 10) + "mb"
+			return strconv.FormatInt(s, 10) + "MB"
 		}
 		return fmt.Sprintf("%.1fMB", float64(size)/float64(1024*1024))
 	case size < 1024*1024*1024*1024: //GB

@@ -122,7 +122,7 @@ class PageRssSearchState extends ChangeNotifier {
     notifyListeners();
   }
 
-  pageSearch(int pageindex) {
+  pageSearch(int pageindex, Function? stopLoading) {
     var txt = searchcontroller.text;
     if (pageindex < 1) pageindex = 1;
     if (pageindex > 9) pageindex = 9;
@@ -132,8 +132,10 @@ class PageRssSearchState extends ChangeNotifier {
       pageCount = value.pageCount;
       fileCount = value.fileCount;
       _updateNavBtns();
+      verticalScroll.animateTo(0, duration: Duration(milliseconds: 200), curve: Curves.easeOut);
       notifyListeners();
 
+      if (stopLoading != null) stopLoading();
       if (fileCount == 0) {
         BotToast.showText(text: "搜不到结果哦，换个关键字试试？");
       }
@@ -171,22 +173,23 @@ class PageRssSearchState extends ChangeNotifier {
     return selectKeys;
   }
 
+  final verticalScroll = ScrollController();
   _updateNavBtns() {
     List<Widget> list = [];
     if (pageCount > 0) {
-      list.add(Text("搜索结果分页："));
+      list.add(Text("结果："));
       for (var i = 1; i <= 9 && i <= pageCount; i++) {
         if (i == pageIndex) {
           list.add(OutlinedButton(
               child: Text(i.toString()),
               onPressed: () {
-                Global.pageRssSearchState.pageSearch(i);
+                Global.pageRssSearchState.pageSearch(i, null);
               }));
         } else {
           list.add(TextButton(
               child: Text(i.toString()),
               onPressed: () {
-                Global.pageRssSearchState.pageSearch(i);
+                Global.pageRssSearchState.pageSearch(i, null);
               }));
         }
         list.add(Padding(padding: EdgeInsets.only(left: 4)));

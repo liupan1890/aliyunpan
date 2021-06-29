@@ -13,9 +13,8 @@ import 'package:provider/provider.dart';
 import 'package:alixby/states/SettingState.dart';
 
 // ignore: must_be_immutable
-class SaveMiaoChuanXbyDialog extends StatefulWidget {
-  SaveMiaoChuanXbyDialog({Key? key, required this.box, required this.parentid, required this.parentname})
-      : super(key: key) {
+class SaveShareDialog extends StatefulWidget {
+  SaveShareDialog({Key? key, required this.box, required this.parentid, required this.parentname}) : super(key: key) {
     if (box == "box")
       boxname = "网盘";
     else if (box == "sbox")
@@ -28,10 +27,10 @@ class SaveMiaoChuanXbyDialog extends StatefulWidget {
   String parentname = "";
 
   @override
-  _SaveMiaoChuanXbyDialogState createState() => _SaveMiaoChuanXbyDialogState();
+  _SaveShareDialogState createState() => _SaveShareDialogState();
 }
 
-class _SaveMiaoChuanXbyDialogState extends State<SaveMiaoChuanXbyDialog> {
+class _SaveShareDialogState extends State<SaveShareDialog> {
   final TextEditingController linkcontroller = TextEditingController();
   final TextEditingController pwdcontroller = TextEditingController();
   final verticalScroll = ScrollController();
@@ -47,18 +46,32 @@ class _SaveMiaoChuanXbyDialogState extends State<SaveMiaoChuanXbyDialog> {
   @override
   void initState() {
     super.initState();
+    //https://115.com/s/swnfmss3zbk?password=0000
+    //https://www.aliyundrive.com/s/FGtXkA5SVZM
     Clipboard.getData("text/plain").then((value) {
       if (value != null) {
         var text = value.text;
         if (text != null) {
-          if (text.indexOf("密码:") > 0 && text.indexOf("xby") > 0) {
+          if (text.indexOf("115.com/s/") > 0 || text.indexOf("aliyundrive.com/s/") > 0) {
+            text = text.replaceAll("?password=", "密码:"); //115
+            text = text.replaceAll("访问码：", "密码:"); //115
+            text = text.replaceAll("提取码：", "密码:"); //115
+            text = text.replaceAll("密码：", "密码:"); //115
+          }
+          if (text.indexOf("密码:") > 0) {
             var pwd = text.substring(text.indexOf("密码:") + "密码:".length).trim();
+            if (text.indexOf("115.com/s/") > 0) {
+              pwd = pwd.substring(0, 4); //115是4位密码
+            } else if (text.indexOf("aliyundrive.com/s/") > 0) {
+              pwd = pwd.substring(0, 4); //ali是4位密码
+            }
+
             if (pwd.length == 4) {
               pwdcontroller.text = pwd;
               text = text.substring(0, text.indexOf("密码:")).trim();
             }
           }
-          if (text.indexOf("xby") > 0) {
+          if (text.indexOf("115.com/s/") > 0 || text.indexOf("aliyundrive.com/s/") > 0) {
             linkcontroller.text = text;
           }
         }
@@ -98,7 +111,7 @@ class _SaveMiaoChuanXbyDialogState extends State<SaveMiaoChuanXbyDialog> {
                               onTap: () => Navigator.of(context).pop('ok'),
                             ))),
                     Container(
-                        child: Text("导入xby秒传链接",
+                        child: Text("导入115 / 阿里云盘分享链接",
                             style:
                                 TextStyle(fontSize: 20, color: MColors.textColor, height: 0, fontFamily: "opposans"))),
                     Container(padding: EdgeInsets.only(top: 20)),
@@ -133,10 +146,17 @@ class _SaveMiaoChuanXbyDialogState extends State<SaveMiaoChuanXbyDialog> {
                                       style: TextStyle(fontSize: 14, color: MColors.textColor, fontFamily: "opposans"),
                                       children: [
                                         TextSpan(
-                                            text: "一条 xby秒传链接 ",
+                                            text: "一条 阿里云盘分享 ",
                                             style: TextStyle(color: MColors.textColor, fontFamily: "opposans")),
                                         TextSpan(
-                                            text: "https://xby.writeas.com/?t=XXXXXXXX",
+                                            text: "https://www.aliyundrive.com/s/xxxxxxxxxxx\n",
+                                            style: TextStyle(
+                                                fontSize: 12, color: MColors.textColorRed, fontFamily: "opposans")),
+                                        TextSpan(
+                                            text: "一条 115分享链接 ",
+                                            style: TextStyle(color: MColors.textColor, fontFamily: "opposans")),
+                                        TextSpan(
+                                            text: "https://115.com/s/sssssssssss",
                                             style: TextStyle(
                                                 fontSize: 12, color: MColors.textColorRed, fontFamily: "opposans")),
                                       ]))),
@@ -258,7 +278,7 @@ class _SaveMiaoChuanXbyDialogState extends State<SaveMiaoChuanXbyDialog> {
               if (btnState == ButtonState.Busy) return;
               startLoading();
 
-              Linker.goLinkParse(link, pwd, isPublic).then((value) {
+              Linker.goLinkShare(link, pwd, isPublic).then((value) {
                 stopLoading();
                 if (value.hash == "") {
                   Navigator.of(context).pop('ok');

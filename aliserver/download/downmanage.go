@@ -240,7 +240,9 @@ func DowningStartAll() string {
 //DowningStopAll 停止全部
 func DowningStopAll() string {
 
-	Aria2Rpc.ForcePauseAll()
+	if Aria2Rpc != nil {
+		Aria2Rpc.ForcePauseAll()
+	}
 
 	list := []string{}
 	DataDowningList := DataDowningReadCopy()

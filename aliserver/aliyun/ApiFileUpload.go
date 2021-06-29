@@ -1,7 +1,6 @@
 package aliyun
 
 import (
-	"aliserver/utils"
 	"encoding/json"
 	"errors"
 	"log"
@@ -26,16 +25,9 @@ func UploadCreatForder(boxid string, parentid string, name string) (dirid string
 		"check_name_mode": "refuse",
 		"type":            "folder"}
 
-	b, _ := json.Marshal(postjson)
-	postdata := string(b)
-
-	code, _, body := utils.PostHTTPString(apiurl, GetAuthorization(), postdata)
-	if code == 401 {
-		//UserAccessToken 失效了，尝试刷新一次
-		ApiTokenRefresh("")
-		//刷新完了，重新尝试一遍
-		code, _, body = utils.PostHTTPString(apiurl, GetAuthorization(), postdata)
-	}
+	postdata, _ := json.Marshal(postjson)
+	code, bodybytes := _APIHTTP(apiurl, &postdata)
+	body := string(*bodybytes)
 	if code != 201 || !gjson.Valid(body) { //注意这里是201
 		return "", errors.New("创建文件夹失败")
 	}
@@ -71,17 +63,13 @@ func UploadCreatFile(boxid string, parentid string, name string, size int64, has
 		"content_hash":      strings.ToLower(hash),
 	}
 
-	b, _ := json.Marshal(postjson)
-	postdata := string(b)
-
-	code, _, body := utils.PostHTTPString(apiurl, GetAuthorization(), postdata)
-	if code == 401 {
-		//UserAccessToken 失效了，尝试刷新一次
-		ApiTokenRefresh("")
-		//刷新完了，重新尝试一遍
-		code, _, body = utils.PostHTTPString(apiurl, GetAuthorization(), postdata)
-	}
+	postdata, _ := json.Marshal(postjson)
+	code, bodybytes := _APIHTTP(apiurl, &postdata)
+	body := string(*bodybytes)
 	if code != 201 || !gjson.Valid(body) { //注意这里是201
+		if strings.Contains(body, "file size is exceed") {
+			return false, "", "", "", errors.New("创建文件失败(单文件最大30GB)")
+		}
 		return false, "", "", "", errors.New("创建文件失败")
 	}
 	info := gjson.Parse(body)
@@ -124,19 +112,14 @@ func UploadFileCheckHash(boxid string, file_id string, hash string) (Same bool, 
 	var postjson = map[string]interface{}{"drive_id": boxid,
 		"file_id": file_id}
 
-	b, _ := json.Marshal(postjson)
-	postdata := string(b)
+	postdata, _ := json.Marshal(postjson)
+	code, bodybytes := _APIHTTP(apiurl, &postdata)
+	body := string(*bodybytes)
 
-	code, _, body := utils.PostHTTPString(apiurl, GetAuthorization(), postdata)
 	if code == 401 {
-		//UserAccessToken 失效了，尝试刷新一次
-		ApiTokenRefresh("")
-		//刷新完了，重新尝试一遍
-		code, _, body = utils.PostHTTPString(apiurl, GetAuthorization(), postdata)
-		if code == 401 {
-			return false, errors.New("401")
-		}
+		return false, errors.New("401")
 	}
+
 	if code != 200 || !gjson.Valid(body) {
 		return false, errors.New("error")
 	}
@@ -160,19 +143,12 @@ func UploadFileDelete(boxid string, file_id string) (Delete bool, err error) {
 	var postjson = map[string]interface{}{"drive_id": boxid,
 		"file_id": file_id}
 
-	b, _ := json.Marshal(postjson)
-	postdata := string(b)
-
-	code, _, _ := utils.PostHTTPString(apiurl, GetAuthorization(), postdata)
+	postdata, _ := json.Marshal(postjson)
+	code, _ := _APIHTTP(apiurl, &postdata)
 	if code == 401 {
-		//UserAccessToken 失效了，尝试刷新一次
-		ApiTokenRefresh("")
-		//刷新完了，重新尝试一遍
-		code, _, _ = utils.PostHTTPString(apiurl, GetAuthorization(), postdata)
-		if code == 401 {
-			return false, errors.New("401")
-		}
+		return false, errors.New("401")
 	}
+
 	if code != 204 && code != 202 {
 		return false, errors.New("error")
 	}
@@ -197,19 +173,13 @@ func UploadFileComplete(boxid string, parentid string, name string, file_id stri
 		"content_type":   "",
 	}
 
-	b, _ := json.Marshal(postjson)
-	postdata := string(b)
-
-	code, _, body := utils.PostHTTPString(apiurl, GetAuthorization(), postdata)
+	postdata, _ := json.Marshal(postjson)
+	code, bodybytes := _APIHTTP(apiurl, &postdata)
+	body := string(*bodybytes)
 	if code == 401 {
-		//UserAccessToken 失效了，尝试刷新一次
-		ApiTokenRefresh("")
-		//刷新完了，重新尝试一遍
-		code, _, body = utils.PostHTTPString(apiurl, GetAuthorization(), postdata)
-		if code == 401 {
-			return errors.New("401")
-		}
+		return errors.New("401")
 	}
+
 	if code != 200 || !gjson.Valid(body) {
 		return errors.New("error")
 	}
@@ -242,19 +212,14 @@ func UploadFilePartUrl(boxid string, parentid string, name string, file_id strin
 		},
 	}
 
-	b, _ := json.Marshal(postjson)
-	postdata := string(b)
+	postdata, _ := json.Marshal(postjson)
+	code, bodybytes := _APIHTTP(apiurl, &postdata)
+	body := string(*bodybytes)
 
-	code, _, body := utils.PostHTTPString(apiurl, GetAuthorization(), postdata)
 	if code == 401 {
-		//UserAccessToken 失效了，尝试刷新一次
-		ApiTokenRefresh("")
-		//刷新完了，重新尝试一遍
-		code, _, body = utils.PostHTTPString(apiurl, GetAuthorization(), postdata)
-		if code == 401 {
-			return "", errors.New("401")
-		}
+		return "", errors.New("401")
 	}
+
 	if code != 200 || !gjson.Valid(body) {
 		return "", errors.New("error")
 	}

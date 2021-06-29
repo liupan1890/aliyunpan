@@ -26,12 +26,7 @@ class _PageRightRssHelpState extends State<PageRightRssHelp> {
   // ignore: must_call_super
   Widget build(BuildContext context) {
     var stylegray = TextStyle(fontSize: 13, color: MColors.textColor, fontFamily: "opposans");
-    var styleQ = TextStyle(
-        fontFamily: "opposans",
-        decoration: TextDecoration.underline,
-        decorationStyle: TextDecorationStyle.solid,
-        decorationThickness: 2,
-        decorationColor: Colors.yellowAccent.shade700);
+    var styleQ = TextStyle(fontFamily: "opposans", color: MColors.textColorYellow);
     return Column(children: [
       Container(
           height: 52,
@@ -147,12 +142,12 @@ class _PageRightRssHelpState extends State<PageRightRssHelp> {
                         ),
                         Padding(padding: EdgeInsets.only(top: 32)),
                         Container(
-                          child: Text("Q∷不能导入115分享链接？百度分享链接？磁力链接？", style: styleQ),
+                          child: Text("Q∷不能导入百度分享链接？磁力链接？电驴链接？", style: styleQ),
                         ),
                         Padding(padding: EdgeInsets.only(top: 8)),
                         Container(
                           child: Text(
-                            "答:当然都　不可以，但是可以导入115秒传链接(115://........)和阿里云盘秒传链接(aliyunpan://........)",
+                            "答:不可以，但是可以导入:\n1. 115分享链接(http://115.com/s/......)\n2. 115秒传链接(115://........)\n3. 阿里云盘分享链接(http://www.aliyundrive.com/s/........)\n4. 阿里云盘秒传链接(aliyunpan://........)\n5. txt格式的秒传文件",
                             style: stylegray,
                             softWrap: true,
                           ),

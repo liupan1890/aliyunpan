@@ -1,8 +1,10 @@
 import 'package:alixby/api/AliFile.dart';
-import 'package:alixby/utils/Loading.dart';
 import 'package:alixby/utils/MColors.dart';
 import 'package:alixby/utils/MIcons.dart';
 import 'package:alixby/pagepan/UnrarBackDialog.dart';
+import 'package:alixby/utils/SpinKitRing.dart';
+import 'package:alixby/utils/StringUtils.dart';
+import 'package:argon_buttons_flutter/argon_buttons_flutter.dart';
 import 'package:bot_toast/bot_toast.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
@@ -70,7 +72,7 @@ class _UnrarDialogState extends State<UnrarDialog> {
               child: Center(
                   child: Container(
                 height: 500,
-                width: 500,
+                width: 520,
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(8),
                   color: MColors.dialogBgColor,
@@ -94,7 +96,7 @@ class _UnrarDialogState extends State<UnrarDialog> {
                                 TextStyle(fontSize: 20, color: MColors.textColor, height: 0, fontFamily: "opposans"))),
                     Container(padding: EdgeInsets.only(top: 20)),
                     Container(
-                        width: 440,
+                        width: 480,
                         height: 370,
                         alignment: Alignment.topLeft,
                         decoration: BoxDecoration(
@@ -141,7 +143,7 @@ class _UnrarDialogState extends State<UnrarDialog> {
                                   )),
                             ))),
                     Container(
-                      width: 440,
+                      width: 480,
                       padding: EdgeInsets.only(top: 12),
                       child: Row(mainAxisAlignment: MainAxisAlignment.end, children: [
                         Expanded(
@@ -156,7 +158,7 @@ class _UnrarDialogState extends State<UnrarDialog> {
                           decoration: InputDecoration(
                             hintText: "解压密码。没有不填",
                             hintStyle: TextStyle(fontSize: 13, color: MColors.textColorGray, fontFamily: "opposans"),
-                            contentPadding: EdgeInsets.symmetric(vertical: 4, horizontal: 8),
+                            contentPadding: EdgeInsets.symmetric(vertical: 8, horizontal: 8),
                             focusedBorder: OutlineInputBorder(
                               borderSide: BorderSide(
                                 color: MColors.inputBorderHover,
@@ -178,12 +180,30 @@ class _UnrarDialogState extends State<UnrarDialog> {
                           style: ButtonStyle(minimumSize: MaterialStateProperty.all(Size(0, 36))),
                         ),
                         Padding(padding: EdgeInsets.only(left: 24)),
-                        ElevatedButton(
-                          onPressed: () {
+                        ArgonButton(
+                          height: 32,
+                          width: 220,
+                          minWidth: 220,
+                          borderRadius: 3.0,
+                          roundLoadingShape: false,
+                          color: MColors.elevatedBtnBG,
+                          child: Text(
+                            "解压缩到选中的文件夹内",
+                            style: TextStyle(color: MColors.elevatedBtnColor, fontFamily: "opposans"),
+                          ),
+                          loader: Container(
+                            child: SpinKitRing(
+                              size: 22,
+                              lineWidth: 3,
+                              color: Colors.white,
+                            ),
+                          ),
+                          onTap: (startLoading, stopLoading, btnState) {
                             var password = controller.text;
-                            var fcHide = Loading.showLoading();
+                            if (btnState == ButtonState.Busy) return;
+                            startLoading();
                             AliFile.apiUncompress(widget.box, widget.fileid, selectKey, password).then((value) {
-                              fcHide();
+                              stopLoading();
                               if (value.length == 1) {
                                 BotToast.showText(text: "失败:" + value[0]);
                                 return;
@@ -201,8 +221,6 @@ class _UnrarDialogState extends State<UnrarDialog> {
                                   });
                             });
                           },
-                          child: Text("解压缩到选中的文件夹内"),
-                          style: ButtonStyle(minimumSize: MaterialStateProperty.all(Size(0, 36))),
                         ),
                       ]),
                     ),
@@ -297,7 +315,7 @@ class DirNode2 {
                 hoverDecoration: hoverDecoration,
                 child: Container(
                     key: Key("pdt_unrar_rchc_" + key),
-                    width: 400 - leve * 20,
+                    width: 440 - leve * 20,
                     height: 24,
                     padding: padding,
                     child: Row(key: Key("pdt_unrar_rchcr_" + key), children: [
@@ -305,7 +323,7 @@ class DirNode2 {
                       padding2,
                       Expanded(
                           child: Text(
-                        label,
+                        StringUtils.joinChar(label),
                         key: Key("pdt_unrar_rchcrt_" + key),
                         style: style,
                         maxLines: 1,
@@ -328,7 +346,7 @@ class DirNode2 {
                 hoverDecoration: hoverDecorations,
                 child: Container(
                     key: Key("pdt_unrar_rchc_" + key),
-                    width: 400 - leve * 20,
+                    width: 440 - leve * 20,
                     height: 24,
                     padding: padding,
                     child: Row(key: Key("pdt_unrar_rchcr_" + key), children: [
@@ -336,7 +354,7 @@ class DirNode2 {
                       padding2,
                       Expanded(
                           child: Text(
-                        label,
+                        StringUtils.joinChar(label),
                         key: Key("pdt_unrar_rchcrt_" + key),
                         style: styles,
                         maxLines: 1,

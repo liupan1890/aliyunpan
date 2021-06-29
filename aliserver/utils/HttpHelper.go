@@ -229,6 +229,23 @@ func PostHTTPBytes(url string, header string, postdata *[]byte) (code int, head 
 	}
 	return code, head, body
 }
+func PostHTTPBytes2(url string, header string, postdata *[]byte) (code int, head string, bodybytes *[]byte) {
+
+	for i := 0; i < 2; i++ {
+		if i > 0 {
+			time.Sleep(time.Duration(400 * time.Millisecond))
+		}
+		bodybytes = nil
+		code, head, bodybytes = Raw("POST", url, header, bytes.NewReader(*postdata))
+		if code == 200 || code == 206 {
+			return 200, head, bodybytes
+		}
+		if code >= 200 && code <= 400 {
+			return code, head, bodybytes
+		}
+	}
+	return code, head, bodybytes
+}
 
 //NetErrorMessage 格式化网络错误信息
 func NetErrorMessage(msg string) string {

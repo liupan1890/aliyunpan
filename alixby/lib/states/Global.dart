@@ -25,8 +25,8 @@ class XiangCeTreeState extends TreeState {
 class Global {
   // 是否为release版
   static bool get isRelease => bool.fromEnvironment("dart.vm.product");
-  static String get appTitle => "阿里云盘小白羊版 v1.6.21";
-  static String get appVer => "v1.6.21";
+  static String get appTitle => "阿里云盘小白羊版 v1.6.29";
+  static String get appVer => "v1.6.29";
 
   static PanTreeState panTreeState = PanTreeState();
   static XiangCeTreeState xiangceTreeState = XiangCeTreeState();

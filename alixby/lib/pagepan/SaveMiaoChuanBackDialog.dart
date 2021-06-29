@@ -1,7 +1,10 @@
 import 'package:alixby/api/Linker.dart';
-import 'package:alixby/utils/Loading.dart';
+import 'package:alixby/states/PanData.dart';
 import 'package:alixby/utils/MColors.dart';
 import 'package:alixby/utils/MIcons.dart';
+import 'package:alixby/utils/SpinKitRing.dart';
+import 'package:alixby/utils/StringUtils.dart';
+import 'package:argon_buttons_flutter/argon_buttons_flutter.dart';
 import 'package:bot_toast/bot_toast.dart';
 import 'package:filesize/filesize.dart';
 import 'package:flutter/material.dart';
@@ -75,7 +78,7 @@ class _SaveMiaoChuanBackDialogState extends State<SaveMiaoChuanBackDialog> {
               child: Center(
                   child: Container(
                 height: 540,
-                width: 500,
+                width: 520,
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(8),
                   color: MColors.dialogBgColor,
@@ -94,12 +97,12 @@ class _SaveMiaoChuanBackDialogState extends State<SaveMiaoChuanBackDialog> {
                               onTap: () => Navigator.of(context).pop('ok'),
                             ))),
                     Container(
-                        child: Text("导入秒传短链接---" + widget.boxname,
+                        child: Text("导入文件",
                             style:
                                 TextStyle(fontSize: 20, color: MColors.textColor, height: 0, fontFamily: "opposans"))),
                     Container(padding: EdgeInsets.only(top: 20)),
                     Container(
-                        width: 440,
+                        width: 480,
                         height: 370,
                         alignment: Alignment.topLeft,
                         decoration: BoxDecoration(
@@ -125,12 +128,12 @@ class _SaveMiaoChuanBackDialogState extends State<SaveMiaoChuanBackDialog> {
                               itemBuilder: _buildList,
                             ))),
                     Container(
-                        width: 440,
+                        width: 480,
                         height: 54,
                         padding: EdgeInsets.only(top: 8),
                         child: Text("备注信息：" + widget.link.name)),
                     Container(
-                      width: 440,
+                      width: 480,
                       padding: EdgeInsets.only(top: 8),
                       child: Row(mainAxisAlignment: MainAxisAlignment.end, children: [
                         OutlinedButton(
@@ -139,24 +142,59 @@ class _SaveMiaoChuanBackDialogState extends State<SaveMiaoChuanBackDialog> {
                           style: ButtonStyle(minimumSize: MaterialStateProperty.all(Size(0, 36))),
                         ),
                         Padding(padding: EdgeInsets.only(left: 24)),
-                        ElevatedButton(
-                          onPressed: () {
+                        ArgonButton(
+                          height: 32,
+                          width: 140,
+                          minWidth: 140,
+                          borderRadius: 3.0,
+                          roundLoadingShape: false,
+                          color: MColors.elevatedBtnBG,
+                          child: Text(
+                            "导入这些文件",
+                            style: TextStyle(color: MColors.elevatedBtnColor, fontFamily: "opposans"),
+                          ),
+                          loader: Container(
+                            child: SpinKitRing(
+                              size: 22,
+                              lineWidth: 3,
+                              color: Colors.white,
+                            ),
+                          ),
+                          onTap: (startLoading, stopLoading, btnState) {
                             if (widget.link.hash == "") {
-                              var fcHide = Loading.showLoading();
-
-                              Linker.goLinkUpload(widget.box, widget.parentid, widget.link.fulljson).then((value) {
-                                fcHide();
-                                if (value > 0) {
-                                  Navigator.of(context).pop('ok');
-                                  BotToast.showText(text: "成功创建 " + value.toString() + " 个文件的秒传任务");
-                                } else {
-                                  BotToast.showText(text: "导入秒传任务失败,请重试");
-                                }
-                              });
+                              if (btnState == ButtonState.Busy) return;
+                              startLoading();
+                              if (widget.link.shareid != "") {
+                                Linker.goLinkShareUpload(
+                                        widget.box, widget.parentid, widget.link.shareid, widget.link.fulljson)
+                                    .then((value) {
+                                  stopLoading();
+                                  if (value > 0) {
+                                    Future.delayed(Duration(milliseconds: 800), () {
+                                      PanData.loadFileList(widget.box, widget.parentid, "save"); //触发联网加载
+                                    });
+                                    Navigator.of(context).pop('ok');
+                                    BotToast.showText(text: "成功创建 " + value.toString() + " 个文件的分享任务");
+                                  } else {
+                                    BotToast.showText(text: "导入分享任务失败,请重试");
+                                  }
+                                });
+                              } else {
+                                Linker.goLinkUpload(widget.box, widget.parentid, widget.link.fulljson).then((value) {
+                                  stopLoading();
+                                  if (value > 0) {
+                                    Future.delayed(Duration(milliseconds: 800), () {
+                                      PanData.loadFileList(widget.box, widget.parentid, "save"); //触发联网加载
+                                    });
+                                    Navigator.of(context).pop('ok');
+                                    BotToast.showText(text: "成功创建 " + value.toString() + " 个文件的秒传任务");
+                                  } else {
+                                    BotToast.showText(text: "导入秒传任务失败,请重试");
+                                  }
+                                });
+                              }
                             }
                           },
-                          child: Text("导入这些文件"),
-                          style: ButtonStyle(minimumSize: MaterialStateProperty.all(Size(0, 36))),
                         ),
                       ]),
                     ),
@@ -195,7 +233,8 @@ class _SaveMiaoChuanBackDialogState extends State<SaveMiaoChuanBackDialog> {
                 Expanded(
                   child: Tooltip(
                       message: item.name,
-                      child: Text(item.name, softWrap: false, overflow: TextOverflow.ellipsis, maxLines: 1)),
+                      child: Text(StringUtils.joinChar(item.name),
+                          softWrap: false, overflow: TextOverflow.ellipsis, maxLines: 1)),
                 ),
                 Container(
                     width: 88,

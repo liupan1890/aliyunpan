@@ -2,9 +2,10 @@ import 'package:alixby/api/Downloader.dart';
 import 'package:alixby/api/Uploader.dart';
 import 'package:alixby/states/Global.dart';
 import 'package:alixby/states/pageDownState.dart';
+import 'package:alixby/utils/StringUtils.dart';
 import 'package:bot_toast/bot_toast.dart';
 import 'package:flutter/rendering.dart';
-import 'package:gradient_widgets/gradient_widgets.dart';
+import 'package:percent_indicator/percent_indicator.dart';
 import 'package:hovering/hovering.dart';
 import 'package:provider/provider.dart';
 import 'package:alixby/utils/MColors.dart';
@@ -70,6 +71,12 @@ class _DownFileListState extends State<DownFileList> {
   SizedBox downBoxed = SizedBox(width: 40, height: 40, child: Icon(MIcons.download, color: MColors.iconSelected));
   SizedBox uploadBox = SizedBox(width: 40, height: 40, child: Icon(MIcons.upload, color: MColors.iconDown));
   SizedBox uploadBoxed = SizedBox(width: 40, height: 40, child: Icon(MIcons.upload, color: MColors.iconSelected));
+
+  static LinearGradient coralCandyGradient =
+      buildGradient(Alignment.topLeft, Alignment.bottomRight, const [Color(0xffFFF0D1), Color(0xffFFB8C6)]);
+  static LinearGradient buildGradient(AlignmentGeometry begin, AlignmentGeometry end, List<Color> colors) =>
+      LinearGradient(begin: begin, end: end, colors: colors);
+  static Color probg = Color(0xfff0f0f1);
 
   static onTapFile(String key) {
     Global.pageDownState.pageSelectFile(key);
@@ -154,7 +161,8 @@ class _DownFileListState extends State<DownFileList> {
                     Expanded(
                       child: Tooltip(
                         message: item.path,
-                        child: Text(item.title, softWrap: false, overflow: TextOverflow.ellipsis, maxLines: 2),
+                        child: Text(StringUtils.joinChar(item.title),
+                            softWrap: false, overflow: TextOverflow.ellipsis, maxLines: 2),
                       ),
                     ),
                     Container(
@@ -176,12 +184,14 @@ class _DownFileListState extends State<DownFileList> {
                                     alignment: Alignment.center,
                                     child: Column(children: [
                                       Padding(padding: EdgeInsets.only(top: 20)),
-                                      SizedBox(
-                                          height: 3,
-                                          child: GradientProgressIndicator(
-                                            gradient: Gradients.coralCandyGradient,
-                                            value: item.downProgress / 100,
-                                          )),
+                                      LinearPercentIndicator(
+                                        key: Key("prd_hcr_tp_" + item.key),
+                                        width: 90.0,
+                                        lineHeight: 3.0,
+                                        percent: item.downProgress / 100,
+                                        linearGradient: coralCandyGradient,
+                                        backgroundColor: probg,
+                                      ),
                                       Padding(padding: EdgeInsets.only(top: 4)),
                                       Text(item.lastTime,
                                           style:
@@ -207,10 +217,10 @@ class _DownFileListState extends State<DownFileList> {
                             left: 0,
                             top: 39,
                             child: SizedBox(
-                                width: 210.0,
+                                width: 220.0,
                                 height: 20.0,
                                 child: Container(
-                                    width: 210,
+                                    width: 220,
                                     child: Text(
                                       item.failedMessage,
                                       overflow: TextOverflow.clip,
@@ -239,7 +249,8 @@ class _DownFileListState extends State<DownFileList> {
                     Expanded(
                       child: Tooltip(
                         message: item.path,
-                        child: Text(item.title, softWrap: false, overflow: TextOverflow.ellipsis, maxLines: 2),
+                        child: Text(StringUtils.joinChar(item.title),
+                            softWrap: false, overflow: TextOverflow.ellipsis, maxLines: 2),
                       ),
                     ),
                     Container(
@@ -278,10 +289,10 @@ class _DownFileListState extends State<DownFileList> {
                             left: 0,
                             top: 39,
                             child: SizedBox(
-                                width: 210.0,
+                                width: 220.0,
                                 height: 20.0,
                                 child: Container(
-                                    width: 210,
+                                    width: 220,
                                     child: Text(
                                       item.failedMessage,
                                       overflow: TextOverflow.clip,
@@ -318,7 +329,8 @@ class _DownFileListState extends State<DownFileList> {
                     Expanded(
                       child: Tooltip(
                         message: item.path,
-                        child: Text(item.title, softWrap: false, overflow: TextOverflow.ellipsis, maxLines: 2),
+                        child: Text(StringUtils.joinChar(item.title),
+                            softWrap: false, overflow: TextOverflow.ellipsis, maxLines: 2),
                       ),
                     ),
                     Container(
@@ -349,10 +361,10 @@ class _DownFileListState extends State<DownFileList> {
                             left: 0,
                             top: 39,
                             child: SizedBox(
-                                width: 210.0,
+                                width: 220.0,
                                 height: 20.0,
                                 child: Container(
-                                    width: 210,
+                                    width: 220,
                                     child: Text(
                                       item.failedMessage,
                                       overflow: TextOverflow.clip,

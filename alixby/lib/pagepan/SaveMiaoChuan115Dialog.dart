@@ -1,9 +1,10 @@
 import 'package:alixby/api/Linker.dart';
 import 'package:alixby/states/Global.dart';
-import 'package:alixby/utils/Loading.dart';
 import 'package:alixby/utils/MColors.dart';
 import 'package:alixby/utils/MIcons.dart';
 import 'package:alixby/pagepan/SaveMiaoChuanBackDialog.dart';
+import 'package:alixby/utils/SpinKitRing.dart';
+import 'package:argon_buttons_flutter/argon_buttons_flutter.dart';
 import 'package:bot_toast/bot_toast.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
@@ -32,13 +33,11 @@ class SaveMiaoChuan115Dialog extends StatefulWidget {
 
 class _SaveMiaoChuan115DialogState extends State<SaveMiaoChuan115Dialog> {
   final TextEditingController linkcontroller = TextEditingController();
-  final TextEditingController pwdcontroller = TextEditingController();
   final verticalScroll = ScrollController();
   @override
   void dispose() {
     verticalScroll.dispose();
     linkcontroller.dispose();
-    pwdcontroller.dispose();
     super.dispose();
   }
 
@@ -71,7 +70,7 @@ class _SaveMiaoChuan115DialogState extends State<SaveMiaoChuan115Dialog> {
               child: Center(
                   child: Container(
                 height: 500,
-                width: 500,
+                width: 520,
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(8),
                   color: MColors.dialogBgColor,
@@ -221,14 +220,32 @@ class _SaveMiaoChuan115DialogState extends State<SaveMiaoChuan115Dialog> {
                 },
               )),
           Expanded(child: Container()),
-          ElevatedButton(
-            onPressed: () {
+          ArgonButton(
+            height: 32,
+            width: 90,
+            minWidth: 90,
+            borderRadius: 3.0,
+            roundLoadingShape: false,
+            color: MColors.elevatedBtnBG,
+            child: Text(
+              "解析链接",
+              style: TextStyle(color: MColors.elevatedBtnColor, fontFamily: "opposans"),
+            ),
+            loader: Container(
+              child: SpinKitRing(
+                size: 22,
+                lineWidth: 3,
+                color: Colors.white,
+              ),
+            ),
+            onTap: (startLoading, stopLoading, btnState) {
               String link = linkcontroller.text;
-              String pwd = pwdcontroller.text;
-              var fcHide = Loading.showLoading();
+              String pwd = "";
+              if (btnState == ButtonState.Busy) return;
+              startLoading();
 
               Linker.goLinkParse(link, pwd, isPublic).then((value) {
-                fcHide();
+                stopLoading();
                 if (value.hash == "") {
                   Navigator.of(context).pop('ok');
                   BotToast.showText(text: "解析链接成功");
@@ -247,8 +264,6 @@ class _SaveMiaoChuan115DialogState extends State<SaveMiaoChuan115Dialog> {
                 }
               });
             },
-            child: Text("  解析链接  "),
-            style: ButtonStyle(minimumSize: MaterialStateProperty.all(Size(0, 36))),
           ),
         ],
       ),

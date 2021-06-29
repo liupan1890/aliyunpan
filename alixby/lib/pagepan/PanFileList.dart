@@ -5,6 +5,7 @@ import 'package:alixby/utils/Loading.dart';
 import 'package:alixby/pagepan/ImageDialog.dart';
 import 'package:alixby/pagepan/TextDialog.dart';
 import 'package:alixby/pagepan/UnRarDialog.dart';
+import 'package:alixby/utils/StringUtils.dart';
 import 'package:bot_toast/bot_toast.dart';
 import 'package:flutter/rendering.dart';
 import 'package:hovering/hovering.dart';
@@ -178,7 +179,9 @@ class _PanFileListState extends State<PanFileList> {
     var hoverDecorations = BoxDecoration(
         color: MColors.pageRightFileBGSelect,
         border: Border(bottom: BorderSide(width: 1, color: MColors.pageRightBorderColor)));
-    var title = item.title.padRight(10);
+    var title = item.title;
+    if (title.length < 10) title = title.padRight(10, ' ');
+
     return HoverContainer(
         key: Key("prf_h_" + item.key),
         cursor: SystemMouseCursors.basic,
@@ -210,7 +213,8 @@ class _PanFileListState extends State<PanFileList> {
                                   mouseCursor:
                                       item.filetype != "file" ? SystemMouseCursors.click : SystemMouseCursors.basic,
                                   onTap: () => onTapFileName(item.box, item.key, item.filetype, context),
-                                  child: Text(title, softWrap: false, overflow: TextOverflow.ellipsis, maxLines: 2))))
+                                  child: Text(StringUtils.joinChar(title),
+                                      softWrap: false, overflow: TextOverflow.ellipsis, maxLines: 2))))
                     ])),
                     Container(
                         key: Key("prf_hcr_s_" + item.key),
