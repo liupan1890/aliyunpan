@@ -46,12 +46,12 @@ Mac版由macwk.com使用自有签名打包dmg，可以简单点击安装了(不�
 Win10已误报，需要添加信任程序，才能正常运行
 <br />
 
-![ui](https://s.pc.qq.com/tousu/img/20210701/4270687_1625118656.jpg)
+![ui](https://img12.360buyimg.com/ddimg/jfs/t1/176507/38/17671/878735/60dd59a8E9a9cac38/e45b2c3523f4560c.gif)
 
 <br />
 
 截图看不了的话自己点：[截图视频](https://files.xiami.com/musician-avatar/07d8ec1a38a5462c3afbfac41413b8af/a7a5f9bd75333768990a48931fd4f6d3-846x558.gif)
-     ---     [Windows添加信任](https://lovepicture.nosdn.127.net/1865219764686370696?imageView)
+     ---     [Windows添加信任](https://img12.360buyimg.com/ddimg/jfs/t1/176507/38/17671/878735/60dd59a8E9a9cac38/e45b2c3523f4560c.gif)
  <br />
   
 ``````
