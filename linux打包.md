@@ -47,8 +47,11 @@ MPV 文件夹
 这一个文件是aria2下载软件，需要复制你对应的平台的编译版本（这里是linux-arm64）
 
 https://github.com/aria2/aria2/releases  官方提供了win32 win64 mac linux64
+
 https://github.com/P3TERX/Aria2-Pro-Core 提供了linux-amd64/linux-arm64/linux-armhf/linux-i386
+
 https://github.com/q3aql/aria2-static-builds 提供了linux-gnu-32/linux-gnu-64/linux-gnu-arm-rbpi/win-32/win-64
+
 其他系统的自己寻找，既然你用到了，你肯定能找到
 
 这里我们从Aria2-Pro-Core下载了`aria2-1.35.0-static-linux-arm64.tar.gz`解压缩得到了`aria2c`，把它复制到`electron/resources`里，并且修改可执行权限
