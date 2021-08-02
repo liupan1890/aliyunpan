@@ -26,7 +26,9 @@
 1. 小白羊的程序文件哪里来的？
 随便下载一份小白羊的程序就好了，里面都有了，也在`resources`文件夹里（例如下载阿里小白羊版Linux v2.8.1.pre.zip）
 
-2. 复制通用文件,下面列出的文件直接复制到`electron/resources`里就可以，全平台通用的
+2. 删除`electron/resources/default_app.asar` 这个文件没用了删除掉
+
+3. 复制通用文件,下面列出的文件直接复制到`electron/resources`里就可以，全平台通用的
 ``````
 app.asar
 app.ico
@@ -34,7 +36,7 @@ app.png
 aria2.conf
 ``````
 
-3. 复制特定平台文件
+4. 复制特定平台文件
 ``````
 aria2c.exe / aria2c
 filehash32.exe /filehashm / filehashl
@@ -65,9 +67,10 @@ https://github.com/q3aql/aria2-static-builds 提供了linux-gnu-32/linux-gnu-64/
 linux系统特殊，因为找不到linux上发布的完整的MPV播放器文件，所以linux系统只能手动安装
 
 安装方式一：在应用商店里搜索MPV安装
+
 安装方式二：在终端执行命令“sudo apt install mpv”安装
 
-4. 删除`electron/resources/default_app.asar` 这个文件没用了删除掉
+
 
 
 #### 好了，大功告成了，可以运行electron了
