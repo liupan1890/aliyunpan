@@ -41,7 +41,7 @@ filehash32.exe /filehashm / filehashl
 MPV 文件夹
 ``````
 
-4. 删除`electron/resources/`
+
 
 ##### aria2c (linux/mac) / aria2c.exe (windows) 
 这一个文件是aria2下载软件，需要复制你对应的平台的编译版本（这里是linux-arm64）
@@ -64,7 +64,12 @@ linux系统特殊，因为找不到linux上发布的完整的MPV播放器文件�
 安装方式一：在应用商店里搜索MPV安装
 安装方式二：在终端执行命令“sudo apt install mpv”安装
 
+4. 删除`electron/resources/default_app.asar` 这个文件没用了删除掉
+
+
 #### 好了，大功告成了，可以运行electron了
+
+注：linux下，直接双击'electron'这个文件并不能启动，必须在终端使用命令'./electron'才能启动。因为electron这个文件被发布为共享库而不是可执行程序，所以需要使用终端命令调用启动
 
 
 
