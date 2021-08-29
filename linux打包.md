@@ -39,7 +39,6 @@ aria2.conf
 4. 复制特定平台文件
 ``````
 aria2c.exe / aria2c
-filehash32.exe /filehashm / filehashl
 MPV 文件夹
 ``````
 
@@ -58,8 +57,6 @@ https://github.com/q3aql/aria2-static-builds 提供了linux-gnu-32/linux-gnu-64/
 
 这里我们从Aria2-Pro-Core下载了`aria2-1.35.0-static-linux-arm64.tar.gz`解压缩得到了`aria2c`，把它复制到`electron/resources`里，并且修改可执行权限
 
-##### filehashm (mac) / filehashl (linux64) / filehash32.exe (win32)
-这一个文件是下载完成后校验，计算文件crc64或sha1的。可以直接忽略掉，只是不能在小白羊的设置里开启“每个文件下载后校验完整性”选项
 
 ##### MPV文件夹
 这里面是MPV播放器，在线预览视频时会用到，在我发布的win/mac的小白羊压缩包里都集成了这个文件夹，直接复制就可以
