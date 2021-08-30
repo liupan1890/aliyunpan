@@ -4,13 +4,13 @@
 
 这是我个人基于阿里云盘网页版开发的PC客户端，已经实现了阿里云盘官方客户端的基本功能
 
-> **7.3：版本大改中，切换为Electron，实现官方便捷的文件选择，缩略图，图片预览等功能，支持mac上文件拖动上传，增加同步盘功能，也不会被误报为病毒了，因为预计开发用时较多，近期暂不更新，敬请期待**
+> **8.30：[v2.8.30预览版已发布](https://github.com/liupan1890/aliyunpan/issues/188)，可以尝鲜了**
 
   <br />
   
 v1.6.29：[https://wwe.lanzoui.com/b01npsg8h](https://wwe.lanzoui.com/b01npsg8h)
 
-v1.6.21：[https://wwe.lanzoui.com/b01nqc4gd](https://wwe.lanzoui.com/b01nqc4gd)
+v2.8.30：[https://wwe.lanzoui.com/b01nqc4gd](https://wwe.lanzoui.com/b01nqc4gd)
 
 MacOS：[https://www.macwk.com/soft/aliyun-drive-xiaobaiyang](https://www.macwk.com/soft/aliyun-drive-xiaobaiyang)
 
