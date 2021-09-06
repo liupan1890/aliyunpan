@@ -23,7 +23,11 @@
 
 第一：Potplayer必须是20210127以后的版本，推荐安装最新版
 
-第二：遇到在线预览视频没有画面只有声音的，请自行安装解码器(OpenCodec/LAVFilters)
+##### 第二：有的Potplayer文件夹里只有Potplayermini.exe 没有Potplayer.exe  需要手动把Potplayermini.exe 改名成 Potplayer.exe
+
+第三：有的Potplayer文件夹里只有Potplayer64.exe 没有Potplayer.exe  需要手动把Potplayer64.exe 改名成 Potplayer.exe
+
+第四：遇到在线预览视频没有画面只有声音的，请自行安装解码器(OpenCodec/LAVFilters)
 
 安装解码器参阅
 
