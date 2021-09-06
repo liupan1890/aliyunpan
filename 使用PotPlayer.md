@@ -19,11 +19,11 @@
 
 退出后重新启动小白羊生效
 
-##### 需要注意的是：
+### 需要注意的是：
 
 第一：Potplayer必须是20210127以后的版本，推荐安装最新版
 
-##### 第二：有的Potplayer文件夹里只有Potplayermini.exe 没有Potplayer.exe  需要手动把Potplayermini.exe 改名成 Potplayer.exe
+#### 第二：有的Potplayer文件夹里只有Potplayermini.exe 没有Potplayer.exe  需要手动把Potplayermini.exe 改名成 Potplayer.exe
 
 第三：有的Potplayer文件夹里只有Potplayer64.exe 没有Potplayer.exe  需要手动把Potplayer64.exe 改名成 Potplayer.exe
 
