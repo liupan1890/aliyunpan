@@ -4,7 +4,7 @@
 
 这是我个人基于阿里云盘网页版开发的PC客户端，已经实现了阿里云盘官方客户端的基本功能
 
-> **8.30：[v2.8.30预览版已发布](https://github.com/liupan1890/aliyunpan/issues/188)，可以尝鲜了**
+> **9.16：[v2.9.15预览版已发布](https://github.com/liupan1890/aliyunpan/issues/188)，可以尝鲜了**
 
   <br />
   
