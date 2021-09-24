@@ -1,0 +1,172 @@
+body.body--dark {
+  background-color: rgb(33, 33, 33) !important;
+}
+.body--dark .tophead {
+  color: rgba(204, 204, 204, 0.72);
+  background: rgb(50, 50, 51);
+  box-shadow: rgba(0, 0, 0, 0.2) 0px 2px 12px 0px;
+}
+.body--dark .settingborder {
+  border-right: 1px solid #77777d;
+}
+.body--dark .q-item2 {
+  color: #323339 !important;
+  font-size: 13px !important;
+}
+.body--dark .filemenu2 .q-item {
+  color: #d2d3d9;
+}
+.body--dark .filename {
+  color: #d2d3d9;
+}
+.body--dark .RightSelected {
+  color: #d2d3d9;
+  border-top: 1px solid #e5e8ed11;
+  border-bottom: 1px solid #e5e8ed11;
+}
+
+.body--dark .cvideo {
+  color: #bac6d1;
+}
+.body--dark .downitem {
+  border-bottom: 1px solid #e5e8ed11;
+}
+.body--dark .fileitem {
+  border-bottom: 1px solid #e5e8ed11;
+}
+.body--dark .fileitem:hover {
+  background: rgba(128, 128, 128, 0.14);
+}
+.body--dark .downitem:hover {
+  background: rgba(128, 128, 128, 0.14);
+}
+.body--dark .downitem.selected {
+  background: rgba(112, 136, 255, 0.12);
+}
+.body--dark .fileitem.selected {
+  background: rgba(112, 136, 255, 0.12);
+}
+.body--dark .filetime,
+.body--dark .filesize {
+  color: rgba(255, 255, 255, 0.62);
+}
+.body--dark .text-state {
+  color: rgba(255, 255, 255, 0.62);
+}
+.body--dark .downspeed {
+  color: #ffffff33;
+}
+.body--dark .progress-total {
+  background: #84858d84;
+}
+.body--dark .progress-total .progress-current {
+  background: #ffffff33;
+}
+.body--dark .filebtn2 .q-btn {
+  opacity: 0.95;
+}
+
+.body--dark .q-menu--dark {
+  background: rgb(49, 49, 54);
+}
+.body--dark .q-btn-group {
+  background: rgb(49, 49, 54);
+}
+
+.body--dark #Left {
+  background: rgb(37, 37, 38);
+}
+
+.body--dark ::-webkit-scrollbar-thumb {
+  background: rgba(201, 201, 202, 0.3);
+  border-radius: 5px;
+}
+.body--dark .q-tree--dark .q-tree__node-header-content,
+.body--dark .q-tree__node-header-content {
+  color: #c2c3c9;
+}
+.body--dark .q-tree--dark .q-tree__node-header:before {
+  color: #c0c0c0;
+}
+.body--dark .q-tree--dark .q-tree__node:after {
+  color: #c0c0c0;
+}
+.body--dark .toppannavitem::before {
+  color: rgba(255, 255, 255, 0.62);
+}
+.body--dark .toppannavitem:hover {
+  background: #04386b;
+}
+.body--dark .leftMenuTab {
+  color: rgba(204, 204, 204, 0.6);
+}
+
+.body--dark .bg-leftMenuTabActive {
+  background: #ffebee33;
+}
+
+.body--dark .q-tree__node--selected .q-icon,
+.body--dark .text-primary,
+.body--dark .RightTop .q-btn,
+.body--dark .text-red,
+.body--dark .text-error {
+  color: rgb(223, 86, 89) !important;
+}
+
+.body--dark .bg-primary {
+  background: rgb(223, 86, 89) !important;
+}
+.bg-negative {
+  background: rgba(193, 0, 21, 0.9) !important;
+}
+
+.body--dark .detail .q-field__before span,
+.body--dark .detail > div > span {
+  color: rgba(255, 255, 255, 0.54);
+}
+.body--dark .ztree li a,
+.body--dark .ztree .node_name {
+  color: #d2d3d9 !important;
+}
+.body--dark .ztree .curSelectedNode .node_name {
+  color: #d2d3d9 !important;
+  background-color: #b7e3f733 !important;
+}
+.body--dark .dialogcardsection {
+  border: 1px solid rgba(255, 255, 255, 0.33);
+}
+.body--dark .q-dialog__inner > .q-card--dark {
+  background: rgb(37, 37, 38);
+}
+.body--dark .q-dialog__inner > .q-card--dark .q-card__section > div,
+.body--dark .q-dialog__inner > .q-card--dark .q-card__section .q-tab-panels--dark {
+  background: rgb(37, 37, 38);
+}
+.body--dark .hintlabel {
+  color: rgba(255, 255, 255, 0.54);
+}
+.body--dark .renamecard,
+.body--dark .renamecard .q-panel {
+  background: rgb(49, 49, 54);
+}
+.body--dark .q-btn-group--outline {
+  background: transparent !important;
+}
+
+.body--dark .q-btn-dropdown--split .q-btn--outline:before,
+.body--dark .q-btn-dropdown--split .q-btn-dropdown__arrow-container.q-btn--outline {
+  border-color: rgba(255, 255, 255, 0.6);
+}
+.body--dark .fileicon i {
+  color: #6f6f6f;
+}
+.body--dark .q-dialog .q-card__section .text-amber,
+.body--dark .q-dialog .q-card__actions .text-amber {
+  color: rgb(223, 86, 89) !important;
+}
+.body--dark .q-dialog .q-card__actions .bg-amber {
+  background: rgb(223, 86, 89) !important;
+}
+.colddd {
+  color: #c0c0c0;
+}

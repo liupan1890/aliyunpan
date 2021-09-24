@@ -1,0 +1,7 @@
+package panfilepackage;
+syntax = "proto3";
+
+message PanFile {
+  string file_id = 1;
+  int64 size = 2;
+}

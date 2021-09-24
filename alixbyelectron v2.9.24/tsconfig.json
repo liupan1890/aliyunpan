@@ -1,0 +1,11 @@
+{
+  "extends": "@quasar/app/tsconfig-preset",
+  "compilerOptions": {
+    "importHelpers": true,
+    "experimentalDecorators": true,
+    "baseUrl": "."
+  },
+  "importHelpers": true,
+  "experimentalDecorators": true,
+  "noImplicitAny": false
+}

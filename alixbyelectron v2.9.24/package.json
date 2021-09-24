@@ -1,0 +1,55 @@
+{
+  "name": "alixby",
+  "version": "0.0.1",
+  "description": "阿里云盘小白羊版",
+  "productName": "alixby",
+  "author": "github.com/liupan1890",
+  "private": true,
+  "scripts": {
+    "lint": "eslint --ext .js,.ts,.vue ./",
+    "test": "echo \"No test specified\" && exit 0"
+  },
+  "dependencies": {
+    "@quasar/extras": "1.11.0",
+    "aria2": "4.1.2",
+    "axios": "0.21.4",
+    "core-js": "3.17.3",
+    "dexie": "3.0.3",
+    "hash-wasm": "4.9.0",
+    "jquery": "3.6.0",
+    "jschardet": "3.0.0",
+    "path": "0.12.7",
+    "protobufjs": "^6.11.2",
+    "quasar": "2.1.0",
+    "sag-ztree-vue": "0.0.5-beta.3",
+    "v-viewer": "3.0.9",
+    "vue-code-highlight": "0.7.8",
+    "vue-router": "4.0.11",
+    "vue-virtual-scroller": "^2.0.0-alpha.1",
+    "vuex": "4.0.2"
+  },
+  "devDependencies": {
+    "@babel/eslint-parser": "7.15.7",
+    "@quasar/app": "3.1.0",
+    "@types/node": "16.9.2",
+    "@typescript-eslint/eslint-plugin": "4.30.0",
+    "@typescript-eslint/parser": "4.30.0",
+    "electron": "12.0.9",
+    "electron-devtools-installer": "3.2.0",
+    "electron-packager": "15.4.0",
+    "eslint": "7.32.0",
+    "eslint-config-prettier": "8.3.0",
+    "eslint-plugin-vue": "7.18.0",
+    "vuex-module-decorators": "1.0.1",
+    "worker-loader": "^3.0.8"
+  },
+  "browserslist": [
+    "last 3 Chrome versions",
+    "last 3 Edge versions"
+  ],
+  "engines": {
+    "node": ">= 16",
+    "npm": ">= 6.13.4",
+    "yarn": ">= 1.21.1"
+  }
+}
