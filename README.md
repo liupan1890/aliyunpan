@@ -4,13 +4,13 @@
 
 这是我个人基于阿里云盘网页版开发的PC客户端，支持win7-11 32位/64位，macOS，linux
 
-> **9.24：[v2.9.24预览版已发布](https://github.com/liupan1890/aliyunpan/issues/251)，可以尝鲜了**
+> **11.07：[v2.11.07版已发布](https://github.com/liupan1890/aliyunpan/issues/251)，可以尝鲜了**
 
   <br />
   
 v1.6.29：[https://wwe.lanzoui.com/b01npsg8h](https://wwe.lanzoui.com/b01npsg8h)
 
-v2.9.24：[https://wwe.lanzoui.com/b01nqc4gd](https://wwe.lanzoui.com/b01nqc4gd)
+v2.11.07：[https://wwe.lanzoui.com/b01nqc4gd](https://wwe.lanzoui.com/b01nqc4gd)
 
 MacOS：[https://www.macwk.com/soft/aliyun-drive-xiaobaiyang](https://www.macwk.com/soft/aliyun-drive-xiaobaiyang)
 
