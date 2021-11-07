@@ -4,7 +4,7 @@
 
 这是我个人基于阿里云盘网页版开发的PC客户端，支持win7-11 32位/64位，macOS，linux
 
-> **11.07：[v2.11.07版已发布](https://github.com/liupan1890/aliyunpan/issues/251)，可以尝鲜了**
+> **11.07：[v2.11.07版已发布](https://github.com/liupan1890/aliyunpan/issues/363)，可以尝鲜了**
 
   <br />
   
