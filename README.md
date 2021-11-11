@@ -35,7 +35,7 @@ MPV 播放视频、在线预览图片、在线预览文本、上传文件、上�
 
 #
 
-![Image](https://raw.githubusercontent.com/liupan1890/aliyunpan/main/v2.10.19.png)
+![Image](https://raw.githubusercontent.com/liupan1890/aliyunpan/main/doc/v2.10.19.png)
 
 #
 
