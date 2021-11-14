@@ -4,13 +4,13 @@
 
 这是我个人基于阿里云盘网页版开发的PC客户端，支持win7-11 32位/64位，macOS，linux
 
-> **11.07：[v2.11.07版已发布](https://github.com/liupan1890/aliyunpan/issues/363)，可以尝鲜了**
+> **11.14：[v2.11.14版已发布](https://github.com/liupan1890/aliyunpan/issues/363)，可以尝鲜了**
 
   <br />
   
 v1.6.29：[https://wwe.lanzoui.com/b01npsg8h](https://wwe.lanzoui.com/b01npsg8h)
 
-v2.11.07：[https://wwe.lanzoui.com/b01nqc4gd](https://wwe.lanzoui.com/b01nqc4gd)
+v2.11.14：[https://wwe.lanzoui.com/b01nqc4gd](https://wwe.lanzoui.com/b01nqc4gd)
 
 MacOS：[https://www.macwk.com/soft/aliyun-drive-xiaobaiyang](https://www.macwk.com/soft/aliyun-drive-xiaobaiyang)
 
@@ -22,13 +22,14 @@ Mac版由macwk.com使用自有签名打包dmg，可以简单点击安装了(不�
 <br />
 
 ``````
-2021年10月31日 已完成功能：
+2021年11月14日 已完成功能：
 多账号登录、常用文件操作（新建文件夹、收藏、重命名、复制、移动、删除、详情、视频雪碧图）、
-MPV 播放视频、在线预览图片、在线预览文本、上传文件、上传文件夹、批量改名、在线解压、
-回收站、收藏夹、连接到远程 Aria2 下载、导入阿里云分享链接、在线预览 word/excel/ppt/pdf、缩略图列表
+在线播放原始视频、在线播放转码视频、在线预览图片、在线预览文本、在线预览 word/excel/ppt/pdf、
+连接到远程 Aria2 下载、上传文件、上传文件夹、批量改名、在线解压、回收站、收藏夹、
+分享文件、导入阿里云分享链接、缩略图列表、网盘内文件搜索
 
 等待完成的功能：
-相册功能、网盘和相册间文件互相复制、分享文件、聚合搜索、网盘内文件搜索、文件同步盘、重复文件扫描、帐号间文件复制
+相册功能、网盘和相册间文件互相复制、文件同步盘、重复文件扫描、帐号间文件复制
 ``````
 
 <br />
@@ -85,6 +86,8 @@ MPV 播放视频、在线预览图片、在线预览文本、上传文件、上�
 小白羊可以快速复制文件，可以直接预览视频的雪碧图，可以直接删除文件
 
 小白羊支持数万文件夹和数万文件的管理，支持一次性列出文件夹里包含的全部文件
+
+小白羊支持单次上传/下载 一百万 量级的文件/文件夹
 
 小白羊仍在努力开发新功能，让大家使用起来更方便！
 
