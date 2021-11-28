@@ -4,13 +4,13 @@
 
 这是我个人基于阿里云盘网页版开发的PC客户端，支持win7-11 32位/64位，macOS，linux
 
-> **11.14：[v2.11.14版已发布](https://github.com/liupan1890/aliyunpan/issues/363)，可以尝鲜了**
+> **11.28：[v2.11.28版已发布](https://github.com/liupan1890/aliyunpan/issues/424)，可以尝鲜了**
 
   <br />
   
 v1.6.29：[https://wwe.lanzoui.com/b01npsg8h](https://wwe.lanzoui.com/b01npsg8h)
 
-v2.11.14：[https://wwe.lanzoui.com/b01nqc4gd](https://wwe.lanzoui.com/b01nqc4gd)
+v2.11.28：[https://wwe.lanzoui.com/b01nqc4gd](https://wwe.lanzoui.com/b01nqc4gd)
 
 MacOS：[https://www.macwk.com/soft/aliyun-drive-xiaobaiyang](https://www.macwk.com/soft/aliyun-drive-xiaobaiyang)
 
@@ -22,11 +22,11 @@ Mac版由macwk.com使用自有签名打包dmg，可以简单点击安装了(不�
 <br />
 
 ``````
-2021年11月14日 已完成功能：
+2021年11月28日 已完成功能：
 多账号登录、常用文件操作（新建文件夹、收藏、重命名、复制、移动、删除、详情、视频雪碧图）、
 在线播放原始视频、在线播放转码视频、在线预览图片、在线预览文本、在线预览 word/excel/ppt/pdf、
 连接到远程 Aria2 下载、上传文件、上传文件夹、批量改名、在线解压、回收站、收藏夹、
-分享文件、导入阿里云分享链接、缩略图列表、网盘内文件搜索
+分享文件、导入阿里云分享链接、缩略图列表、网盘内文件搜索、视频文件洗码
 
 等待完成的功能：
 相册功能、网盘和相册间文件互相复制、文件同步盘、重复文件扫描、帐号间文件复制
