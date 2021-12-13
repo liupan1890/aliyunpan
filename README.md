@@ -4,13 +4,13 @@
 
 基于阿里云盘网页版开发的PC客户端，支持win7-11，macOS，linux
 
-> **11.29：[v2.11.29版已发布](https://github.com/liupan1890/aliyunpan/issues/424)，可以尝鲜了**
+> **11.29：[v2.12.05版已发布](https://github.com/liupan1890/aliyunpan/issues/424)，可以尝鲜了**
 
   <br />
   
 v1.6.29：[https://wwe.lanzoui.com/b01npsg8h](https://wwe.lanzoui.com/b01npsg8h)
 
-v2.11.29：[https://wwe.lanzoui.com/b01nqc4gd](https://wwe.lanzoui.com/b01nqc4gd)
+v2.12.05：[https://wwe.lanzoui.com/b01nqc4gd](https://wwe.lanzoui.com/b01nqc4gd)
 
 MacOS：[https://www.macwk.com/soft/aliyun-drive-xiaobaiyang](https://www.macwk.com/soft/aliyun-drive-xiaobaiyang)
 
@@ -96,45 +96,10 @@ Mac版由macwk.com使用自有签名打包dmg，可以简单点击安装了(不�
 
 #
 
-#### 常见问题
-**1.Mac系统下载后提示：已损坏，您应该将它移到废纸篓？**
-
-答：这是因为苹果系统要求程序被证书签名，一年688元，我没有买。请参照此链接方式二操作即可
-https://blog.csdn.net/H_Zaiii/article/details/105730557
-
-**2.怎样版本更新？怎样彻底卸载？**
-
-答：版本更新：删除旧文件，下载新版解压即可。彻底卸载：删除小白羊的文件夹，删除C:\Users\用户名\AppData\Roaming\alipay这个文件夹即可
-
-**3.可以选择多个文件后批量操作吗？**
-
-答：当然可以，<br />
-1.支持点击文件名前面的勾选按钮多选<br />
-2.支持点击区间选择后，批量拖选<br />
-3.支持配合Ctrl键、Shift键，实现自由选中多个文件，跟win10文件管理器多选操作是一样的<br />
-
-**4.可以指定把文件下载到哪里吗？**
-
-答：可以，<br />
-在设置里可以选择下载保存的位置，<br />
-默认的是按照阿里云盘的完整路径保存的，<br />
-在设置里也可以去掉阿里云盘的完整路径直接保存
+#### 常见问题请参阅帮助文档
 
 
-**5.可以一次下载整个文件夹吗？可以一次上传整个文件夹吗？支持断点续传吗？**
-
-答：可以，已测试单次上传和下载一百万个文件，已测试单次上传和下载193GB的单个大体积文件<br />
-
-下载：可以批量下载多个文件夹，没有文件数量的限制！下载文件时也支持断点续传，可以随时暂停恢复继续下载
-
-上传：直接拖动要上传的文件夹扔到小白羊窗口上就可以了！也可以点击上传按钮选择文件夹！没有上传数量的限制！支持单个体积几百GB的大文件，上传文件时支持秒传，支持断点续传，可以随时暂停恢复继续上传！
-
-**6.支持在线预览哪些文件？**
-
-1.支持预览所有的音视频格式（阿里云盘只支持部分常见视频格式，小白羊可以通过电脑上的播放软件播放更多的格式）<br />
-2.支持在线预览图片<br />
-3.支持在线预览word/excel/ppt/wps/pdf/txt<br />
-4.支持在线预览200多种格式的文本类型文件(.cpp .js .ini .csv ......)<br />
+#### 特别感谢 @jkqxl @iD2073 @ybbluesky 等为小白羊提供了大量的优化建议
 
 
 
