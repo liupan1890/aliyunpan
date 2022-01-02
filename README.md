@@ -6,6 +6,7 @@
 
 > **11.29：[v2.12.05版已发布](https://github.com/liupan1890/aliyunpan/issues/424)，可以尝鲜了**
 
+> **2022-01-02:在憋大招，耐心等待新版本**
   <br />
   
 v1.6.29：[https://wwe.lanzoui.com/b01npsg8h](https://wwe.lanzoui.com/b01npsg8h)
