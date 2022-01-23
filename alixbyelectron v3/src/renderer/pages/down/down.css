@@ -1,0 +1,167 @@
+.DownRightFileList {
+  height: calc(100% - 50px - 48px - 8px);
+}
+.DownRightFileList .VList,
+.DownRightFileList .ant-spin-nested-loading,
+.DownRightFileList .ant-spin-container {
+  width: 100%;
+  height: 100%;
+}
+
+.DownRightFileList .icondownload {
+  color: #bcb3b399;
+}
+.DownRightFileList .runing .icondownload {
+  color: #2196f3;
+}
+
+.downitem {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: nowrap;
+  align-items: center;
+  height: 50px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  word-wrap: break-word;
+  word-break: break-all;
+
+  border-bottom: 1px solid #e5e8ed99;
+}
+.fileicon.ml {
+  margin-left: 7px;
+}
+.downitem:hover {
+  background: #f7f8fadd;
+}
+.downitem .select {
+  color: #bcb3b366 !important;
+}
+.downitem.selected .select i,
+.downitem:hover .select i {
+  color: #637dff !important;
+}
+.downitem.selected {
+  background: #f7f8fa;
+}
+
+.downitem .filename > div:hover {
+  color: unset;
+}
+
+.downitem .filename > div {
+  cursor: default;
+}
+.downitem .filesize {
+  flex-grow: 0;
+  flex-shrink: 0;
+  width: 72px;
+  margin-right: 16px;
+  font-size: 16px;
+  text-align: right;
+}
+.downprogress {
+  flex-grow: 0;
+  flex-shrink: 0;
+  width: 90px;
+  margin-right: 8px;
+}
+.downspeed {
+  flex-grow: 0;
+  flex-shrink: 0;
+  width: 126px;
+  overflow: hidden;
+  color: #00000033;
+  font-size: 26px;
+  white-space: nowrap;
+  text-align: right;
+  text-overflow: clip;
+}
+
+.transfering-state {
+  display: block;
+  width: 100%;
+  overflow: visible;
+}
+.text-state {
+  max-width: 100%;
+  height: 16px;
+  margin: 0;
+  overflow: hidden;
+  color: #00000066;
+  font-size: 12px;
+  line-height: 16px;
+  white-space: nowrap;
+  -o-text-overflow: ellipsis;
+  text-overflow: ellipsis;
+}
+.text-error {
+  width: 100%;
+  height: 16px;
+  margin: 0;
+  overflow: visible;
+  color: #f35b51;
+  font-size: 12px;
+  line-height: 16px;
+  white-space: nowrap;
+}
+.progress-total {
+  position: relative;
+  width: 100%;
+  height: 3px;
+  margin-top: 2px;
+  background: #84858d14;
+  border-radius: 1.5px;
+}
+.progress-total .progress-current {
+  position: absolute;
+  top: 0;
+  left: 0;
+  min-width: 6px;
+  max-width: 100%;
+  height: 100%;
+  background: #00000033;
+  border-radius: 1.5px;
+  -webkit-transition: width 0.3s ease, opacity 0.3s ease;
+  -o-transition: width 0.3s ease, opacity 0.3s ease;
+  transition: width 0.3s ease, opacity 0.3s ease;
+}
+.progress-total .progress-current.succeed {
+  background: #099970;
+}
+.progress-total .progress-current.error {
+  background: #f35b51;
+}
+.progress-total .progress-current.active {
+  background: linear-gradient(270deg, #ffba7a 0%, #ff74c7 8.56%, #637dff 26.04%, rgba(99, 125, 255, 0.2) 100%);
+}
+
+.downHideTip {
+  padding: 8px;
+  text-align: center;
+  opacity: 0.5;
+}
+.downHideTip .iconfont {
+  color: #ccc;
+  font-size: 80px;
+}
+.downHideTip.limite {
+  position: relative;
+  bottom: 16px;
+  padding: 0;
+  width: 300px;
+  margin-left: 30%;
+  background: #ffffff;
+  opacity: 0.8;
+}
+
+.filebtn2 {
+  margin: 0 8px 0 0;
+  flex-shrink: 0;
+  flex-grow: 0;
+  width: 120px;
+  text-align: right;
+}
+.filebtn2 .q-btn {
+  margin: 4px;
+}

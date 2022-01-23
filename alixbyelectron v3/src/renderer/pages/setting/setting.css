@@ -1,0 +1,258 @@
+/*========= setting ========*/
+.settingmodal .ant-tabs.down .ant-tabs-ink-bar {
+  background: rgb(223, 86, 89);
+}
+.settingTabDown {
+  color: rgb(223, 86, 89);
+}
+.settingTabDown:hover,
+.ant-tabs-tab-active .settingTabDown {
+  background: rgba(223, 86, 89, 0.1);
+}
+
+.settingmodal .ant-tabs.pan .ant-tabs-ink-bar {
+  background: rgb(255, 111, 0);
+}
+.settingTabPan {
+  color: rgb(255, 111, 0);
+}
+.settingTabPan:hover,
+.ant-tabs-tab-active .settingTabPan {
+  background: rgba(255, 111, 0, 0.1);
+}
+
+.settingmodal .ant-tabs.ui .ant-tabs-ink-bar {
+  background: rgb(156, 39, 176);
+}
+.settingTabUI {
+  color: rgb(156, 39, 176);
+}
+.settingTabUI:hover,
+.ant-tabs-tab-active .settingTabUI {
+  background: rgba(156, 39, 176, 0.1);
+}
+
+.settingmodal .ant-tabs.aria2 .ant-tabs-ink-bar {
+  background: rgb(30, 136, 229);
+}
+.settingTabAria2 {
+  color: rgb(30, 136, 229);
+}
+.settingTabAria2:hover,
+.ant-tabs-tab-active .settingTabAria2 {
+  background: rgba(30, 136, 229, 0.1);
+}
+
+.settingmodal .ant-tabs.about .ant-tabs-ink-bar {
+  background: rgb(38, 166, 154);
+}
+.settingTabAbout {
+  color: rgb(38, 166, 154);
+}
+.settingTabAbout:hover,
+.ant-tabs-tab-active .settingTabAbout {
+  background: rgba(38, 166, 154, 0.1);
+}
+.settingTabDown > i,
+.settingTabPan > i,
+.settingTabUI > i,
+.settingTabAria2 > i,
+.settingTabAbout > i,
+.settingTabDebug > i,
+.settingTabLog > i {
+  display: block;
+  width: 46px;
+  height: 24px;
+  font-size: 24px;
+  line-height: 24px;
+}
+
+.settingmodal .ant-tabs-tab {
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+.settingmodal .ant-tabs-tab-btn > div {
+  padding: 8px 5px 8px 5px !important;
+  text-align: center;
+}
+.settingmodal .ant-modal-content {
+  height: 100%;
+}
+.settingmodal .ant-modal-body {
+  height: calc(100% - 40px);
+  padding: 0 4px 16px 0 !important;
+  overflow-y: auto;
+}
+
+.settingmodal .settingbody {
+  height: 100%;
+  padding: 16px 24px 16px 0;
+}
+
+.pageright .settingbody {
+  padding: 54px 24px 36px 0;
+}
+
+.settinghead {
+  display: inline-block;
+  margin-bottom: 4px;
+  padding: 32px 0 4px 0;
+  font-size: 15px;
+  line-height: 20px;
+  user-select: none;
+}
+.settinghead.first {
+  padding: 0px 0 4px 0;
+}
+.settinghead::after {
+  display: block;
+  width: 100%;
+  height: 2px;
+  background: #1976d2aa;
+  opacity: 0.75;
+  content: '';
+}
+.settingborder {
+  border-right: 1px solid #e0e0e0;
+}
+
+.settingrow {
+  padding-top: 4px;
+  max-width: 450px;
+  margin-right: auto;
+}
+.settingbody p {
+  margin: 0;
+}
+.settingbody .iconbulb {
+  display: inline-block;
+  height: 22px;
+  margin-left: 4px;
+  padding-top: 2px;
+  color: #ffc107;
+  font-size: 20px;
+  line-height: 22px;
+  cursor: help;
+}
+
+.settingbody .ant-alert-with-description {
+  padding: 8px 8px !important;
+}
+
+.opred {
+  padding: 0 2px;
+  color: rgb(223, 86, 89);
+  background: rgba(223, 86, 89, 0.1);
+}
+
+.oporg {
+  padding: 0 2px;
+  color: rgb(255, 111, 0);
+  background: rgba(255, 111, 0, 0.1);
+}
+
+.opblue {
+  padding: 0 2px;
+  color: rgb(30, 136, 229);
+  background: rgba(30, 136, 229, 0.1);
+}
+
+.ant-popover-inner-content hr {
+  color: rgba(136, 136, 136, 0.15);
+  border-color: rgba(136, 136, 136, 0.15);
+}
+.dark .ant-popover-inner-content hr {
+  color: rgba(136, 136, 136, 0.35);
+  border-color: rgba(136, 136, 136, 0.35);
+}
+.dark .warninginfo,
+.dark .warninginfo .ant-alert-message,
+.dark .warninginfo .ant-alert-description {
+  color: rgba(255, 255, 255, 0.85);
+  line-height: 1.15 !important;
+}
+.dark .warninginfo .ant-alert-message {
+  color: rgba(255, 255, 255, 0.95) !important;
+}
+.dark .warninginfo {
+  background: #594214 !important;
+}
+.hrspace {
+  padding-top: 8px;
+}
+.settingbody .loglist {
+  height: 100%;
+  overflow-y: auto;
+}
+.settingbody .loglist .ant-list-item {
+  padding: 4px 8px !important; /*8px 16px;*/
+  font-size: 12px;
+  user-select: text;
+  -webkit-user-drag: none;
+}
+
+.settingbody .ant-input {
+  padding: 3px 9px !important; /*4 11*/
+}
+.settingbody .ant-input-search-button {
+  height: 30px !important; /*32*/
+  min-width: 60px;
+}
+.settingbody .ant-btn {
+  height: 28px;
+  padding: 2px 13px !important; /*4 15*/ /*32*/
+  line-height: 22px;
+}
+.settingbody .ant-btn > .iconfont {
+  margin-right: 2px;
+}
+
+.settingbody .ant-select-single:not(.ant-select-customize-input) .ant-select-selector {
+  height: 30px !important; /*32*/
+  padding: 0 9px !important; /*0 11*/
+}
+.settingbody .ant-select-single:not(.ant-select-customize-input) .ant-select-selector .ant-select-selection-search-input {
+  height: 28px; /*30*/
+}
+.settingbody .ant-select-single .ant-select-selector .ant-select-selection-item,
+.ant-select-single .ant-select-selector .ant-select-selection-placeholder {
+  line-height: 28px; /*30*/
+}
+.ant-select-dropdown {
+  padding: 0 !important; /*4 0*/
+}
+.ant-select-item {
+  min-height: 30px !important;
+  padding: 4px 10px !important; /*5 12*/ /*32*/
+}
+.settingbody .ant-input-number-input {
+  height: 28px !important; /*30*/
+}
+
+.settingbody .ant-radio-button-wrapper {
+  height: 28px;
+  padding: 0 13px;
+  line-height: 26px; /*30*/ /*32*/ /*0 15*/
+}
+.settingrow .ant-tag {
+  line-height: 22px !important;
+  margin-bottom: 8px;
+}
+
+.taginput {
+  width: 110px !important;
+}
+.taginput .ant-input,
+.taginput .ant-btn {
+  padding: 1px 4px !important;
+  font-size: 12px !important;
+  height: 24px !important;
+}
+.taginput .ant-input-group-addon {
+  font-size: 12px !important;
+}
+.taginput .ant-btn {
+  height: 24px !important;
+  min-width: 20px;
+}

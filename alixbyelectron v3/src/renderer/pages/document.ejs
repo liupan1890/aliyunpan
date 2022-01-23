@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="en">
+  <head>  
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>阿里云盘小白羊版</title><meta name="data-spm" content="aliyundrive"/>
+  <link rel="stylesheet" href="iconfont.css" />
+  <link rel="stylesheet" href="prism-vsc-dark-plus.css" />
+  <script src="prism.js" data-manual></script>
+  <script src="wasm_exec.js" data-manual></script>
+  <script>
+    const go = new Go();
+    WebAssembly.instantiateStreaming(fetch('wasm.wasm'), go.importObject).then((res) => {
+      go.run(res.instance);
+    });
+  </script>
+</head>
+<body>
+  <div id="root"></div>
+  <script src="https://g.alicdn.com/IMM/office-js/1.1.5/aliyun-web-office-sdk.min.js"></script>
+    <script>
+      window.Global = { ...window._Global };
+    </script>
+</body>
+</html>

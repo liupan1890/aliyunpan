@@ -1,0 +1,61 @@
+/**==============*/
+.siderTab,
+.contentTab {
+  width: 100%;
+  height: 100%;
+}
+.siderTab .ant-tabs-content,
+.contentTab .ant-tabs-content {
+  height: 100%;
+  overflow: hidden;
+}
+.siderTab .ant-tabs-nav,
+.contentTab .ant-tabs-nav {
+  display: none !important;
+  width: 0 !important;
+}
+
+.siderTab .ant-tabs-tabpane,
+.contentTab .ant-tabs-tabpane {
+  margin: 0 !important;
+  padding: 0 !important;
+}
+.siderTab .leftmenu.ant-menu {
+  border-right: none !important;
+}
+.siderTab .leftmenu .ant-menu-item {
+  margin: 0 !important;
+  padding: 0 14px !important;
+}
+
+.siderTab .leftmenu.ant-menu-inline .ant-menu-item::after {
+  right: unset;
+  left: 0;
+}
+
+.siderTab .leftmenu .ant-menu-item .iconfont {
+  font-size: 22px !important;
+}
+.siderTab .leftmenu.ant-menu.ant-menu-inline-collapsed > .ant-menu-item {
+  padding: 0 calc(50% - 22px / 2) !important;
+}
+
+.pageleft {
+  width: 100%;
+  height: 100%;
+}
+
+.headdesc {
+  height: 44px;
+  padding: 16px 0 0 18px;
+  color: #8a9ca5;
+  line-height: 20px;
+  user-select: none;
+  -webkit-user-drag: none;
+  white-space: nowrap;
+  word-break: keep-all;
+  overflow: hidden;
+}
+.ant-layout-sider-collapsed .headdesc {
+  display: none;
+}
