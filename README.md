@@ -4,14 +4,14 @@
 
 基于阿里云盘网页版开发的PC客户端，支持win7-11，macOS，linux
 
-> **11.29：[v2.12.05版已发布](https://github.com/liupan1890/aliyunpan/issues/424)，可以尝鲜了**
+> **04.14：[v2.12.14版已发布](https://github.com/liupan1890/aliyunpan/issues/639)，适配官网升级**
 
-> **2022-01-02:在憋大招，耐心等待新版本**
+> **2022-01-02:在憋大招，耐心等待v3版**
   <br />
   
 v1.6.29：[https://wwe.lanzoui.com/b01npsg8h](https://wwe.lanzoui.com/b01npsg8h)
 
-v2.12.05：[https://wwe.lanzoui.com/b01nqc4gd](https://wwe.lanzoui.com/b01nqc4gd)
+v2.12.14：[https://wwe.lanzoui.com/b01nqc4gd](https://wwe.lanzoui.com/b01nqc4gd)
 
 MacOS：[https://www.macwk.com/soft/aliyun-drive-xiaobaiyang](https://www.macwk.com/soft/aliyun-drive-xiaobaiyang)
 
