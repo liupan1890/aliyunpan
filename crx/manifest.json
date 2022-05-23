@@ -1,0 +1,11 @@
+{
+    "manifest_version": 2,
+    "name": "demo",
+    "version": "1.0.0",
+    "description": "demo",
+    "devtools_page": "devtools.html",
+    "permissions": [
+        "http://*/*",
+        "https://*/*"
+    ]
+}
