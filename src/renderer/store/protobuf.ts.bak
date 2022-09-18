@@ -1,0 +1,71 @@
+import { IAliGetDirModel } from '@/aliapi/alimodels'
+import { Message, Type, Field, OneOf } from 'protobufjs/light' // respectively "./node_modules/protobufjs/light.js"
+
+export class AwesomeSubMessage extends Message<AwesomeSubMessage> {
+  @Field.d(1, 'string')
+  public awesomeString?: string
+}
+
+export enum AwesomeEnum {
+  ONE = 1,
+  TWO = 2
+}
+
+@Type.d('SuperAwesomeMessage')
+export class AwesomeMessage extends Message<AwesomeMessage> {
+  @Field.d(1, 'string', 'optional', 'awesome default string')
+  public awesomeField?: string
+
+  @Field.d(2, AwesomeSubMessage)
+  public awesomeSubMessage?: AwesomeSubMessage
+
+  @Field.d(3, AwesomeEnum, 'optional', AwesomeEnum.ONE)
+  public awesomeEnum?: AwesomeEnum
+
+  @OneOf.d('awesomeSubMessage', 'awesomeEnum')
+  public which?: string
+}
+
+// example code
+let message = { awesomeField: 'hello' }
+let buffer = AwesomeMessage.encode(message).finish()
+let decoded = AwesomeMessage.decode(buffer)
+console.log(message, buffer, decoded)
+
+@Type.d('IAliGetDirModel')
+export class PAliGetDirModel extends Message<PAliGetDirModel> {
+  @Field.d(1, 'bool')
+  public __v_skip!: true
+  @Field.d(2, 'string')
+  public drive_id!: string
+  @Field.d(3, 'string')
+  public file_id!: string
+  @Field.d(4, 'string')
+  public parent_file_id!: string
+  @Field.d(5, 'string')
+  public name!: string
+  @Field.d(6, 'string')
+  public namesearch!: string
+  @Field.d(7, 'int64')
+  public size!: number
+  @Field.d(8, 'int32')
+  public time!: number
+  @Field.d(9, 'string')
+  public description!: string
+}
+
+export function ToIAliGetDirModelBuffer(list: any[]) {
+  let result: Uint8Array[] = []
+  for (let i = 0, maxi = list.length; i < maxi; i++) {
+    result.push(PAliGetDirModel.encode(list[i]).finish())
+  }
+  return result
+}
+
+export function ToIAliGetDirModelObject(list: Uint8Array[]) {
+  let result: IAliGetDirModel[] = []
+  for (let i = 0, maxi = list.length; i < maxi; i++) {
+    result.push(PAliGetDirModel.decode(list[i]))
+  }
+  return result
+}
