@@ -4,8 +4,6 @@ export default function getFileIcon(category: string | undefined, ext: string | 
   if (!mimext) mimext = ''
   if (!category) category = 'others'
 
-
-
   ext = '.' + ext.toLowerCase().replace('.', '').trim() + '.'
   mimext = '.' + mimext.toLowerCase().replace('.', '').trim() + '.'
 

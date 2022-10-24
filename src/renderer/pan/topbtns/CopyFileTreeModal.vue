@@ -7,8 +7,6 @@ import { usePanTreeStore } from '../../store'
 import message from '../../utils/message'
 import { copyToClipboard } from '../../utils/electronhelper'
 
-import { Checkbox as AntdCheckbox } from 'ant-design-vue'
-import 'ant-design-vue/es/checkbox/style/css'
 import AliFileWalk from '../../aliapi/filewalk'
 
 interface FileNodeData {
@@ -17,98 +15,97 @@ interface FileNodeData {
   name: string
   time: number
   size: number
-  isdir: boolean
+  isDir: boolean
 }
 
 interface ShowNodeData {
   name: string
-  isdir: boolean
+  isDir: boolean
   nodes: ShowNodeData[]
 }
 
-function windowsTree(obj: ShowNodeData, showfile: boolean, showascii: boolean) {
-  let format_str = showascii ? ['└─', '├─', '    ', '│  '] : ['\\---', '+---', '    ', '|   ']
-  return obj.name + '\n' + windowsSubTree('', obj.nodes, showfile, format_str) + '\n'
+function windowsTree(obj: ShowNodeData, showFile: boolean, showAscii: boolean) {
+  const formatStr = showAscii ? ['└─', '├─', '    ', '│  '] : ['\\---', '+---', '    ', '|   ']
+  return obj.name + '\n' + windowsSubTree('', obj.nodes, showFile, formatStr) + '\n'
 }
 
-function windowsSubTree(prefix: string, nodes: ShowNodeData[], showfile: boolean, format_str: string[]) {
-  let strarry: string[] = []
-  nodes = nodes.filter((t) => t.isdir == false).concat(nodes.filter((t) => t.isdir == true))
-  let lastindex = nodes.length - 1
-  let haschild = checkHasChildFile(nodes)
+function windowsSubTree(prefix: string, nodes: ShowNodeData[], showFile: boolean, formatStr: string[]) {
+  const strArray: string[] = []
+  nodes = nodes.filter((t) => t.isDir == false).concat(nodes.filter((t) => t.isDir == true))
+  const lastIndex = nodes.length - 1
+  const hasChild = checkHasChildFile(nodes)
   for (let i = 0, maxi = nodes.length; i < maxi; i++) {
-    let node = nodes[i]
-    let new_prefix = ''
+    const node = nodes[i]
+    let newPrefix = ''
 
     
-    if (node.isdir) {
-      strarry.push(prefix + (i == lastindex ? format_str[0] : format_str[1]) + node.name + '\n')
-      new_prefix = prefix + (haschild && i != lastindex ? format_str[3] : format_str[2])
-      strarry.push(windowsSubTree(new_prefix, node.nodes, showfile, format_str))
-    } else if (showfile) {
-      strarry.push(prefix + (haschild ? format_str[3] : format_str[2]) + node.name + '\n')
+    if (node.isDir) {
+      strArray.push(prefix + (i == lastIndex ? formatStr[0] : formatStr[1]) + node.name + '\n')
+      newPrefix = prefix + (hasChild && i != lastIndex ? formatStr[3] : formatStr[2])
+      strArray.push(windowsSubTree(newPrefix, node.nodes, showFile, formatStr))
+    } else if (showFile) {
+      strArray.push(prefix + (hasChild ? formatStr[3] : formatStr[2]) + node.name + '\n')
       
-      if (i == lastindex || nodes[i + 1].isdir) strarry.push(prefix + (haschild ? format_str[3] : format_str[2]) + '\n')
+      if (i == lastIndex || nodes[i + 1].isDir) strArray.push(prefix + (hasChild ? formatStr[3] : formatStr[2]) + '\n')
     }
   }
-  return strarry.join('')
+  return strArray.join('')
 }
 
 function checkHasChildFile(nodes: ShowNodeData[]) {
   for (let i = 0, maxi = nodes.length; i < maxi; i++) {
-    let node = nodes[i]
-    if (node.isdir && node.nodes.length > 0) return true
+    const node = nodes[i]
+    if (node.isDir && node.nodes.length > 0) return true
   }
   return false
 }
 
-function linuxTree(obj: ShowNodeData, showfile: boolean, showascii: boolean) {
-  let format_str = showascii ? ['│   ', '├── ', '└── ', '    '] : ['│   ', '├── ', '└── ', '    ']
-  return obj.name + '\n' + linuxSubTree('', obj.nodes, showfile, format_str) + '\n'
+function linuxTree(obj: ShowNodeData, showFile: boolean, showAscii: boolean) {
+  const formatStr = showAscii ? ['│   ', '├── ', '└── ', '    '] : ['│   ', '├── ', '└── ', '    ']
+  return obj.name + '\n' + linuxSubTree('', obj.nodes, showFile, formatStr) + '\n'
 }
 
-function linuxSubTree(prefix: string, nodes: ShowNodeData[], showfile: boolean, format_str: string[]) {
-  let strarry: string[] = []
-  nodes = nodes.filter((t) => t.isdir == false).concat(nodes.filter((t) => t.isdir == true))
-  let lastindex = nodes.length - 1
+function linuxSubTree(prefix: string, nodes: ShowNodeData[], showFile: boolean, formatStr: string[]) {
+  const strArray: string[] = []
+  nodes = nodes.filter((t) => t.isDir == false).concat(nodes.filter((t) => t.isDir == true))
+  const lastIndex = nodes.length - 1
   for (let i = 0, maxi = nodes.length; i < maxi; i++) {
-    let node = nodes[i]
-    let new_prefix = ''
+    const node = nodes[i]
+    let newPrefix = ''
 
     
-    if (node.isdir) {
-      strarry.push(prefix + (i == lastindex ? format_str[2] : format_str[1]) + node.name + '\n')
-      new_prefix = prefix + (i == lastindex ? format_str[3] : format_str[0])
-      strarry.push(linuxSubTree(new_prefix, node.nodes, showfile, format_str))
-    } else if (showfile) {
-      strarry.push(prefix + (i == lastindex ? format_str[2] : format_str[1]) + node.name + '\n')
+    if (node.isDir) {
+      strArray.push(prefix + (i == lastIndex ? formatStr[2] : formatStr[1]) + node.name + '\n')
+      newPrefix = prefix + (i == lastIndex ? formatStr[3] : formatStr[0])
+      strArray.push(linuxSubTree(newPrefix, node.nodes, showFile, formatStr))
+    } else if (showFile) {
+      strArray.push(prefix + (i == lastIndex ? formatStr[2] : formatStr[1]) + node.name + '\n')
     }
   }
-  return strarry.join('')
+  return strArray.join('')
 }
 
-function pathTree(obj: ShowNodeData, showfile: boolean, sepchar: string) {
-  return obj.name + '\n' + pathSubTree(obj.name, obj.nodes, showfile, sepchar) + '\n'
+function pathTree(obj: ShowNodeData, showFile: boolean, sepchar: string) {
+  return obj.name + '\n' + pathSubTree(obj.name, obj.nodes, showFile, sepchar) + '\n'
 }
 
-function pathSubTree(prefix: string, nodes: ShowNodeData[], showfile: boolean, sepchar: string) {
-  let strarry: string[] = []
-  nodes = nodes.filter((t) => t.isdir == false).concat(nodes.filter((t) => t.isdir == true))
-  let lastindex = nodes.length - 1
+function pathSubTree(prefix: string, nodes: ShowNodeData[], showFile: boolean, sepchar: string) {
+  const strArray: string[] = []
+  nodes = nodes.filter((t) => t.isDir == false).concat(nodes.filter((t) => t.isDir == true))
   for (let i = 0, maxi = nodes.length; i < maxi; i++) {
-    let node = nodes[i]
-    let new_prefix = ''
+    const node = nodes[i]
+    let newPrefix = ''
 
     
-    if (node.isdir) {
-      strarry.push(prefix + sepchar + node.name + '\n')
-      new_prefix = prefix + sepchar + node.name
-      strarry.push(pathSubTree(new_prefix, node.nodes, showfile, sepchar))
-    } else if (showfile) {
-      strarry.push(prefix + sepchar + node.name + '\n')
+    if (node.isDir) {
+      strArray.push(prefix + sepchar + node.name + '\n')
+      newPrefix = prefix + sepchar + node.name
+      strArray.push(pathSubTree(newPrefix, node.nodes, showFile, sepchar))
+    } else if (showFile) {
+      strArray.push(prefix + sepchar + node.name + '\n')
     }
   }
-  return strarry.join('')
+  return strArray.join('')
 }
 
 export default defineComponent({
@@ -122,69 +119,67 @@ export default defineComponent({
       required: true
     }
   },
-  components: {
-    AntdCheckbox
-  },
+
   setup(props) {
     const treeLoading = ref(false)
     const formRef = ref()
     const form = reactive({
-      treecontent: '',
-      showlinux: 'win',
-      showfile: 'file',
-      showline: 'ascii',
-      treeinfo: ''
+      treeContent: '',
+      showLinux: 'win',
+      showFile: 'file',
+      showLine: 'ascii',
+      treeInfo: ''
     })
 
     let drive_id = ''
     let file_id = ''
     let file_name = ''
     
-    let DirMap: Map<string, FileNodeData> = new Map<string, FileNodeData>()
+    const DirMap: Map<string, FileNodeData> = new Map<string, FileNodeData>()
     
-    let ChildrenDirMap: Map<string, FileNodeData[]> = new Map<string, FileNodeData[]>()
-    let ChildrenFileMap: Map<string, FileNodeData[]> = new Map<string, FileNodeData[]>()
-    let TreeData: ShowNodeData = { name: file_name, isdir: true, nodes: [] }
+    const ChildrenDirMap: Map<string, FileNodeData[]> = new Map<string, FileNodeData[]>()
+    const ChildrenFileMap: Map<string, FileNodeData[]> = new Map<string, FileNodeData[]>()
+    let treeData: ShowNodeData = { name: file_name, isDir: true, nodes: [] }
     const handleOpen = () => {
       
-      let file = props.filelist[0]
+      const file = props.filelist[0]
       drive_id = file.drive_id
       file_id = file.file_id
       file_name = file.name
-      TreeData = { name: file_name, isdir: file.isdir, nodes: [] }
+      treeData = { name: file_name, isDir: file.isDir, nodes: [] }
       LoadFileTree()
     }
 
     const handleClose = () => {
       
       if (treeLoading.value) treeLoading.value = false
-      form.treecontent = ''
-      form.treeinfo = ''
+      form.treeContent = ''
+      form.treeInfo = ''
     }
 
     const RefreshFileTree = () => {
       
-      if (form.showline == 'path') {
-        if (form.showlinux == 'win') {
-          form.treecontent = pathTree(TreeData, form.showfile == 'file', '\\')
+      if (form.showLine == 'path') {
+        if (form.showLinux == 'win') {
+          form.treeContent = pathTree(treeData, form.showFile == 'file', '\\')
         } else {
-          form.treecontent = pathTree(TreeData, form.showfile == 'file', '/')
+          form.treeContent = pathTree(treeData, form.showFile == 'file', '/')
         }
       } else {
-        if (form.showlinux == 'win') {
-          form.treecontent = windowsTree(TreeData, form.showfile == 'file', form.showline == 'ascii')
+        if (form.showLinux == 'win') {
+          form.treeContent = windowsTree(treeData, form.showFile == 'file', form.showLine == 'ascii')
         } else {
-          form.treecontent = linuxTree(TreeData, form.showfile == 'file', form.showline == 'ascii')
+          form.treeContent = linuxTree(treeData, form.showFile == 'file', form.showLine == 'ascii')
         }
       }
     }
 
     const LoadFileTree = () => {
-      form.treecontent = ''
-      form.treeinfo = ''
+      form.treeContent = ''
+      form.treeInfo = ''
       
-      if (TreeData.isdir == false) {
-        form.treeinfo = '文件 1 个，文件夹 0 个'
+      if (treeData.isDir == false) {
+        form.treeInfo = '文件 1 个，文件夹 0 个'
         RefreshFileTree()
         return
       }
@@ -194,77 +189,77 @@ export default defineComponent({
         .then((dir) => {
           treeLoading.value = false
           if (!dir.next_marker) {
-            if (dir.items.length == 5000) {
-              message.error('文件夹内包含文件太多，已忽略5000条后面的数据', 10)
+            if (dir.items.length == 8000) {
+              message.error('文件夹内包含文件太多，已忽略8000条后面的数据', 10)
             }
             
             
-            let root: FileNodeData = { file_id: file_id, parent_file_id: '', name: file_name, time: 0, size: 0, isdir: true }
+            const root: FileNodeData = { file_id: file_id, parent_file_id: '', name: file_name, time: 0, size: 0, isDir: true }
             DirMap.set(root.file_id, root)
             ChildrenDirMap.set(root.file_id, [])
             ChildrenFileMap.set(root.file_id, [])
             
-            let dircount = 0
-            let filecount = 0
+            let dirCount = 0
+            let fileCount = 0
             try {
-              let dirparentid: string = ''
-              let fileparentid: string = ''
-              let childdirlist: FileNodeData[] = [] 
-              let childfilelist: FileNodeData[] = [] 
+              let dirParentID: string = ''
+              let fileParentID: string = ''
+              let childDirList: FileNodeData[] = [] 
+              let childFileList: FileNodeData[] = [] 
               let item: FileNodeData
               
-              let children = dir.items
+              const children = dir.items
               for (let i = 0, maxi = children.length; i < maxi; i++) {
                 item = children[i]
-                if (item.isdir) {
-                  dircount++
+                if (item.isDir) {
+                  dirCount++
                   DirMap.set(item.file_id, item)
-                  if (dirparentid != item.parent_file_id) {
+                  if (dirParentID != item.parent_file_id) {
                     if (ChildrenDirMap.has(item.parent_file_id)) {
-                      childdirlist = ChildrenDirMap.get(item.parent_file_id)! 
+                      childDirList = ChildrenDirMap.get(item.parent_file_id)! 
                     } else {
-                      childdirlist = [] 
-                      ChildrenDirMap.set(item.parent_file_id, childdirlist) 
+                      childDirList = [] 
+                      ChildrenDirMap.set(item.parent_file_id, childDirList) 
                     }
-                    dirparentid = item.parent_file_id
+                    dirParentID = item.parent_file_id
                   }
-                  childdirlist.push(item)
+                  childDirList.push(item)
                 } else {
-                  filecount++
-                  if (fileparentid != item.parent_file_id) {
+                  fileCount++
+                  if (fileParentID != item.parent_file_id) {
                     if (ChildrenFileMap.has(item.parent_file_id)) {
-                      childfilelist = ChildrenFileMap.get(item.parent_file_id)! 
+                      childFileList = ChildrenFileMap.get(item.parent_file_id)! 
                     } else {
-                      childfilelist = [] 
-                      ChildrenFileMap.set(item.parent_file_id, childfilelist) 
+                      childFileList = [] 
+                      ChildrenFileMap.set(item.parent_file_id, childFileList) 
                     }
-                    fileparentid = item.parent_file_id
+                    fileParentID = item.parent_file_id
                   }
-                  childfilelist.push(item)
+                  childFileList.push(item)
                 }
               }
             } catch {}
             
 
             const convert = function (id: string): ShowNodeData | undefined {
-              let dir = DirMap.get(id)
+              const dir = DirMap.get(id)
               if (!dir) return undefined
-              let show: ShowNodeData = { name: dir.name, isdir: dir.isdir, nodes: [] }
-              let dirs = ChildrenDirMap.get(id) || []
+              const show: ShowNodeData = { name: dir.name, isDir: dir.isDir, nodes: [] }
+              const dirs = ChildrenDirMap.get(id) || []
               for (let j = 0, maxj = dirs.length; j < maxj; j++) {
-                let a = convert(dirs[j].file_id)
+                const a = convert(dirs[j].file_id)
                 if (a) show.nodes.push(a)
               }
-              let files = ChildrenFileMap.get(id) || []
+              const files = ChildrenFileMap.get(id) || []
               for (let j = 0, maxj = files.length; j < maxj; j++) {
-                show.nodes.push({ name: files[j].name, isdir: false, nodes: [] })
+                show.nodes.push({ name: files[j].name, isDir: false, nodes: [] } as ShowNodeData)
               }
               return show
             }
-            TreeData = convert(file_id) || { name: file_name, isdir: true, nodes: [] }
-            form.treeinfo = '文件 ' + filecount.toString() + ' 个，文件夹 ' + dircount.toString() + ' 个'
+            treeData = convert(file_id) || { name: file_name, isDir: true, nodes: [] }
+            form.treeInfo = '文件 ' + fileCount.toString() + ' 个，文件夹 ' + dirCount.toString() + ' 个'
           } else {
-            message.warning('解析文件失败 ' + dir.next_marker)
+            message.warning('解析文件失败 ' + dir.next_marker.replace('TooManyWalkFolders', '包含太多子文件夹'))
           }
           RefreshFileTree()
         })
@@ -276,15 +271,15 @@ export default defineComponent({
   },
   methods: {
     handleShowLinux(val: any) {
-      this.form.showlinux = val
+      this.form.showLinux = val
       this.RefreshFileTree()
     },
     handleShowFile(val: any) {
-      this.form.showfile = val
+      this.form.showFile = val
       this.RefreshFileTree()
     },
     handleShowLine(val: any) {
-      this.form.showline = val
+      this.form.showLine = val
       this.RefreshFileTree()
     },
     handleLoadFileTree() {
@@ -299,8 +294,8 @@ export default defineComponent({
       modalCloseAll()
     },
     handleOK() {
-      if (this.form.treecontent) {
-        copyToClipboard(this.form.treecontent)
+      if (this.form.treeContent) {
+        copyToClipboard(this.form.treeContent)
         message.success('目录树已复制到剪切板')
       } else {
         message.error('新建文件失败 父文件夹错误')
@@ -311,7 +306,7 @@ export default defineComponent({
 </script>
 
 <template>
-  <a-modal :visible="visible" modal-class="modalclass" @cancel="handleHide" @before-open="handleOpen" @close="handleClose" :footer="false" :unmount-on-close="true" :mask-closable="false">
+  <a-modal :visible="visible" modal-class="modalclass" :footer="false" :unmount-on-close="true" :mask-closable="false" @cancel="handleHide" @before-open="handleOpen" @close="handleClose">
     <template #title>
       <span class="modaltitle">复制目录树</span>
     </template>
@@ -325,7 +320,7 @@ export default defineComponent({
           <a-col flex="none" style="text-align: right">风格:</a-col>
           <a-col flex="4px"></a-col>
           <a-col flex="none">
-            <a-select size="small" tabindex="-1" :style="{ width: '96px' }" :disabled="treeLoading" :model-value="form.showlinux" @change="handleShowLinux">
+            <a-select size="small" tabindex="-1" :style="{ width: '96px' }" :disabled="treeLoading" :model-value="form.showLinux" @change="handleShowLinux">
               <a-option value="linux"> Linux </a-option>
               <a-option value="win"> Win10 </a-option>
             </a-select>
@@ -334,7 +329,7 @@ export default defineComponent({
           <a-col flex="none" style="text-align: right">显示:</a-col>
           <a-col flex="4px"></a-col>
           <a-col flex="none">
-            <a-select size="small" tabindex="-1" :style="{ width: '96px' }" :disabled="treeLoading" :model-value="form.showfile" @change="handleShowFile">
+            <a-select size="small" tabindex="-1" :style="{ width: '96px' }" :disabled="treeLoading" :model-value="form.showFile" @change="handleShowFile">
               <a-option value="file"> 文件 </a-option>
               <a-option value="folder"> 文件夹 </a-option>
             </a-select>
@@ -343,7 +338,7 @@ export default defineComponent({
           <a-col flex="none" style="text-align: right">连接线:</a-col>
           <a-col flex="4px"></a-col>
           <a-col flex="none">
-            <a-select size="small" tabindex="-1" :style="{ width: '90px' }" :disabled="treeLoading" :model-value="form.showline" @change="handleShowLine">
+            <a-select size="small" tabindex="-1" :style="{ width: '90px' }" :disabled="treeLoading" :model-value="form.showLine" @change="handleShowLine">
               <a-option value="ascii"> ├── </a-option>
               <a-option value="asni"> +--- </a-option>
               <a-option value="path"> 路径 </a-option>
@@ -355,13 +350,13 @@ export default defineComponent({
           </a-col>
         </a-row>
 
-        <a-form-item field="treecontent" label="解析出来的目录树：" class="textareafill">
-          <a-textarea class="filetreecontent" v-model="form.treecontent" readonly placeholder="请先点击 解析文件 按钮" @keydown="(e) => e.stopPropagation()" />
+        <a-form-item field="treeContent" label="解析出来的目录树：" class="textareafill">
+          <a-textarea v-model="form.treeContent" class="filetreecontent" readonly placeholder="请先点击 解析文件 按钮" @keydown="(e:any) => e.stopPropagation()" />
         </a-form-item>
       </a-form>
     </div>
     <div class="modalfoot" style="width: 80vw">
-      <div class="tips">{{ treeLoading ? '目录解析中...' : form.treeinfo }}</div>
+      <div class="tips">{{ treeLoading ? '目录解析中...' : form.treeInfo }}</div>
       <div style="flex-grow: 1"></div>
       <a-button type="outline" size="small" @click="handleHide">关闭</a-button>
     </div>

@@ -8,22 +8,23 @@ import AliTrash from '../../aliapi/trash'
 export interface ICopyTreeInfo {
   user_id: string
   drive_id: string
-  dir_id: string
-  dir_name: string
-  parent_id: string
+  dirID: string
+  dirName: string
+  parentID: string
   loading: boolean
-  onlydir: boolean
+  onlyDir: boolean
 }
-export function NewCopyTreeInfo(onlydir: boolean) {
-  return {
+export function NewCopyTreeInfo(onlyDir: boolean) {
+  const info: ICopyTreeInfo = {
     user_id: '',
     drive_id: '',
-    dir_id: '',
-    dir_name: '',
-    parent_id: '',
+    dirID: '',
+    dirName: '',
+    parentID: '',
     loading: false,
-    onlydir: onlydir
+    onlyDir: onlyDir
   }
+  return info
 }
 
 export interface ICopyTreeNode {
@@ -34,56 +35,56 @@ export interface ICopyTreeNode {
   children?: ICopyTreeNode[]
 }
 
-export async function LoadDir(dir_id: string, DirData: ICopyTreeInfo, TreeData: Ref<ICopyTreeNode[]>) {
+export async function LoadDir(dirID: string, DirData: ICopyTreeInfo, treeData: Ref<ICopyTreeNode[]>) {
   DirData.loading = true
-  if (!dir_id) dir_id = 'root'
-  if (dir_id.startsWith('dir_')) dir_id = dir_id.substring('dir_'.length)
+  if (!dirID) dirID = 'root'
+  if (dirID.startsWith('dir_')) dirID = dirID.substring('dir_'.length)
 
-  if (dir_id == 'root') {
-    DirData.dir_id = 'root'
-    DirData.dir_name = '根目录'
-    DirData.parent_id = 'root'
+  if (dirID == 'root') {
+    DirData.dirID = 'root'
+    DirData.dirName = '根目录'
+    DirData.parentID = 'root'
   } else {
-    let getdir = await AliFile.ApiFileInfo(DirData.user_id, DirData.drive_id, dir_id)
+    const getdir = await AliFile.ApiFileInfo(DirData.user_id, DirData.drive_id, dirID)
     if (getdir) {
-      DirData.dir_id = getdir.file_id
-      DirData.dir_name = getdir.name
-      DirData.parent_id = getdir.parent_file_id
+      DirData.dirID = getdir.file_id
+      DirData.dirName = getdir.name
+      DirData.parentID = getdir.parent_file_id
     } else {
       message.error('读取文件夹信息失败')
     }
   }
 
-  let resp = await AliTrash.ApiDirFileListNoLock(DirData.user_id, DirData.drive_id, dir_id, '', '', DirData.onlydir ? 'folder' : '')
+  const resp = await AliTrash.ApiDirFileListNoLock(DirData.user_id, DirData.drive_id, dirID, '', '', DirData.onlyDir ? 'folder' : '')
   DirData.loading = false
-  let list: ICopyTreeNode[] = []
-  let items = resp.items
+  const list: ICopyTreeNode[] = []
+  const items = resp.items
   let item: IAliGetFileModel
   for (let i = 0, maxi = items.length; i < maxi; i++) {
     item = items[i]
     list.push({
-      key: (item.isdir ? 'dir_' : 'file_') + item.file_id,
+      key: (item.isDir ? 'dir_' : 'file_') + item.file_id,
       title: item.name,
-      icon: item.isdir ? foldericonfn : fileiconfn,
-      download_url: '' //item.download_url
-    })
+      icon: item.isDir ? foldericonfn : fileiconfn,
+      download_url: '' // item.download_url
+    } as ICopyTreeNode)
   }
-  TreeData.value = list
+  treeData.value = list
 }
 
-export async function LoadCopy(LeftData: ICopyTreeInfo, LeftCheckedKeys: string[], LeftTreeData: ICopyTreeNode[], CopyTreeLoading: Ref<boolean>, TreeData: ICopyTreeNode[]) {
+export async function LoadCopy(LeftData: ICopyTreeInfo, LeftCheckedKeys: string[], LeftTreeData: ICopyTreeNode[], CopyTreeLoading: Ref<boolean>, treeData: ICopyTreeNode[]) {
   CopyTreeLoading.value = true
-  TreeData.length = 0
+  treeData.length = 0
   for (let i = 0, maxi = LeftTreeData.length; i < maxi && LeftCheckedKeys.length > 0; i++) {
-    let node = LeftTreeData[i]
+    const node = LeftTreeData[i]
     if (LeftCheckedKeys.includes(node.key)) {
-      let key = node.key
+      const key = node.key
       LeftCheckedKeys = LeftCheckedKeys.filter((t) => t != key)
-      TreeData.push({ ...node, children: [] })
+      treeData.push({ ...node, children: [] } as ICopyTreeNode)
     }
   }
-  for (let i = 0, maxi = TreeData.length; i < maxi; i++) {
-    let node = TreeData[i]
+  for (let i = 0, maxi = treeData.length; i < maxi; i++) {
+    const node = treeData[i]
     if (node.key.startsWith('dir_')) {
       await LoadChildDir(LeftData.user_id, LeftData.drive_id, node)
     }
@@ -94,26 +95,26 @@ export async function LoadCopy(LeftData: ICopyTreeInfo, LeftCheckedKeys: string[
 }
 
 async function LoadChildDir(user_id: string, drive_id: string, node: ICopyTreeNode) {
-  let dir_id = node.key.substring('dir_'.length)
-  let resp = await AliTrash.ApiDirFileListNoLock(user_id, drive_id, dir_id, '', '', 'folder')
+  const dirID = node.key.substring('dir_'.length)
+  const resp = await AliTrash.ApiDirFileListNoLock(user_id, drive_id, dirID, '', '', 'folder')
 
-  let list: ICopyTreeNode[] = []
-  let items = resp.items
+  const list: ICopyTreeNode[] = []
+  const items = resp.items
   let item: IAliGetFileModel
   for (let i = 0, maxi = items.length; i < maxi; i++) {
     item = items[i]
     list.push({
-      key: (item.isdir ? 'dir_' : 'file_') + item.file_id,
+      key: (item.isDir ? 'dir_' : 'file_') + item.file_id,
       title: item.name,
-      icon: item.isdir ? foldericonfn : fileiconfn,
-      download_url: '', //item.download_url,
+      icon: item.isDir ? foldericonfn : fileiconfn,
+      download_url: '', // item.download_url,
       children: []
-    })
+    } as ICopyTreeNode)
   }
   node.children = list
 
   for (let i = 0, maxi = list.length; i < maxi; i++) {
-    let nd = list[i]
+    const nd = list[i]
     if (nd.key.startsWith('dir_')) {
       await LoadChildDir(user_id, drive_id, nd)
     }
@@ -121,21 +122,22 @@ async function LoadChildDir(user_id: string, drive_id: string, node: ICopyTreeNo
 }
 
 
-export function GetTreeNodes(TreeData: ICopyTreeNode[], TreeDataMap: Map<string, ICopyTreeNode>) {
-  let data: ICopyTreeNode[] = []
-  for (let i = 0, maxi = TreeData.length; i < maxi; i++) {
-    let item = TreeData[i]
+export function GetTreeNodes(treeData: ICopyTreeNode[], treeDataMap: Map<string, ICopyTreeNode>) {
+  const data: ICopyTreeNode[] = []
+  for (let i = 0, maxi = treeData.length; i < maxi; i++) {
+    const item = treeData[i]
     data.push({
       key: item.key,
       title: item.title,
       icon: item.icon,
       download_url: item.download_url,
-      children: GetTreeNodes(item.children!, TreeDataMap)
-    })
+      children: GetTreeNodes(item.children!, treeDataMap)
+    } as ICopyTreeNode)
   }
   data.sort((a, b) => a.title!.localeCompare(b.title!))
   data.map((a) => {
-    TreeDataMap.set(a.key as string, a)
+    treeDataMap.set(a.key as string, a)
+    return true
   })
   return data
 }

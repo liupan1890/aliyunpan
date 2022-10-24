@@ -1,25 +1,27 @@
 import { defineStore } from 'pinia'
+import { onHideRightMenuScroll } from '../utils/keyboardhelper'
 
 export interface ModalState {
-  modalname: string
-  modaldata: any
+  modalName: string
+  modalData: any
 }
 
 const useModalStore = defineStore('modal', {
   state: (): ModalState => ({
-    modalname: '',
-    modaldata: {}
+    modalName: '',
+    modalData: {}
   }),
 
   actions: {
-    showModal(modalname: string, modaldata: any) {
-      if (modalname && modalname == this.modalname) {
+    showModal(modalName: string, modalData: any) {
+      if (modalName) onHideRightMenuScroll()
+      if (modalName && modalName == this.modalName) {
         
-        this.$patch({ modalname: '', modaldata: {} })
+        this.$patch({ modalName: '', modalData: {} })
         setTimeout(() => {
-          this.$patch({ modalname, modaldata })
+          this.$patch({ modalName, modalData })
         }, 300)
-      } else this.$patch({ modalname, modaldata })
+      } else this.$patch({ modalName, modalData })
     }
   }
 })

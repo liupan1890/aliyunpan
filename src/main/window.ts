@@ -9,18 +9,18 @@ export const ua = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 
 export const Referer = 'https://www.aliyundrive.com/'
 
 export const AppWindow: {
-  mainWindow: Electron.BrowserWindow | null
-  uploadWindow: Electron.BrowserWindow | null
-  downloadWindow: Electron.BrowserWindow | null
-  appTray: Electron.Tray | null
+  mainWindow: BrowserWindow | undefined
+  uploadWindow: BrowserWindow | undefined
+  downloadWindow: BrowserWindow | undefined
+  appTray: Tray | undefined
   winWidth: number
   winHeight: number
   winTheme: string
 } = {
-  mainWindow: null,
-  uploadWindow: null,
-  downloadWindow: null,
-  appTray: null,
+  mainWindow: undefined,
+  uploadWindow: undefined,
+  downloadWindow: undefined,
+  appTray: undefined,
   winWidth: 0,
   winHeight: 0,
   winTheme: ''
@@ -30,27 +30,27 @@ export function createMainWindow() {
   Menu.setApplicationMenu(null) 
   
   try {
-    const configjson = getUserDataPath('config.json')
-    if (existsSync(configjson)) {
-      let configdata = JSON.parse(readFileSync(configjson, 'utf-8'))
-      AppWindow.winWidth = configdata.width
-      AppWindow.winHeight = configdata.height
+    const configJson = getUserDataPath('config.json')
+    if (existsSync(configJson)) {
+      const configData = JSON.parse(readFileSync(configJson, 'utf-8'))
+      AppWindow.winWidth = configData.width
+      AppWindow.winHeight = configData.height
     }
   } catch {}
   try {
-    const themejson = getUserDataPath('theme.json')
-    if (existsSync(themejson)) {
-      let themedata = JSON.parse(readFileSync(themejson, 'utf-8'))
-      AppWindow.winTheme = themedata.theme
+    const themeJson = getUserDataPath('theme.json')
+    if (existsSync(themeJson)) {
+      const themeData = JSON.parse(readFileSync(themeJson, 'utf-8'))
+      AppWindow.winTheme = themeData.theme
     }
   } catch {}
   if (AppWindow.winWidth <= 0) {
     
     try {
       const { screen } = require('electron')
-      let size = screen.getPrimaryDisplay().workAreaSize
+      const size = screen.getPrimaryDisplay().workAreaSize
       let width = size.width * 0.677
-      let height = size.height * 0.866
+      const height = size.height * 0.866
       if (width > AppWindow.winWidth) AppWindow.winWidth = width
       if (size.width >= 970 && width < 970) width = 970 
       if (AppWindow.winWidth > 1080) AppWindow.winWidth = 1080
@@ -67,9 +67,9 @@ export function createMainWindow() {
     debounceResize(function () {
       try {
         if (AppWindow.mainWindow && AppWindow.mainWindow.isMaximized() == false && AppWindow.mainWindow.isMinimized() == false && AppWindow.mainWindow.isFullScreen() == false) {
-          let s = AppWindow.mainWindow!.getSize() 
-          const configjson = getUserDataPath('config.json')
-          writeFileSync(configjson, `{"width":${s[0].toString()},"height": ${s[1].toString()}}`, 'utf-8')
+          const s = AppWindow.mainWindow!.getSize() 
+          const configJson = getUserDataPath('config.json')
+          writeFileSync(configJson, `{"width":${s[0].toString()},"height": ${s[1].toString()}}`, 'utf-8')
         }
       } catch {}
     }, 3000)
@@ -77,6 +77,7 @@ export function createMainWindow() {
 
   AppWindow.mainWindow.on('close', (event) => {
     if (process.platform === 'darwin') {
+      // donothing
     } else {
       event.preventDefault()
       AppWindow.mainWindow?.hide()
@@ -157,7 +158,7 @@ export function ShowError(title: string, errmsg: string) {
     .then((_) => {})
 }
 
-let timerResize: NodeJS.Timeout | undefined = undefined
+let timerResize: NodeJS.Timeout | undefined
 const debounceResize = (fn: any, wait: number) => {
   if (timerResize) clearTimeout(timerResize)
   timerResize = setTimeout(() => {
@@ -168,7 +169,7 @@ const debounceResize = (fn: any, wait: number) => {
 
 export function createTray() {
   
-  var trayMenuTemplate = [
+  const trayMenuTemplate = [
     {
       label: '显示主界面',
       click: function () {
@@ -186,7 +187,7 @@ export function createTray() {
       click: function () {
         if (AppWindow.mainWindow) {
           AppWindow.mainWindow.destroy()
-          AppWindow.mainWindow = null
+          AppWindow.mainWindow = undefined
         }
         app.quit()
       }
@@ -194,7 +195,7 @@ export function createTray() {
   ]
 
   
-  let icon = getResourcesPath('app.ico')
+  const icon = getResourcesPath('app.ico')
   AppWindow.appTray = new Tray(icon)
   
   const contextMenu = Menu.buildFromTemplate(trayMenuTemplate)
@@ -215,7 +216,7 @@ export function createTray() {
 }
 
 export function creatUpload() {
-  if (AppWindow.uploadWindow != null && AppWindow.uploadWindow.isDestroyed() == false) return
+  if (AppWindow.uploadWindow && AppWindow.uploadWindow.isDestroyed() == false) return
   AppWindow.uploadWindow = creatElectronWindow(10, 10, false, 'main', 'dark')
 
   AppWindow.uploadWindow.on('ready-to-show', function () {
@@ -229,14 +230,15 @@ export function creatUpload() {
       try {
         AppWindow.uploadWindow?.destroy()
       } catch {}
-      AppWindow.uploadWindow = null
+      AppWindow.uploadWindow = undefined
       creatUpload()
     }
   })
+  AppWindow.uploadWindow.hide()
 }
 
 export function creatDownload() {
-  if (AppWindow.downloadWindow != null && AppWindow.downloadWindow.isDestroyed() == false) return
+  if (AppWindow.downloadWindow && AppWindow.downloadWindow.isDestroyed() == false) return
   AppWindow.downloadWindow = creatElectronWindow(10, 10, false, 'main', 'dark')
 
   AppWindow.downloadWindow.on('ready-to-show', function () {
@@ -250,14 +252,17 @@ export function creatDownload() {
       try {
         AppWindow.downloadWindow?.destroy()
       } catch {}
-      AppWindow.downloadWindow = null
+      AppWindow.downloadWindow = undefined
       creatDownload()
     }
   })
+
+  AppWindow.downloadWindow.webContents.closeDevTools()
+  AppWindow.downloadWindow.hide()
 }
 
 export function creatElectronWindow(width: number, height: number, center: boolean, page: string, theme: string) {
-  let win = new BrowserWindow({
+  const win = new BrowserWindow({
     show: false,
     width: width,
     height: height,
@@ -267,6 +272,7 @@ export function creatElectronWindow(width: number, height: number, center: boole
     icon: getResourcesPath('app.ico'),
     useContentSize: true,
     frame: false,
+    transparent: false,
     hasShadow: width > 680,
     autoHideMenuBar: true,
     backgroundColor: theme && theme == 'dark' ? '#23232e' : '#ffffff',
@@ -288,7 +294,7 @@ export function creatElectronWindow(width: number, height: number, center: boole
   })
   win.removeMenu()
   if (DEBUGGING) {
-    const url = `http://localhost:${process.env['VITE_DEV_SERVER_PORT']}`
+    const url = `http://localhost:${process.env.VITE_DEV_SERVER_PORT}`
     win.loadURL(url, { userAgent: ua, httpReferrer: Referer })
   } else {
     win.loadURL('file://' + getAsarPath('dist/' + page + '.html'), {
@@ -319,8 +325,8 @@ function creatUploadPort() {
   debounceUpload(function () {
     if (AppWindow.mainWindow && AppWindow.uploadWindow && AppWindow.uploadWindow.isDestroyed() == false) {
       const { port1, port2 } = new MessageChannelMain()
-      AppWindow.mainWindow.webContents.postMessage('setUploadPort', null, [port1])
-      AppWindow.uploadWindow.webContents.postMessage('setPort', null, [port2])
+      AppWindow.mainWindow.webContents.postMessage('setUploadPort', undefined, [port1])
+      AppWindow.uploadWindow.webContents.postMessage('setPort', undefined, [port2])
     }
   }, 1000)
 }
@@ -328,12 +334,12 @@ function creatDownloadPort() {
   debounceDownload(function () {
     if (AppWindow.mainWindow && AppWindow.downloadWindow && AppWindow.downloadWindow.isDestroyed() == false) {
       const { port1, port2 } = new MessageChannelMain()
-      AppWindow.mainWindow.webContents.postMessage('setDownloadPort', null, [port1])
-      AppWindow.downloadWindow.webContents.postMessage('setPort', null, [port2])
+      AppWindow.mainWindow.webContents.postMessage('setDownloadPort', undefined, [port1])
+      AppWindow.downloadWindow.webContents.postMessage('setPort', undefined, [port2])
     }
   }, 1000)
 }
-let timerUpload: NodeJS.Timeout | undefined = undefined
+let timerUpload: NodeJS.Timeout | undefined
 const debounceUpload = (fn: any, wait: number) => {
   if (timerUpload) {
     clearTimeout(timerUpload)
@@ -343,7 +349,7 @@ const debounceUpload = (fn: any, wait: number) => {
     timerUpload = undefined
   }, wait)
 }
-let timerDownload: NodeJS.Timeout | undefined = undefined
+let timerDownload: NodeJS.Timeout | undefined
 const debounceDownload = (fn: any, wait: number) => {
   if (timerDownload) {
     clearTimeout(timerDownload)

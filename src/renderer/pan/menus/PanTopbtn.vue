@@ -22,7 +22,7 @@ export default defineComponent({
 </script>
 
 <template>
-  <div class="toppanbtn" v-show="!isselected && dirtype == 'pan'">
+  <div v-show="!isselected && dirtype == 'pan'" class="toppanbtn">
     <a-dropdown trigger="hover" class="rightmenu" position="bl">
       <a-button type="text" size="small" tabindex="-1"><i class="iconfont iconplus" />新建<i class="iconfont icondown" /></a-button>
       <template #content>
@@ -53,7 +53,7 @@ export default defineComponent({
         </a-doption>
       </template>
     </a-dropdown>
-    <a-button type="text" size="small" tabindex="-1" @click="modalDaoRuShareLink" title="Ctrl+L"><i class="iconfont iconlink2" />导入分享</a-button>
+    <a-button type="text" size="small" tabindex="-1" title="Ctrl+L" @click="modalDaoRuShareLink"><i class="iconfont iconlink2" />导入分享</a-button>
   </div>
 </template>
 <style></style>

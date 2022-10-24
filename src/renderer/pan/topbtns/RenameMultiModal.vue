@@ -22,6 +22,7 @@ const foldericonfn = () => iconfolder
 const fileiconfn = (icon: string) => h('i', { class: 'iconfont ' + icon })
 
 export default defineComponent({
+  components: { MySwitchTab, AntdTree },
   props: {
     visible: {
       type: Boolean,
@@ -36,68 +37,68 @@ export default defineComponent({
     const okLoading = ref(false)
     const treeref = ref()
     const winStore = useWinStore()
-    const TreeHeight = computed(() => winStore.height - 42 - 90)
-    const switchvalues = [
+    const treeHeight = computed(() => winStore.height - 42 - 90)
+    const switchValues = [
       { key: 'replace', title: '替换', alt: '' },
       { key: 'delete', title: '删除', alt: '' },
       { key: 'add', title: '增加', alt: '' },
       { key: 'index', title: '编号', alt: '' },
       { key: 'others', title: '其他', alt: '' }
     ]
-    const switchvalue = ref('replace')
+    const switchValue = ref('replace')
     const handleSwitch = (val: string) => {
-      switchvalue.value = val
-      renameconfig.replace.enable = val == 'replace'
-      renameconfig.delete.enable = val == 'delete'
-      renameconfig.add.enable = val == 'add'
-      renameconfig.index.enable = val == 'index'
-      renameconfig.others.enable = val == 'others'
+      switchValue.value = val
+      renameConfig.replace.enable = val == 'replace'
+      renameConfig.delete.enable = val == 'delete'
+      renameConfig.add.enable = val == 'add'
+      renameConfig.index.enable = val == 'index'
+      renameConfig.others.enable = val == 'others'
     }
 
-    const replacedata = ref<string[]>([])
-    const indexdata = [
+    const replaceData = ref<string[]>([])
+    const indexData = [
       { label: '第#个 例如:第001个', value: '第#个' },
       { label: '(#) 例如:(001)', value: '(#)' },
       { label: '[#] 例如:[001]', value: '[#]' },
       { label: '#.  例如:001.', value: '#.' },
       { label: '#-  例如:001-', value: '#-' }
     ]
-    const renameconfig = reactive(NewRenameConfigData())
+    const renameConfig = reactive(NewRenameConfigData())
 
-    const TreeData = ref<TreeNodeData[]>([])
-    const TreeExpandedKeys = ref<string[]>([])
-    const TreeSelectedKeys = ref<string[]>([])
-    const TreeCheckedKeys = ref<{ checked: string[]; halfChecked: string[] }>({ checked: [], halfChecked: [] })
-    const CheckInfo = ref('')
+    const treeData = ref<TreeNodeData[]>([])
+    const treeExpandedKeys = ref<string[]>([])
+    const treeSelectedKeys = ref<string[]>([])
+    const treeCheckedKeys = ref<{ checked: string[]; halfChecked: string[] }>({ checked: [], halfChecked: [] })
+    const checkInfo = ref('')
 
     const onRunReplaceName = throttle(() => {
-      RunReplaceName(renameconfig, TreeData.value, TreeCheckedKeys.value.checked)
+      RunReplaceName(renameConfig, treeData.value, treeCheckedKeys.value.checked)
     }, 300)
 
     watchEffect(() => {
-      let checklen = TreeCheckedKeys.value.checked.length || 0
+      const checkLen = treeCheckedKeys.value.checked.length || 0
       let alllen = 0
       let matchlen = 0
-      RunAllNode(TreeData.value, (node) => {
+      RunAllNode(treeData.value, (node) => {
         alllen++
-        if (node.ismatch) matchlen++
+        if (node.isMatch) matchlen++
         return true
       })
-      CheckInfo.value = '已选中 ' + checklen + ' 要替换 ' + matchlen + ' 总数 ' + alllen
+      checkInfo.value = '已选中 ' + checkLen + ' 要替换 ' + matchlen + ' 总数 ' + alllen
       onRunReplaceName()
     })
 
-    watch(renameconfig, onRunReplaceName)
+    watch(renameConfig, onRunReplaceName)
 
     const onLoadData = (treeNode: EventDataNode) => {
       return new Promise<void>((resolve) => {
-        if (treeNode.dataRef == undefined || treeNode.dataRef?.children?.length) {
+        if (!treeNode.dataRef || treeNode.dataRef?.children?.length) {
           resolve()
           return
         }
-        apiLoad(treeNode.dataRef.key).then((addlist) => {
-          treeNode.dataRef!.children = addlist
-          if (TreeData.value) TreeData.value = TreeData.value.concat()
+        apiLoad(treeNode.dataRef.key).then((addList: TreeNodeData[]) => {
+          treeNode.dataRef!.children = addList
+          if (treeData.value) treeData.value = treeData.value.concat()
 
           resolve()
         })
@@ -108,12 +109,12 @@ export default defineComponent({
       if (list.length < 4) {
         setTimeout(() => {
           for (let i = 0, maxi = list.length; i < maxi; i++) {
-            let item = list[i]
+            const item = list[i]
             if (item.isLeaf == false) {
-              apiLoad(item.key).then((addlist) => {
-                item.children = addlist
-                if (TreeData.value) TreeData.value = TreeData.value.concat()
-                if (TreeExpandedKeys.value) TreeExpandedKeys.value.push(item.key)
+              apiLoad(item.key).then((addList: TreeNodeData[]) => {
+                item.children = addList
+                if (treeData.value) treeData.value = treeData.value.concat()
+                if (treeExpandedKeys.value) treeExpandedKeys.value.push(item.key)
               })
             }
           }
@@ -122,35 +123,35 @@ export default defineComponent({
     }
 
     const apiLoad = (key: any) => {
-      let pantreeStore = usePanTreeStore()
+      const pantreeStore = usePanTreeStore()
       return AliTrash.ApiDirFileListNoLock(pantreeStore.user_id, pantreeStore.drive_id, key as string, '', 'name ASC')
         .then((resp) => {
-          const addlist: TreeNodeData[] = []
+          const addList: TreeNodeData[] = []
           if (resp.next_marker == '') {
             for (let i = 0, maxi = resp.items.length; i < maxi; i++) {
               const item = resp.items[i]
-              addlist.push({
+              addList.push({
                 key: item.file_id,
                 title: item.name,
                 rawtitle: item.name,
                 newtitle: item.name,
                 children: [],
-                isdir: item.isdir,
-                isLeaf: !item.isdir,
-                ismatch: false,
-                icon: item.isdir ? foldericonfn : () => fileiconfn(item.icon)
-              })
+                isDir: item.isDir,
+                isLeaf: !item.isDir,
+                isMatch: false,
+                icon: item.isDir ? foldericonfn : () => fileiconfn(item.icon)
+              } as TreeNodeData)
             }
-            autoExpand(addlist)
+            autoExpand(addList)
           } else {
             message.error('列出文件失败：' + resp.next_marker)
           }
-          if (addlist.length > 0) {
+          if (addList.length > 0) {
             setTimeout(() => {
               onRunReplaceName()
             }, 300)
           }
-          return addlist
+          return addList
         })
         .catch(() => {
           return [] as TreeNodeData[]
@@ -158,66 +159,71 @@ export default defineComponent({
     }
 
     const handleOpen = () => {
-      let cachereg = localStorage.getItem('renamemulti')
-      if (cachereg) {
-        let reglist:string[] = JSON.parse(cachereg)
-        replacedata.value = reglist
+      const cacheReg = localStorage.getItem('renamemulti')
+      if (cacheReg) {
+        const regList: string[] = JSON.parse(cacheReg)
+        replaceData.value = regList
       }
 
       
-      let filelist: IAliGetFileModel[] = []
+      let fileList: IAliGetFileModel[] = []
 
-      console.log(props)
       if (props.istree) {
         const pantreeStore = usePanTreeStore()
-        filelist = [{ ...pantreeStore.selectDir, isdir: true, ext: '', category: '', icon: '', sizestr: '', timestr: '', starred: false, thumbnail: '' }]
+        fileList = [{ ...pantreeStore.selectDir, isDir: true, ext: '', category: '', icon: '', sizeStr: '', timeStr: '', starred: false, thumbnail: '' } as IAliGetFileModel]
       } else {
         const panfileStore = usePanFileStore()
-        filelist = panfileStore.GetSelected()
+        fileList = panfileStore.GetSelected()
+        if (fileList.length == 0) {
+          const focus = panfileStore.mGetFocus()
+          panfileStore.mKeyboardSelect(focus, false, false)
+          fileList = panfileStore.GetSelected()
+        }
       }
 
-      let data: TreeNodeData[] = []
-      let checklist: string[] = []
-      filelist.map((item) => {
+      const data: TreeNodeData[] = []
+      const checkList: string[] = []
+      fileList.map((item) => {
         data.push({
           key: item.file_id,
           title: item.name,
           rawtitle: item.name,
           newtitle: item.name,
           children: [],
-          isdir: item.isdir,
-          isLeaf: !item.isdir,
-          ismatch: false,
-          icon: item.isdir ? foldericonfn : () => fileiconfn(item.icon)
-        })
+          isDir: item.isDir,
+          isLeaf: !item.isDir,
+          isMatch: false,
+          icon: item.isDir ? foldericonfn : () => fileiconfn(item.icon)
+        } as TreeNodeData)
 
-        checklist.push(item.file_id)
+        checkList.push(item.file_id)
+        return true
       })
 
-      TreeData.value = data
-      TreeCheckedKeys.value = { checked: checklist, halfChecked: [] }
+      treeData.value = data
+      treeCheckedKeys.value = { checked: checkList, halfChecked: [] }
     }
     const handleClose = () => {
       
       if (okLoading.value) okLoading.value = false
-      switchvalue.value = 'replace'
-      replacedata.value = []
-      TreeData.value = []
-      TreeExpandedKeys.value = []
-      TreeSelectedKeys.value = []
-      TreeCheckedKeys.value.checked = []
-      renameconfig.show = false
-      renameconfig.replace = { enable: true, search: '', newword: '', chkCase: true, chkAll: true, chkReg: false, applyto: 'name' }
-      renameconfig.delete = { enable: false, type: 'search', search: '', chkCase: true, chkAll: true, chkReg: false, applyto: 'name', beginlen: 0, endlen: 0, beginword: '', endword: '' }
-      renameconfig.add = { enable: false, type: 'position', search: '', before: '', after: '', beginword: '', endword: '', applyto: 'name' }
-      renameconfig.index = { enable: false, type: 'begin', format: '', minlen: 1, beginindex: 1, minnum: 1 }
-      renameconfig.others = { enable: false, nameformat: '', extformat: '', randomformat: '', randomlen: 4 }
+      switchValue.value = 'replace'
+      replaceData.value = []
+      treeData.value = []
+      treeExpandedKeys.value = []
+      treeSelectedKeys.value = []
+      treeCheckedKeys.value.checked = []
+      renameConfig.show = false
+      renameConfig.replace = { enable: true, search: '', newword: '', chkCase: true, chkAll: true, chkReg: false, applyto: 'name' }
+      renameConfig.delete = { enable: false, type: 'search', search: '', chkCase: true, chkAll: true, chkReg: false, applyto: 'name', beginlen: 0, endlen: 0, beginword: '', endword: '' }
+      renameConfig.add = { enable: false, type: 'position', search: '', before: '', after: '', beginword: '', endword: '', applyto: 'name' }
+      renameConfig.index = { enable: false, type: 'begin', format: '', minlen: 1, beginindex: 1, minnum: 1 }
+      renameConfig.others = { enable: false, nameformat: '', extformat: '', randomformat: '', randomlen: 4 }
     }
 
     const handleSelectTree = (type: string) => {
-      let checklist: string[] = []
+      const checkList: string[] = []
 
-      TreeCheckedKeys.value = { checked: checklist, halfChecked: [] }
+      treeCheckedKeys.value = { checked: checkList, halfChecked: [] }
     }
 
     const handleTreeCheck = () => {
@@ -231,13 +237,13 @@ export default defineComponent({
       const dragKey = info.dragNode.key 
       const dropPos = info.node.pos?.split('-') || []
 
-      let frompos = info.dragNode.pos || ''
-      if (frompos.indexOf('-') > 0) frompos = frompos.substring(0, frompos.lastIndexOf('-') + 1)
-      let topos = info.node.pos || ''
-      if (topos.indexOf('-') > 0) topos = topos.substring(0, topos.lastIndexOf('-') + 1)
-      const isTop = frompos.indexOf(topos) == 0 && frompos.length == topos.length + 2
-      console.log(frompos, info.dragNode, 'to', topos, info.node, info.dropPosition, dropPos, isTop)
-      if (frompos != topos && !isTop) {
+      let fromPos = info.dragNode.pos || ''
+      if (fromPos.indexOf('-') > 0) fromPos = fromPos.substring(0, fromPos.lastIndexOf('-') + 1)
+      let toPos = info.node.pos || ''
+      if (toPos.indexOf('-') > 0) toPos = toPos.substring(0, toPos.lastIndexOf('-') + 1)
+      const isTop = fromPos.indexOf(toPos) == 0 && fromPos.length == toPos.length + 2
+      console.log(fromPos, info.dragNode, 'to', toPos, info.node, info.dropPosition, dropPos, isTop)
+      if (fromPos != toPos && !isTop) {
         message.warning('只能在同一个文件夹中拖放排序')
         return false
       }
@@ -253,7 +259,7 @@ export default defineComponent({
           }
         })
       }
-      const data = [...TreeData.value]
+      const data = [...treeData.value]
 
       
 
@@ -278,31 +284,31 @@ export default defineComponent({
         ar.splice(i + 1, 0, dragObj)
       }
 
-      TreeData.value = data
+      treeData.value = data
       onRunReplaceName()
     }
 
     return {
       okLoading,
       treeref,
-      TreeHeight,
+      treeHeight,
       handleOpen,
       handleClose,
-      switchvalues,
-      switchvalue,
+      switchValues,
+      switchValue,
       handleSwitch,
-      replacedata,
-      indexdata,
-      renameconfig,
-      TreeData,
-      TreeExpandedKeys,
-      TreeSelectedKeys,
-      TreeCheckedKeys,
+      replaceData,
+      indexData,
+      renameConfig,
+      treeData,
+      treeExpandedKeys,
+      treeSelectedKeys,
+      treeCheckedKeys,
       treeSelectToExpand,
       handleTreeCheck,
       onLoadData,
       handleSelectTree,
-      CheckInfo,
+      checkInfo,
       onRunReplaceName,
       onDragEnter,
       onDrop
@@ -317,38 +323,38 @@ export default defineComponent({
     },
     handleOK(type: string) {
       let reg = ''
-      if (this.renameconfig.replace.enable && this.renameconfig.replace.chkReg) reg = this.renameconfig.replace.search
-      if (this.renameconfig.delete.enable && this.renameconfig.delete.chkReg) reg = this.renameconfig.delete.search
+      if (this.renameConfig.replace.enable && this.renameConfig.replace.chkReg) reg = this.renameConfig.replace.search
+      if (this.renameConfig.delete.enable && this.renameConfig.delete.chkReg) reg = this.renameConfig.delete.search
 
       if (reg) {
-        let reglist: string[] = []
-        let cachereg = localStorage.getItem('renamemulti')
-        if (cachereg) reglist = JSON.parse(cachereg)
-        if (!reglist.includes(reg)) {
-          reglist.push(reg)
-          localStorage.setItem('renamemulti', JSON.stringify(reglist))
+        let regList: string[] = []
+        const cacheReg = localStorage.getItem('renamemulti')
+        if (cacheReg) regList = JSON.parse(cacheReg)
+        if (!regList.includes(reg)) {
+          regList.push(reg)
+          localStorage.setItem('renamemulti', JSON.stringify(regList))
         }
       }
 
-      let idlist: string[] = []
-      let namelist: string[] = []
-      let checkmap = new Set(this.TreeCheckedKeys.checked)
-      RunAllNode(this.TreeData, (node) => {
+      const idList: string[] = []
+      const nameList: string[] = []
+      const checkMap = new Set(this.treeCheckedKeys.checked)
+      RunAllNode(this.treeData, (node) => {
         
-        let ismatch = node.newtitle && node.newtitle !== node.rawtitle && checkmap.has(node.key) 
-        if (ismatch) {
-          idlist.push(node.key)
-          namelist.push(node.newtitle)
+        const isMatch = node.newtitle && node.newtitle !== node.rawtitle && checkMap.has(node.key) 
+        if (isMatch) {
+          idList.push(node.key)
+          nameList.push(node.newtitle)
         }
         return true
       })
-      if (idlist.length == 0) {
+      if (idList.length == 0) {
         message.error('没有需要重命名的文件!')
         return
       }
       this.okLoading = true
-      let pantreeStore = usePanTreeStore()
-      AliFileCmd.ApiRenameBatch(pantreeStore.user_id, pantreeStore.drive_id, idlist, namelist)
+      const pantreeStore = usePanTreeStore()
+      AliFileCmd.ApiRenameBatch(pantreeStore.user_id, pantreeStore.drive_id, idList, nameList)
         .then((success) => {
           if (success.length > 0) {
             
@@ -373,21 +379,21 @@ export default defineComponent({
     },
     handleContextMenu(menuKey: string, treeNodeKey: string) {
       if (menuKey == 'all') {
-        let checklist: string[] = []
+        let checkList: string[] = []
         
-        RunAllNode(this.TreeData, (node) => {
-          checklist.push(node.key)
+        RunAllNode(this.treeData, (node) => {
+          checkList.push(node.key)
           return true
         })
         
-        if (checklist.length == this.TreeCheckedKeys.checked.length) checklist = []
-        this.TreeCheckedKeys = { checked: checklist, halfChecked: [] }
+        if (checkList.length == this.treeCheckedKeys.checked.length) checkList = []
+        this.treeCheckedKeys = { checked: checkList, halfChecked: [] }
         return
       }
-      let checked = new Set(this.TreeCheckedKeys.checked)
+      const checked = new Set(this.treeCheckedKeys.checked)
       if (menuKey == 'selectall') {
         
-        RunAllNode(this.TreeData, (node) => {
+        RunAllNode(this.treeData, (node) => {
           if (node.key == treeNodeKey) {
             if (node.children) node.children.map((t) => checked.add(t.key))
             return false
@@ -396,11 +402,12 @@ export default defineComponent({
         })
       } else if (menuKey == 'selectnone') {
         
-        RunAllNode(this.TreeData, (node) => {
+        RunAllNode(this.treeData, (node) => {
           if (node.key == treeNodeKey) {
             if (node.children) {
               node.children.map((t) => {
                 checked.delete(t.key)
+                return true
               })
             }
             return false
@@ -409,12 +416,13 @@ export default defineComponent({
         })
       } else if (menuKey == 'selectfile') {
         
-        RunAllNode(this.TreeData, (node) => {
+        RunAllNode(this.treeData, (node) => {
           if (node.key == treeNodeKey) {
             if (node.children) {
               node.children.map((t) => {
-                if (t.isdir) checked.delete(t.key)
+                if (t.isDir) checked.delete(t.key)
                 else checked.add(t.key)
+                return true
               })
             }
             return false
@@ -423,12 +431,13 @@ export default defineComponent({
         })
       } else if (menuKey == 'selectfolder') {
         
-        RunAllNode(this.TreeData, (node) => {
+        RunAllNode(this.treeData, (node) => {
           if (node.key == treeNodeKey) {
             if (node.children) {
               node.children.map((t) => {
-                if (t.isdir) checked.add(t.key)
+                if (t.isDir) checked.add(t.key)
                 else checked.delete(t.key)
+                return true
               })
             }
             return false
@@ -437,18 +446,17 @@ export default defineComponent({
         })
       }
 
-      this.TreeCheckedKeys.checked = Array.from(checked)
+      this.treeCheckedKeys.checked = Array.from(checked)
     },
     handleSelectRow(visible: boolean, treeNodeKey: string) {
-      if (visible) this.TreeSelectedKeys = [treeNodeKey]
+      if (visible) this.treeSelectedKeys = [treeNodeKey]
     }
-  },
-  components: { MySwitchTab, AntdTree }
+  }
 })
 </script>
 
 <template>
-  <a-modal :visible="visible" fullscreen modal-class="modalclass renamemulti" @cancel="handleHide" @before-open="handleOpen" @close="handleClose" :footer="false" :unmount-on-close="true" :mask-closable="false">
+  <a-modal :visible="visible" fullscreen modal-class="modalclass renamemulti" :footer="false" :unmount-on-close="true" :mask-closable="false" @cancel="handleHide" @before-open="handleOpen" @close="handleClose">
     <template #title>
       <span class="modaltitle">批量重命名网盘文件</span>
     </template>
@@ -458,25 +466,25 @@ export default defineComponent({
           <div class="headswitch">
             <div class="bghr"></div>
             <div class="sw">
-              <MySwitchTab :name="'panleft'" :tabs="switchvalues" :value="switchvalue" @update:value="handleSwitch" />
+              <MySwitchTab :name="'panleft'" :tabs="switchValues" :value="switchValue" @update:value="handleSwitch" />
             </div>
           </div>
           <div class="renamelefttab">
-            <a-tabs type="text" :direction="'horizontal'" class="hidetabs" :justify="true" :active-key="switchvalue">
+            <a-tabs type="text" :direction="'horizontal'" class="hidetabs" :justify="true" :active-key="switchValue">
               <a-tab-pane key="replace" title="1">
                 <a-typography-text type="secondary"> 查找： </a-typography-text>
                 <a-row style="margin-bottom: 16px">
                   <a-col flex="auto">
-                    <a-auto-complete :data="replacedata" v-model="renameconfig.replace.search" style="width: 100%" placeholder="输入要查找的字符" allow-clear strict />
+                    <a-auto-complete v-model="renameConfig.replace.search" :data="replaceData" style="width: 100%" placeholder="输入要查找的字符" allow-clear strict />
                   </a-col>
                 </a-row>
                 <a-row>
                   <a-col flex="auto">
-                    <a-checkbox v-model="renameconfig.replace.chkCase">忽略大小写</a-checkbox>
+                    <a-checkbox v-model="renameConfig.replace.chkCase">忽略大小写</a-checkbox>
                     <br />
-                    <a-checkbox v-model="renameconfig.replace.chkAll">替换全部匹配项</a-checkbox>
+                    <a-checkbox v-model="renameConfig.replace.chkAll">替换全部匹配项</a-checkbox>
                     <br />
-                    <a-checkbox v-model="renameconfig.replace.chkReg">使用正则表达式</a-checkbox>
+                    <a-checkbox v-model="renameConfig.replace.chkReg">使用正则表达式</a-checkbox>
                   </a-col>
                 </a-row>
 
@@ -485,15 +493,15 @@ export default defineComponent({
                 <a-typography-text type="secondary"> 替换成： </a-typography-text>
                 <a-row style="margin-bottom: 16px">
                   <a-col flex="auto">
-                    <a-input style="width: 100%" v-model="renameconfig.replace.newword" placeholder="输入新的字符" allow-clear />
+                    <a-input v-model="renameConfig.replace.newword" style="width: 100%" placeholder="输入新的字符" allow-clear />
                   </a-col>
                 </a-row>
 
                 <a-typography-text type="secondary"> 应用于： </a-typography-text>
                 <a-row style="margin-bottom: 16px">
                   <a-col flex="auto">
-                    <a-select size="small" style="width: 100%" v-model="renameconfig.replace.applyto">
-                      <a-option value="full">文件名 + 扩展名　(name.mp4)</a-option>
+                    <a-select v-model="renameConfig.replace.applyto" size="small" style="width: 100%">
+                      <a-option value="full">文件名 + 扩展名 (name.mp4)</a-option>
                       <a-option value="name">仅在文件名中替换 (name)</a-option>
                       <a-option value="ext">仅在扩展名中替换 (.mp4)</a-option>
                     </a-select>
@@ -522,7 +530,7 @@ export default defineComponent({
                 <a-typography-text type="secondary"> 删除方式： </a-typography-text>
                 <a-row :wrap="false">
                   <a-col flex="auto">
-                    <a-select size="small" v-model="renameconfig.delete.type" style="width: 100%" placeholder="请选择">
+                    <a-select v-model="renameConfig.delete.type" size="small" style="width: 100%" placeholder="请选择">
                       <a-option value="search">删除指定字符</a-option>
                       <a-option value="position">删除指定位置</a-option>
                       <a-option value="range">删除指定区间</a-option>
@@ -530,31 +538,31 @@ export default defineComponent({
                   </a-col>
                 </a-row>
                 <div class="renamehr"><div class="renamehrline"></div></div>
-                <div v-if="renameconfig.delete.type == 'search'">
+                <div v-if="renameConfig.delete.type == 'search'">
                   <a-typography-text type="secondary"> 查找： </a-typography-text>
                   <a-row style="margin-bottom: 16px">
                     <a-col flex="auto">
-                      <a-auto-complete :data="replacedata" v-model="renameconfig.delete.search" style="width: 100%" placeholder="输入要查找的字符" allow-clear strict />
+                      <a-auto-complete v-model="renameConfig.delete.search" :data="replaceData" style="width: 100%" placeholder="输入要查找的字符" allow-clear strict />
                     </a-col>
                   </a-row>
                   <a-row style="margin-bottom: 16px">
                     <a-col flex="auto">
-                      <a-checkbox v-model="renameconfig.delete.chkCase">忽略大小写</a-checkbox>
+                      <a-checkbox v-model="renameConfig.delete.chkCase">忽略大小写</a-checkbox>
                       <br />
-                      <a-checkbox v-model="renameconfig.delete.chkAll">替换全部匹配项</a-checkbox>
+                      <a-checkbox v-model="renameConfig.delete.chkAll">替换全部匹配项</a-checkbox>
                       <br />
-                      <a-checkbox v-model="renameconfig.delete.chkReg">使用正则表达式</a-checkbox>
+                      <a-checkbox v-model="renameConfig.delete.chkReg">使用正则表达式</a-checkbox>
                     </a-col>
                   </a-row>
                 </div>
 
-                <div v-if="renameconfig.delete.type == 'position'">
+                <div v-if="renameConfig.delete.type == 'position'">
                   <a-row style="margin-bottom: 16px; align-items: center" :wrap="false">
                     <a-col flex="none">
                       <a-typography-text type="secondary"> 从文件名开始删除 </a-typography-text>
                     </a-col>
                     <a-col flex="none">
-                      <a-input-number size="small" v-model="renameconfig.delete.beginlen" style="width: 80px; margin: 0 4px" placeholder="长度" :min="0" :max="64" />
+                      <a-input-number v-model="renameConfig.delete.beginlen" size="small" style="width: 80px; margin: 0 4px" placeholder="长度" :min="0" :max="64" />
                     </a-col>
                     <a-col flex="none"> 个字 </a-col>
                     <a-col flex="auto"> </a-col>
@@ -564,34 +572,34 @@ export default defineComponent({
                       <a-typography-text type="secondary"> 从文件名结尾删除 </a-typography-text>
                     </a-col>
                     <a-col flex="none">
-                      <a-input-number size="small" v-model="renameconfig.delete.endlen" style="width: 80px; margin: 0 4px" placeholder="长度" :min="0" :max="64" />
+                      <a-input-number v-model="renameConfig.delete.endlen" size="small" style="width: 80px; margin: 0 4px" placeholder="长度" :min="0" :max="64" />
                     </a-col>
                     <a-col flex="none"> 个字 </a-col>
                     <a-col flex="auto"> </a-col>
                   </a-row>
                 </div>
 
-                <div v-if="renameconfig.delete.type == 'range'">
+                <div v-if="renameConfig.delete.type == 'range'">
                   <a-typography-text type="secondary"> 查找删除a和b之间的字： </a-typography-text>
                   <a-row style="margin: 16px 0; align-items: center" :wrap="false">
                     <a-col flex="none">
                       <a-typography-text type="secondary"> a </a-typography-text>
                     </a-col>
                     <a-col flex="none">
-                      <a-input size="small" v-model="renameconfig.delete.beginword" style="width: 100px; margin: 0 4px" placeholder="要查找的字" />
+                      <a-input v-model="renameConfig.delete.beginword" size="small" style="width: 100px; margin: 0 4px" placeholder="要查找的字" />
                     </a-col>
                     <a-col flex="auto"> </a-col>
                     <a-col flex="none"> b </a-col>
                     <a-col flex="none">
-                      <a-input size="small" v-model="renameconfig.delete.endword" style="width: 100px; margin: 0 4px" placeholder="要查找的字" />
+                      <a-input v-model="renameConfig.delete.endword" size="small" style="width: 100px; margin: 0 4px" placeholder="要查找的字" />
                     </a-col>
                   </a-row>
                 </div>
                 <a-typography-text type="secondary"> 应用于： </a-typography-text>
                 <a-row style="margin-bottom: 16px">
                   <a-col flex="auto">
-                    <a-select size="small" style="width: 100%" v-model="renameconfig.delete.applyto">
-                      <a-option value="full">文件名 + 扩展名　(name.mp4)</a-option>
+                    <a-select v-model="renameConfig.delete.applyto" size="small" style="width: 100%">
+                      <a-option value="full">文件名 + 扩展名 (name.mp4)</a-option>
                       <a-option value="name">仅在文件名中删除 (name)</a-option>
                       <a-option value="ext">仅在扩展名中删除 (.mp4)</a-option>
                     </a-select>
@@ -619,20 +627,20 @@ export default defineComponent({
                 <a-typography-text type="secondary"> 添加方式： </a-typography-text>
                 <a-row :wrap="false">
                   <a-col flex="auto">
-                    <a-select size="small" style="width: 100%" v-model="renameconfig.add.type" placeholder="请选择">
+                    <a-select v-model="renameConfig.add.type" size="small" style="width: 100%" placeholder="请选择">
                       <a-option value="position">添加到指定位置</a-option>
                       <a-option value="search">添加到指定字符</a-option>
                     </a-select>
                   </a-col>
                 </a-row>
                 <div class="renamehr"><div class="renamehrline"></div></div>
-                <div v-if="renameconfig.add.type == 'position'">
+                <div v-if="renameConfig.add.type == 'position'">
                   <a-row style="margin-bottom: 16px; align-items: center" :wrap="false">
                     <a-col flex="none">
                       <a-typography-text type="secondary" style="padding-right: 4px"> 文件名前添加 </a-typography-text>
                     </a-col>
                     <a-col flex="auto">
-                      <a-input size="small" v-model="renameconfig.add.beginword" style="width: 100%" placeholder="请输入" />
+                      <a-input v-model="renameConfig.add.beginword" size="small" style="width: 100%" placeholder="请输入" />
                     </a-col>
                   </a-row>
                   <a-row style="margin-bottom: 16px; align-items: center" :wrap="false">
@@ -640,17 +648,17 @@ export default defineComponent({
                       <a-typography-text type="secondary" style="padding-right: 4px"> 文件名后添加 </a-typography-text>
                     </a-col>
                     <a-col flex="auto">
-                      <a-input size="small" v-model="renameconfig.add.endword" style="width: 100%" placeholder="请输入" />
+                      <a-input v-model="renameConfig.add.endword" size="small" style="width: 100%" placeholder="请输入" />
                     </a-col>
                   </a-row>
                 </div>
-                <div v-if="renameconfig.add.type == 'search'">
+                <div v-if="renameConfig.add.type == 'search'">
                   <a-row style="margin-bottom: 16px; align-items: center" :wrap="false">
                     <a-col flex="none">
                       <a-typography-text type="secondary" style="padding-right: 4px"> 查找第一个 </a-typography-text>
                     </a-col>
                     <a-col flex="auto">
-                      <a-input size="small" v-model="renameconfig.add.search" style="width: 100%" placeholder="请输入" />
+                      <a-input v-model="renameConfig.add.search" size="small" style="width: 100%" placeholder="请输入" />
                     </a-col>
                   </a-row>
                   <a-row style="margin-bottom: 16px; align-items: center" :wrap="false">
@@ -658,7 +666,7 @@ export default defineComponent({
                       <a-typography-text type="secondary" style="padding-right: 4px"> 在之前添加 </a-typography-text>
                     </a-col>
                     <a-col flex="auto">
-                      <a-input size="small" v-model="renameconfig.add.before" style="width: 100%" placeholder="请输入" />
+                      <a-input v-model="renameConfig.add.before" size="small" style="width: 100%" placeholder="请输入" />
                     </a-col>
                   </a-row>
                   <a-row style="margin-bottom: 16px; align-items: center" :wrap="false">
@@ -666,15 +674,15 @@ export default defineComponent({
                       <a-typography-text type="secondary" style="padding-right: 4px"> 在之后添加 </a-typography-text>
                     </a-col>
                     <a-col flex="auto">
-                      <a-input size="small" v-model="renameconfig.add.after" style="width: 100%" placeholder="请输入" />
+                      <a-input v-model="renameConfig.add.after" size="small" style="width: 100%" placeholder="请输入" />
                     </a-col>
                   </a-row>
                 </div>
                 <a-typography-text type="secondary"> 应用于： </a-typography-text>
                 <a-row style="margin-bottom: 16px">
                   <a-col flex="auto">
-                    <a-select size="small" style="width: 100%" v-model="renameconfig.add.applyto">
-                      <a-option value="full">文件名 + 扩展名　(name.mp4)</a-option>
+                    <a-select v-model="renameConfig.add.applyto" size="small" style="width: 100%">
+                      <a-option value="full">文件名 + 扩展名 (name.mp4)</a-option>
                       <a-option value="name">仅在文件名中添加 (name)</a-option>
                       <a-option value="ext">仅在扩展名中添加 (.mp4)</a-option>
                     </a-select>
@@ -704,7 +712,7 @@ export default defineComponent({
                     <a-typography-text type="secondary"> 位置： </a-typography-text>
                   </a-col>
                   <a-col flex="auto">
-                    <a-select size="small" v-model="renameconfig.index.type" style="width: 100%">
+                    <a-select v-model="renameConfig.index.type" size="small" style="width: 100%">
                       <a-option value="begin">文件名前面 01name.mp4</a-option>
                       <a-option value="end">文件名结尾 name01.mp4</a-option>
                     </a-select>
@@ -716,7 +724,7 @@ export default defineComponent({
                     <a-typography-text type="secondary"> 格式： </a-typography-text>
                   </a-col>
                   <a-col flex="auto">
-                    <a-auto-complete :data="indexdata" v-model="renameconfig.index.format" placeholder="输入编号格式" allow-clear strict />
+                    <a-auto-complete v-model="renameConfig.index.format" :data="indexData" placeholder="输入编号格式" allow-clear strict />
                   </a-col>
                 </a-row>
                 <div class="op"><span class="opred">说明：#代表编号</span></div>
@@ -725,7 +733,7 @@ export default defineComponent({
                     <a-typography-text type="secondary"> 编号从几开始： </a-typography-text>
                   </a-col>
                   <a-col flex="none">
-                    <a-input-number size="small" v-model="renameconfig.index.beginindex" style="width: 80px" placeholder="请输入" :min="1" />
+                    <a-input-number v-model="renameConfig.index.beginindex" size="small" style="width: 80px" placeholder="请输入" :min="1" />
                   </a-col>
                 </a-row>
                 <a-row style="margin: 16px 0; align-items: center" :wrap="false">
@@ -733,7 +741,7 @@ export default defineComponent({
                     <a-typography-text type="secondary"> 编号每次增加： </a-typography-text>
                   </a-col>
                   <a-col flex="none">
-                    <a-input-number size="small" v-model="renameconfig.index.minnum" style="width: 80px" placeholder="请输入" :min="1" />
+                    <a-input-number v-model="renameConfig.index.minnum" size="small" style="width: 80px" placeholder="请输入" :min="1" />
                   </a-col>
                 </a-row>
 
@@ -742,7 +750,7 @@ export default defineComponent({
                     <a-typography-text type="secondary"> 编号最小长度： </a-typography-text>
                   </a-col>
                   <a-col flex="none">
-                    <a-input-number size="small" v-model="renameconfig.index.minlen" style="width: 80px" placeholder="请输入" :min="1" :max="100" />
+                    <a-input-number v-model="renameConfig.index.minlen" size="small" style="width: 80px" placeholder="请输入" :min="1" :max="100" />
                   </a-col>
                 </a-row>
                 <div class="op" style="text-align: left"><span class="opred">填2，则编号为 '01'；填4，则编号为'0001'</span></div>
@@ -772,17 +780,16 @@ export default defineComponent({
                   <a-col flex="none">
                     <a-select
                       size="small"
-                      :model-value="renameconfig.others.nameformat"
-                      @update:modelValue="
-                        (val:any) => {
-                          renameconfig.others.extformat = ''
-                          renameconfig.others.randomformat = ''
-                          renameconfig.others.nameformat = val as string
-                        }
-                      "
+                      :model-value="renameConfig.others.nameformat"
                       style="width: 200px"
                       placeholder="请选择"
-                    >
+                      @update:model-value="
+                        (val:any) => {
+                          renameConfig.others.extformat = ''
+                          renameConfig.others.randomformat = ''
+                          renameConfig.others.nameformat = val as string
+                        }
+                      ">
                       <a-option value="AA">AA (全部大写)</a-option>
                       <a-option value="aa">aa (全部小写)</a-option>
                       <a-option value="Aa">Aa 第一个单词首字母大写</a-option>
@@ -799,17 +806,16 @@ export default defineComponent({
                   <a-col flex="none">
                     <a-select
                       size="small"
-                      :model-value="renameconfig.others.extformat"
-                      @update:modelValue="
-                        (val:any) => {
-                          renameconfig.others.nameformat = ''
-                          renameconfig.others.randomformat = ''
-                          renameconfig.others.extformat=val as string
-                        }
-                      "
+                      :model-value="renameConfig.others.extformat"
                       style="width: 200px"
                       placeholder="请选择"
-                    >
+                      @update:model-value="
+                        (val:any) => {
+                          renameConfig.others.nameformat = ''
+                          renameConfig.others.randomformat = ''
+                          renameConfig.others.extformat=val as string
+                        }
+                      ">
                       <a-option value="AA">AA 全部转换为大写</a-option>
                       <a-option value="aa">aa 全部转换为小写</a-option>
                     </a-select>
@@ -829,17 +835,16 @@ export default defineComponent({
                   <a-col flex="auto">
                     <a-select
                       size="small"
-                      :model-value="renameconfig.others.randomformat"
-                      @update:modelValue="
-                        (val:any) => {
-                          renameconfig.others.nameformat = ''
-                          renameconfig.others.extformat = ''
-                          renameconfig.others.randomformat = val as string
-                        }
-                      "
+                      :model-value="renameConfig.others.randomformat"
                       style="width: 100%"
                       placeholder="请选择"
-                    >
+                      @update:model-value="
+                        (val:any) => {
+                          renameConfig.others.nameformat = ''
+                          renameConfig.others.extformat = ''
+                          renameConfig.others.randomformat = val as string
+                        }
+                      ">
                       <a-option value="0-9a-z">随机 数字+小写字母</a-option>
                       <a-option value="0-9A-Z">随机 数字+大写字母</a-option>
                       <a-option value="0-9a-zA-Z">随机 数字+大小写字母</a-option>
@@ -856,7 +861,7 @@ export default defineComponent({
                     <a-typography-text type="secondary"> 长度： </a-typography-text>
                   </a-col>
                   <a-col flex="none">
-                    <a-input-number size="small" v-model="renameconfig.others.randomlen" style="width: 80px" placeholder="长度" :min="4" :max="64" />
+                    <a-input-number v-model="renameConfig.others.randomlen" size="small" style="width: 80px" placeholder="长度" :min="4" :max="64" />
                   </a-col>
                   <a-col flex="auto"> </a-col>
                   <a-col flex="none">
@@ -890,9 +895,9 @@ export default defineComponent({
               <a-button type="text" size="small" tabindex="-1" :disabled="okLoading" @click="onRunReplaceName()"> <i class="iconfont iconreload-1-icon" />刷新 </a-button>
               <a-button type="text" size="small" tabindex="-1" :disabled="okLoading" @click="handleContextMenu('all', '')"> <i class="iconfont iconfangkuang" />全选 </a-button>
             </div>
-            <div style="padding-top: 3px; color: rgb(var(--primary-6)); flex-shrink: 0">{{ CheckInfo }}</div>
+            <div style="padding-top: 3px; color: rgb(var(--primary-6)); flex-shrink: 0">{{ checkInfo }}</div>
             <div style="flex-grow: 1"></div>
-            <a-radio-group type="button" tabindex="-1" v-model="renameconfig.show" class="renameradio">
+            <a-radio-group v-model="renameConfig.show" type="button" tabindex="-1" class="renameradio">
               <a-radio tabindex="-1" :value="false" title="高亮显示被替换的文字">高亮</a-radio>
               <a-radio tabindex="-1" :value="true" title="显示替换后的文件名">最终</a-radio>
             </a-radio-group>
@@ -901,36 +906,35 @@ export default defineComponent({
           <div style="height: 16px"></div>
           <div style="width: 100%; padding-right: 16px; overflow: hidden">
             <AntdTree
+              ref="treeref"
+              v-model:expandedKeys="treeExpandedKeys"
+              v-model:selectedKeys="treeSelectedKeys"
+              v-model:checkedKeys="treeCheckedKeys"
+              :tree-data="treeData"
+              :load-data="onLoadData"
               :tabindex="-1"
               :focusable="false"
-              ref="treeref"
               class="renametree"
               :checkable="true"
-              blockNode
+              block-node
               selectable
-              checkStrictly
-              :autoExpandParent="false"
-              showIcon
-              :height="TreeHeight"
-              :style="{ height: TreeHeight + 'px' }"
-              :showLine="{ showLeafIcon: false }"
+              check-strictly
+              :auto-expand-parent="false"
+              show-icon
+              :height="treeHeight"
+              :style="{ height: treeHeight + 'px' }"
+              :show-line="{ showLeafIcon: false }"
+              draggable
               @select="treeSelectToExpand"
               @check="handleTreeCheck"
-              v-model:expandedKeys="TreeExpandedKeys"
-              v-model:selectedKeys="TreeSelectedKeys"
-              v-model:checkedKeys="TreeCheckedKeys"
-              :treeData="TreeData"
-              :loadData="onLoadData"
-              draggable
               @dragenter="onDragEnter"
-              @drop="onDrop"
-            >
+              @drop="onDrop">
               <template #switcherIcon>
                 <i class="ant-tree-switcher-icon iconfont Arrow" />
               </template>
               <template #title="{ dataRef }">
-                <a-dropdown v-if="dataRef.isdir" class="smallmenu" :trigger="['contextMenu']" @select="(value:any)=>handleContextMenu(value,dataRef.key)" @popup-visible-change="(visible:boolean)=>handleSelectRow(visible,dataRef.key)">
-                  <span :class="dataRef.ismatch ? 'match fulltitle' : 'fulltitle'" v-html="dataRef.title" title="点击鼠标右键菜单"></span>
+                <a-dropdown v-if="dataRef.isDir" class="smallmenu" :trigger="['contextMenu']" @select="(value:any)=>handleContextMenu(value,dataRef.key)" @popup-visible-change="(visible:boolean)=>handleSelectRow(visible,dataRef.key)">
+                  <span :class="dataRef.isMatch ? 'match fulltitle' : 'fulltitle'" title="点击鼠标右键菜单" v-html="dataRef.title"></span>
                   <template #content>
                     <a-doption value="selectall">选则全部子项</a-doption>
                     <a-doption value="selectnone">反选全部子项</a-doption>
@@ -938,7 +942,7 @@ export default defineComponent({
                     <a-doption value="selectfolder">选则子文件夹</a-doption>
                   </template>
                 </a-dropdown>
-                <span v-else :class="dataRef.ismatch ? 'match fulltitle' : 'fulltitle'" v-html="dataRef.title"></span>
+                <span v-else :class="dataRef.isMatch ? 'match fulltitle' : 'fulltitle'" v-html="dataRef.title"></span>
               </template>
             </AntdTree>
           </div>

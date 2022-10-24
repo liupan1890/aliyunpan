@@ -1,5 +1,12 @@
 import { IAliGetFileModel } from '../aliapi/alimodels'
-import { useSettingStore } from '../store'
+
+declare type DownloadState =
+  | '排队中' // 排队中， 等待下载
+  | 'running' // 下载中
+  | 'hashing' // 计算hash，校验完整性
+  | '已暂停' // 已暂停
+  | 'success' // 下载成功
+  | 'error' // 下载失败
 
 
 export interface IStateDownFile {
@@ -15,7 +22,7 @@ export interface IStateDownFile {
   name: string
   
   size: number
-  sizestr: string
+  sizeStr: string
   icon: string
   isDir: boolean
   
@@ -31,8 +38,8 @@ export interface IStateDownProgress {
   DownSpeed: number
   DownSpeedStr: string
   DownProcess: number
-  FailedCode: number
-  FailedMessage: string
+  failedCode: number
+  failedMessage: string
   
   AutoTry: number
 }
@@ -48,15 +55,16 @@ export interface IAriaDownProgress {
   errorMessage: string
 }
 
-export let DowningList = new Map<string, IStateDownFile>()
-export let DownedList: IStateDownFile[] = []
+export const DowningList = new Map<string, IStateDownFile>()
+export const DownedList: IStateDownFile[] = []
 export default class DownDAL {
-  static aAddDownload(filelist: IAliGetFileModel[], savepath: string, needPanPath: boolean, tip: boolean) {}
+  static aAddDownload(fileList: IAliGetFileModel[], savepath: string, needPanPath: boolean, tip: boolean) {}
   static async aSpeedEvent() {}
   static mSpeedEvent(list: IAriaDownProgress[]) {}
   static QueryIsDowning() {
     return false
   }
+
   static QuerySelectedIsDowning() {
     return false
   }
@@ -69,15 +77,12 @@ export default class DownDAL {
 
   
   static async aClearDowned() {
-    let max = useSettingStore().debugDownedListMax
-    //return DBDown.deleteDownedOutCount(max)
+    // const max = useSettingStore().debugDownedListMax
+    // return DBDown.deleteDownedOutCount(max)
   }
 
-  static DowningState(all: boolean, start: boolean) {
-    if (all) {
-    } else {
-    }
-  }
+  static DowningState(all: boolean, start: boolean) {}
+
   static DowningOrder() {}
   static DowningDelete(all: boolean) {}
   static DownedDelete(all: boolean) {}

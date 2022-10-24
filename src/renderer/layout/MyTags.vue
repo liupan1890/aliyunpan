@@ -1,17 +1,17 @@
 <script lang="ts">
 import message from '../utils/message'
-import { defineComponent, ref } from 'vue'
+import { defineComponent, PropType, ref } from 'vue'
 
 export default defineComponent({
-  props: { value: Array, maxlen: Number },
+  props: { value: Array as PropType<string[]>, maxlen: Number },
   emits: ['update:value'],
   setup(props, context) {
-    const addval = ref('')
-    const del = (delval: any) => {
-      let value = props.value
-      let arr: string[] = []
-      value?.forEach((val) => {
-        if ((val as string) != (delval as string)) {
+    const addVal = ref('')
+    const del = (delVal: string) => {
+      const value = props.value
+      const arr: string[] = []
+      value?.forEach((val: string) => {
+        if (val != delVal) {
           if (arr.includes(val as string) == false) {
             arr.push(val as string)
           }
@@ -24,25 +24,25 @@ export default defineComponent({
         message.error('输入的字符太长了，最长' + props.maxlen + '个')
         return
       }
-      let value = props.value
-      let arr: string[] = []
+      const value = props.value
+      const arr: string[] = []
       value?.forEach((val) => {
         if (arr.includes(val as string) == false) arr.push(val as string)
       })
       if (arr.includes(val) == false) arr.push(val)
-      addval.value = ''
+      addVal.value = ''
       context.emit('update:value', arr)
     }
 
-    return { addval, add, del }
+    return { addVal, add, del }
   }
 })
 </script>
 
 <template>
   <div class="mytags">
-    <a-tag tabindex="-1" v-for="item in value" closable color="red" @close="del(item)">{{ item }}</a-tag>
-    <a-input-search tabindex="-1" v-model:model-value="addval" :style="{ width: '120px' }" size="small" button-text="添加" search-button @search="add" @press-enter="add(addval)" />
+    <a-tag v-for="item in value" :key="item" closable color="red" tabindex="-1" @close="del(item)">{{ item }}</a-tag>
+    <a-input-search v-model:model-value="addVal" tabindex="-1" :style="{ width: '120px' }" size="small" button-text="添加" search-button @search="add" @press-enter="add(addVal)" />
   </div>
 </template>
 <style>

@@ -1,16 +1,11 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue'
-
 import 'ant-design-vue/es/tree/style/css'
 import MySwitchTab from '../layout/MySwitchTab.vue'
-import { useAppStore, useWinStore } from '../store'
+import { useAppStore } from '../store'
 
-const treeref = ref()
-const winStore = useWinStore()
 const appStore = useAppStore()
-const TreeHeight = computed(() => winStore.height - 42 - 56 - 24 - 4)
 
-const switchvalues = [
+const switchValues = [
   { key: 'allpic', title: '全部照片', alt: '' },
   { key: 'xiangce', title: '我的相册', alt: '' }
 ]
@@ -21,7 +16,7 @@ const switchvalues = [
     <div class="headswitch">
       <div class="bghr"></div>
       <div class="sw">
-        <MySwitchTab :name="'picleft'" :tabs="switchvalues" :value="appStore.GetAppTabMenu" @update:value="(val:string)=>appStore.toggleTabMenu('pic', val)" />
+        <MySwitchTab :name="'picleft'" :tabs="switchValues" :value="appStore.GetAppTabMenu" @update:value="(val:string)=>appStore.toggleTabMenu('pic', val)" />
       </div>
     </div>
     <div class="treeleft">

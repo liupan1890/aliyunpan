@@ -35,16 +35,16 @@ export default defineComponent({
 </script>
 
 <template>
-  <div class="toppanbtn" v-show="isselected && dirtype !== 'trash' && dirtype !== 'recover'">
-    <a-button type="text" size="small" tabindex="-1" @click="() => menuDownload(istree)" title="Ctrl+D"><i class="iconfont icondownload" />下载</a-button>
-    <a-button v-show="dirtype == 'pan'" type="text" size="small" tabindex="-1" @click="() => menuCreatShare(istree, 'pan')" title="Ctrl+S"><i class="iconfont iconfenxiang" />分享</a-button>
-    <a-button v-show="!isallfavored" type="text" size="small" tabindex="-1" @click="() => menuFavSelectFile(istree, true)" title="Ctrl+G"><i class="iconfont iconcrown" />收藏</a-button>
-    <a-button v-show="isallfavored" type="text" size="small" tabindex="-1" @click="() => menuFavSelectFile(istree, false)" title="Ctrl+G"><i class="iconfont iconcrown2" />取消收藏</a-button>
+  <div v-show="isselected && dirtype !== 'trash' && dirtype !== 'recover'" class="toppanbtn">
+    <a-button type="text" size="small" tabindex="-1" title="Ctrl+D" @click="() => menuDownload(istree)"><i class="iconfont icondownload" />下载</a-button>
+    <a-button v-show="dirtype == 'pan'" type="text" size="small" tabindex="-1" title="Ctrl+S" @click="() => menuCreatShare(istree, 'pan')"><i class="iconfont iconfenxiang" />分享</a-button>
+    <a-button v-show="!isallfavored" type="text" size="small" tabindex="-1" title="Ctrl+G" @click="() => menuFavSelectFile(istree, true)"><i class="iconfont iconcrown" />收藏</a-button>
+    <a-button v-show="isallfavored" type="text" size="small" tabindex="-1" title="Ctrl+G" @click="() => menuFavSelectFile(istree, false)"><i class="iconfont iconcrown2" />取消收藏</a-button>
 
     <a-dropdown trigger="hover" class="rightmenu" position="bl">
       <a-button type="text" size="small" tabindex="-1" class="danger"><i class="iconfont icondelete" />删除<i class="iconfont icondown" /></a-button>
       <template #content>
-        <a-doption title="Ctrl+Delete" @click="() => menuTrashSelectFile(istree, false)" class="danger">
+        <a-doption title="Ctrl+Delete" class="danger" @click="() => menuTrashSelectFile(istree, false)">
           <template #icon> <i class="iconfont icondelete" /> </template>
           <template #default>放回收站</template>
         </a-doption>
@@ -53,7 +53,7 @@ export default defineComponent({
             <span class="arco-dropdown-option-icon"><i class="iconfont iconrest"></i></span>彻底删除
           </template>
           <template #content>
-            <a-doption title="Ctrl+Shift+Delete" @click="() => menuTrashSelectFile(istree, true)" class="danger">
+            <a-doption title="Ctrl+Shift+Delete" class="danger" @click="() => menuTrashSelectFile(istree, true)">
               <template #default>删除后无法还原</template>
             </a-doption>
           </template>

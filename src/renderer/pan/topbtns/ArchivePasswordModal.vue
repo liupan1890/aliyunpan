@@ -50,8 +50,7 @@ export default defineComponent({
     })
     const handleOpen = () => {
       setTimeout(() => {
-        const autofocus = document.getElementById('ArchivePasswordInput')
-        if (autofocus) autofocus.focus()
+        document.getElementById('ArchivePasswordInput')?.focus()
       }, 200)
 
       form.password = ''
@@ -84,8 +83,8 @@ export default defineComponent({
         }
 
         this.okLoading = true
-        let props = this.$props
-        let resp = await AliArchive.ApiArchiveList(props.user_id, props.drive_id, props.file_id, props.domain_id, props.ext, this.form.password)
+        const props = this.$props
+        const resp = await AliArchive.ApiArchiveList(props.user_id, props.drive_id, props.file_id, props.domain_id, props.ext, this.form.password)
         this.okLoading = false
         if (!resp) {
           message.error('获取解压信息出错，请重试')
@@ -93,14 +92,12 @@ export default defineComponent({
         }
         if (resp.state == '密码错误') {
           message.error('解压密码错误，请重试')
-          return
         } else if (resp.state == 'Succeed' || resp.state == 'Running') {
           
           modalArchive(props.user_id, props.drive_id, props.file_id, props.file_name, props.parent_file_id, this.form.password)
         } else {
           message.error('在线解压失败 ' + resp.state + '，请重试')
           DebugLog.mSaveDanger('在线解压失败 ' + resp.state, props.drive_id + ' ' + props.file_id)
-          return
         }
       })
     }
@@ -109,7 +106,7 @@ export default defineComponent({
 </script>
 
 <template>
-  <a-modal :visible="visible" modal-class="modalclass" @cancel="handleHide" @before-open="handleOpen" @close="handleClose" :footer="false" :unmount-on-close="true" :mask-closable="false">
+  <a-modal :visible="visible" modal-class="modalclass" :footer="false" :unmount-on-close="true" :mask-closable="false" @cancel="handleHide" @before-open="handleOpen" @close="handleClose">
     <template #title>
       <span class="modaltitle">需要解压密码</span>
     </template>

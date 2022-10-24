@@ -76,7 +76,7 @@ const handleSelectDownSavePath = () => {
   <div class="settingcard">
     <div class="settinghead">:下载时 最大并行任务数</div>
     <div class="settingrow">
-      <a-select tabindex="-1" :style="{ width: '252px' }" :model-value="settingStore.downFileMax" @update:model-value="cb({ downFileMax: $event })" :popup-container="'#SettingDiv'">
+      <a-select tabindex="-1" :style="{ width: '252px' }" :model-value="settingStore.downFileMax" :popup-container="'#SettingDiv'" @update:model-value="cb({ downFileMax: $event })">
         <a-option :value="1">
           同时下载 1 个文件
           <template #suffix>大文件</template>
@@ -92,9 +92,9 @@ const handleSelectDownSavePath = () => {
       </a-select>
     </div>
     <div class="settingspace"></div>
-    <div class="settinghead">:下载时 每个文件的下载线程</div>
+    <div class="settinghead">:下载时 每个文件的线程</div>
     <div class="settingrow">
-      <a-select tabindex="-1" :style="{ width: '252px' }" :model-value="settingStore.downThreadMax" @update:model-value="cb({ downThreadMax: $event })" :popup-container="'#SettingDiv'">
+      <a-select tabindex="-1" :style="{ width: '252px' }" :model-value="settingStore.downThreadMax" :popup-container="'#SettingDiv'" @update:model-value="cb({ downThreadMax: $event })">
         <a-option :value="1">每个文件使用 1 个线程</a-option>
         <a-option :value="2">每个文件使用 2 个线程</a-option>
         <a-option :value="4">每个文件使用 4 个线程<template #suffix>推荐</template></a-option>
@@ -116,7 +116,7 @@ const handleSelectDownSavePath = () => {
     <div class="settingspace"></div>
     <div class="settinghead">:下载时 总下载速度限制</div>
     <div class="settingrow" style="display: flex; align-items: center">
-      <a-input-number tabindex="-1" :style="{ width: '128px' }" mode="button" :min="0" :max="settingStore.downGlobalSpeedM == 'MB' ? 100 : 999" :step="settingStore.downGlobalSpeedM == 'MB' ? 5 : 50" :model-value="settingStore.downGlobalSpeed" @update:model-value="cb({ downGlobalSpeed: $event })">
+      <a-input-number tabindex="-1" :style="{ width: '128px' }" mode="button" :min="0" :max="settingStore.downGlobalSpeedM == 'MB' ? 100 : 999" :step="settingStore.downGlobalSpeedM == 'MB' ? 4 : 40" :model-value="settingStore.downGlobalSpeed" @update:model-value="cb({ downGlobalSpeed: $event })">
       </a-input-number>
       <div style="height: 32px; border-left: 1px solid var(--color-neutral-3)"></div>
       <a-radio-group type="button" tabindex="-1" :model-value="settingStore.downGlobalSpeedM" @update:model-value="cb({ downGlobalSpeedM: $event, downGlobalSpeed: 0 })">
@@ -132,21 +132,6 @@ const handleSelectDownSavePath = () => {
             <span class="opred">0-100MB/s</span> 百兆宽带最高跑到 12MB/s<br />
             <span class="opred">0-999KB/s</span> 超慢的宽带请选择KB/s (1MB/s=1000KB/s)<br />
             适当的限速可以不影响其他人上网
-          </div>
-        </template>
-      </a-popover>
-    </div>
-    <div class="settingspace"></div>
-    <div class="settinghead">:下载时 优先下载小文件</div>
-    <div class="settingrow">
-      <MySwitch :value="settingStore.downSmallFileFirst" @update:value="cb({ downSmallFileFirst: $event })"> 下载中 优先下载小于100MB的小文件</MySwitch>
-      <a-popover position="right">
-        <i class="iconfont iconbulb" />
-        <template #content>
-          <div>
-            默认：<span class="opred">关闭</span>
-            <hr />
-            当有很多文件需要下载时<br />着急用小文件，可以开启此选项
           </div>
         </template>
       </a-popover>

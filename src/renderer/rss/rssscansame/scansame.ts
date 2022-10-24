@@ -8,88 +8,89 @@ import { Ref } from 'vue'
 import { FileData, IScanDriverModel } from '../ScanDAL'
 
 
-export async function GetSameFile(user_id: string, PanData: IScanDriverModel, Processing: Ref<number>, ScanCount: Ref<number>, TotalFileCount: Ref<number>, ScanType: string) {
-  ScanCount.value = 0
-  let keys = PanData.DirMap.keys() 
-  let dirlist: IAliDirBatchResp[] = []
+export async function GetSameFile(user_id: string, PanData: IScanDriverModel, Processing: Ref<number>, scanCount: Ref<number>, totalFileCount: Ref<number>, scanType: string) {
+  scanCount.value = 0
+  const keys = PanData.DirMap.keys() 
+  let dirList: IAliDirBatchResp[] = []
 
   Processing.value = 0
   while (true) {
     let add = 0
-    while (dirlist.length < 20) {
-      let key = keys.next()
+    while (dirList.length < 20) {
+      const key = keys.next()
       if (!key.done) {
         add++
-        dirlist.push({ dir_id: key.value, next_marker: '', items: [], itemsKey: new Set() })
+        dirList.push({ dirID: key.value, next_marker: '', items: [], itemsKey: new Set() } as IAliDirBatchResp)
       } else break
     }
     Processing.value += add
-    if (dirlist.length == 0) break
+    if (dirList.length == 0) break
     if (!PanData.drive_id) break 
 
-    let isget = await ApiBatchDirFileList(user_id, PanData.drive_id, dirlist, ScanType)
-    if (isget) {
-      let list: IAliDirBatchResp[] = []
-      for (let i = 0, maxi = dirlist.length; i < maxi; i++) {
-        if (dirlist[i].next_marker && dirlist[i].items.length < 2000) {
-          list.push(dirlist[i]) 
+    const isGet = await ApiBatchDirFileList(user_id, PanData.drive_id, dirList, scanType)
+    if (isGet) {
+      const list: IAliDirBatchResp[] = []
+      for (let i = 0, maxi = dirList.length; i < maxi; i++) {
+        if (dirList[i].next_marker && dirList[i].items.length < 2000) {
+          list.push(dirList[i]) 
         } else {
           
-          let filelist = dirlist[i].items
-          TotalFileCount.value += filelist.length
+          const fileList = dirList[i].items
+          totalFileCount.value += fileList.length
           
-          for (let j = 0, maxj = filelist.length; j < maxj; j++) {
-            let fileitem = filelist[j]
-            let hash = fileitem.namesearch
+          for (let j = 0, maxj = fileList.length; j < maxj; j++) {
+            const fileItem = fileList[j]
+            const hash = fileItem.namesearch
             if (hash) {
-              let savelist = PanData.SameDirMap.get(hash)
-              if (!savelist) savelist = []
+              let saveList = PanData.SameDirMap.get(hash)
+              if (!saveList) saveList = []
 
-              if (savelist.length < 50) {
+              if (saveList.length < 50) {
                 
-                savelist.push({
-                  file_id: fileitem.file_id,
-                  name: fileitem.name,
-                  parent_file_id: fileitem.parent_file_id,
-                  size: fileitem.size,
-                  sizestr: fileitem.sizestr,
-                  time: fileitem.time,
-                  timestr: fileitem.timestr,
-                  icon: fileitem.icon,
+                saveList.push({
+                  file_id: fileItem.file_id,
+                  name: fileItem.name,
+                  parent_file_id: fileItem.parent_file_id,
+                  size: fileItem.size,
+                  sizeStr: fileItem.sizeStr,
+                  time: fileItem.time,
+                  timeStr: fileItem.timeStr,
+                  icon: fileItem.icon,
                   parent_file_path: ''
-                })
-                PanData.SameDirMap.set(hash, savelist)
+                } as FileData)
+                PanData.SameDirMap.set(hash, saveList)
               }
             }
           }
         }
       }
-      dirlist.length = 0
-      dirlist = list
+      dirList.length = 0
+      dirList = list
     }
   }
   Processing.value = PanData.DirMap.size
 
   
-  let SameDirMap = new Map<string, FileData[]>()
-  let entries = PanData.SameDirMap.entries()
+  const sameDirMap = new Map<string, FileData[]>()
+  const entries = PanData.SameDirMap.entries()
   for (let i = 0, maxi = PanData.SameDirMap.size; i < maxi; i++) {
-    let value = entries.next().value
-    let arr = value[1] as FileData[]
+    const value = entries.next().value
+    const arr = value[1] as FileData[]
     if (arr.length > 1) {
       arr.map((a) => {
         a.parent_file_path = GetParentPath(PanData, a.parent_file_id)
+        return true
       })
       arr.sort((a, b) => b.time - a.time)
-      SameDirMap.set(value[0], arr)
+      sameDirMap.set(value[0], arr)
     }
   }
-  PanData.SameDirMap = SameDirMap
-  ScanCount.value = SameDirMap.size
+  PanData.SameDirMap = sameDirMap
+  scanCount.value = sameDirMap.size
 }
-/*计算出完整的路径* */
+/* 计算出完整的路径* */
 function GetParentPath(PanData: IScanDriverModel, file_id: string) {
-  let path: string[] = []
+  const path: string[] = []
   let dir: IAliGetDirModel | undefined
   while (true) {
     dir = PanData.DirMap.get(file_id)
@@ -103,38 +104,38 @@ function GetParentPath(PanData: IScanDriverModel, file_id: string) {
   return path.join(' > ')
 }
 
-async function ApiBatchDirFileList(user_id: string, drive_id: string, dirlist: IAliDirBatchResp[], ScanType: string) {
-  if (!user_id || !drive_id || dirlist.length == 0) return false
-  let postdata = '{"requests":['
-  for (let i = 0, maxi = dirlist.length; i < maxi; i++) {
-    if (i > 0) postdata = postdata + ','
+async function ApiBatchDirFileList(user_id: string, drive_id: string, dirList: IAliDirBatchResp[], scanType: string) {
+  if (!user_id || !drive_id || dirList.length == 0) return false
+  let postData = '{"requests":['
+  for (let i = 0, maxi = dirList.length; i < maxi; i++) {
+    if (i > 0) postData = postData + ','
     
-    let query = 'parent_file_id="' + dirlist[i].dir_id + '"'
-    if (ScanType == 'size10') query += ' and size > 10485760'
-    else if (ScanType == 'size100') query += ' and size > 104857600'
-    else if (ScanType == 'size1000') query += ' and size > 1048576000'
-    else if (['video', 'doc', 'image', 'audio', 'others', 'zip'].includes(ScanType)) query += ' and category = "' + ScanType + '"'
+    let query = 'parent_file_id="' + dirList[i].dirID + '"'
+    if (scanType == 'size10') query += ' and size > 10485760'
+    else if (scanType == 'size100') query += ' and size > 104857600'
+    else if (scanType == 'size1000') query += ' and size > 1048576000'
+    else if (['video', 'doc', 'image', 'audio', 'others', 'zip'].includes(scanType)) query += ' and category = "' + scanType + '"'
     if (!query.includes('category')) query += ' and type = "file"'
 
     const data2 = {
       body: {
         drive_id: drive_id,
         query: query,
-        marker: dirlist[i].next_marker,
+        marker: dirList[i].next_marker,
         limit: 100,
         fields: 'thumbnail'
       },
       headers: { 'Content-Type': 'application/json' },
-      id: dirlist[i].dir_id,
+      id: dirList[i].dirID,
       method: 'POST',
       url: '/file/search'
     }
-    postdata = postdata + JSON.stringify(data2)
+    postData = postData + JSON.stringify(data2)
   }
-  postdata += '],"resource":"file"}'
+  postData += '],"resource":"file"}'
 
   const url = 'v2/batch?jsonmask=responses(id%2Cstatus%2Cbody(next_marker%2Cpunished_file_count%2Ctotal_count%2Citems(name%2Cfile_id%2Cdrive_id%2Ctype%2Csize%2Cupdated_at%2Ccategory%2Cfile_extension%2Cparent_file_id%2Cmime_type%2Cmime_extension%2Ccontent_hash%2Cpunish_flag)))'
-  const resp = await AliHttp.Post(url, postdata, user_id, '')
+  const resp = await AliHttp.Post(url, postData, user_id, '')
 
   try {
     if (AliHttp.IsSuccess(resp.code)) {
@@ -144,9 +145,9 @@ async function ApiBatchDirFileList(user_id: string, drive_id: string, dirlist: I
         if (status >= 200 && status <= 205) {
           const respi = responses[j]
           const id = respi.id || ''
-          for (let i = 0, maxi = dirlist.length; i < maxi; i++) {
-            if (dirlist[i].dir_id == id) {
-              const dir = dirlist[i]
+          for (let i = 0, maxi = dirList.length; i < maxi; i++) {
+            if (dirList[i].dirID == id) {
+              const dir = dirList[i]
               const items = respi.body.items
               dir.next_marker = respi.body.next_marker
               for (let i = 0, maxi = items.length; i < maxi; i++) {
@@ -172,13 +173,14 @@ async function ApiBatchDirFileList(user_id: string, drive_id: string, dirlist: I
   return false
 }
 
+// eslint-disable-next-line no-unused-vars
 async function ApiWalkDirFileList(user_id: string, drive_id: string, file_id: string, limit: number, category: string) {
   if (!user_id || !drive_id || !file_id) return false
   let next_marker = ''
   let items: any[] = []
   do {
-    let url = 'v2/file/walk?jsonmask=next_marker%2Cpunished_file_count%2Ctotal_count%2Citems(name%2Cfile_id%2Cdrive_id%2Ctype%2Csize%2Cupdated_at%2Ccategory%2Cfile_extension%2Cparent_file_id%2Cmime_type%2Cmime_extension%2Ccontent_hash%2Cpunish_flag)'
-    let postdata = {
+    const url = 'v2/file/walk?jsonmask=next_marker%2Cpunished_file_count%2Ctotal_count%2Citems(name%2Cfile_id%2Cdrive_id%2Ctype%2Csize%2Cupdated_at%2Ccategory%2Cfile_extension%2Cparent_file_id%2Cmime_type%2Cmime_extension%2Ccontent_hash%2Cpunish_flag)'
+    let postData = {
       all: false,
       drive_id: drive_id,
       parent_file_id: file_id,
@@ -190,8 +192,8 @@ async function ApiWalkDirFileList(user_id: string, drive_id: string, file_id: st
       image_cropping_aspect_ratios: ['1:1'],
       type: 'file'
     }
-    if (category && category != 'all') postdata = Object.assign(postdata, { category })
-    const resp = await AliHttp.Post(url, postdata, user_id, '')
+    if (category && category != 'all') postData = Object.assign(postData, { category })
+    const resp = await AliHttp.Post(url, postData, user_id, '')
     try {
       if (AliHttp.IsSuccess(resp.code)) {
         next_marker = resp.body.next_marker
@@ -217,21 +219,21 @@ async function ApiWalkDirFileList(user_id: string, drive_id: string, file_id: st
 }
 
 
-export function DeleteFromSameData(PanData: IScanDriverModel, idlist: string[]) {
-  let entries = PanData.SameDirMap.entries()
-  for (let i = 0, maxi = PanData.SameDirMap.size; i < maxi && idlist.length > 0; i++) {
-    let value = entries.next().value
-    let children = value[1] as FileData[]
-    let savelist: FileData[] = []
+export function DeleteFromSameData(PanData: IScanDriverModel, idList: string[]) {
+  const entries = PanData.SameDirMap.entries()
+  for (let i = 0, maxi = PanData.SameDirMap.size; i < maxi && idList.length > 0; i++) {
+    const value = entries.next().value
+    const children = value[1] as FileData[]
+    const saveList: FileData[] = []
     for (let j = 0, maxj = children.length; j < maxj; j++) {
-      let key = children[j].file_id
-      if (idlist.includes(key)) {
+      const key = children[j].file_id
+      if (idList.includes(key)) {
         
-        idlist = idlist.filter((t) => t != key)
+        idList = idList.filter((t) => t != key)
       } else {
-        savelist.push(children[j])
+        saveList.push(children[j])
       }
     }
-    if (children.length != savelist.length) PanData.SameDirMap.set(value[0], savelist)
+    if (children.length != saveList.length) PanData.SameDirMap.set(value[0], saveList)
   }
 }

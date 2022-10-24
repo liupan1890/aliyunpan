@@ -18,8 +18,8 @@ export interface IAliShareFileResp {
 
   m_user_id: string 
   m_share_id: string 
-  m_dir_id: string 
-  m_dir_name: string 
+  dirID: string 
+  dirName: string 
 }
 
 export interface UpdateShareModel {
@@ -31,12 +31,13 @@ export interface UpdateShareModel {
 
 export default class AliShare {
   
-  static async ApiGetShareAnonymous(shareid: string) {
+  static async ApiGetShareAnonymous(share_id: string): Promise<IAliShareAnonymous> {
     
     
+
     const share: IAliShareAnonymous = {
       shareinfo: {
-        shareid: shareid,
+        share_id: share_id,
         creator_id: '',
         creator_name: '',
         creator_phone: '',
@@ -53,13 +54,13 @@ export default class AliShare {
       shareinfojson: '',
       error: '解析分享链接失败'
     }
-    if (!shareid) return share
-    const url = 'adrive/v2/share_link/get_share_by_anonymous?share_id=' + shareid
-    const postdata = { share_id: shareid }
-    const resp = await AliHttp.Post(url, postdata, '', '')
+    if (!share_id) return share
+    const url = 'adrive/v2/share_link/get_share_by_anonymous?share_id=' + share_id
+    const postData = { share_id: share_id }
+    const resp = await AliHttp.Post(url, postData, '', '')
     if (AliHttp.IsSuccess(resp.code)) {
       if (resp.body.creator_id) {
-        share.shareinfo.shareid = shareid
+        share.shareinfo.share_id = share_id
         share.shareinfo.creator_id = resp.body.creator_id || ''
         share.shareinfo.creator_name = resp.body.creator_name || ''
         share.shareinfo.creator_phone = resp.body.creator_phone || ''
@@ -77,7 +78,7 @@ export default class AliShare {
         return share 
       }
     } else {
-      DebugLog.mSaveWarning('ApiGetShareAnonymous err=' + shareid + ' ' + (resp.code || ''))
+      DebugLog.mSaveWarning('ApiGetShareAnonymous err=' + share_id + ' ' + (resp.code || ''))
     }
     
     if (resp.body?.code == 'ShareLink.Cancelled') share.error = '分享链接被取消分享了'
@@ -89,37 +90,37 @@ export default class AliShare {
   }
 
   
-  static async ApisSubscription(user_id: string, shareid: string) {
-    if (!user_id || !shareid) return undefined
+  static async ApisSubscription(user_id: string, share_id: string): Promise<boolean> {
+    if (!user_id || !share_id) return false
     const url = 'adrive/v1/share_link/subscription/update'
-    const postdata = { share_id: shareid, update_last_seen: true }
-    const resp = await AliHttp.Post(url, postdata, user_id, '')
+    const postData = { share_id: share_id, update_last_seen: true }
+    const resp = await AliHttp.Post(url, postData, user_id, '')
     if (AliHttp.IsSuccess(resp.code)) {
       return true
     } else {
-      DebugLog.mSaveWarning('ApisSubscription err=' + shareid + ' ' + (resp.code || ''))
+      DebugLog.mSaveWarning('ApisSubscription err=' + share_id + ' ' + (resp.code || ''))
     }
     return false
   }
 
   
-  static async ApiGetShareToken(shareid: string, pwd: string) {
+  static async ApiGetShareToken(share_id: string, pwd: string): Promise<string> {
     
     
-    if (!shareid) return '，分享链接错误'
+    if (!share_id) return '，分享链接错误'
     const url = 'v2/share_link/get_share_token'
-    const postdata = { share_id: shareid, share_pwd: pwd }
+    const postData = { share_id: share_id, share_pwd: pwd }
 
-    let resp = await AliHttp.Post(url, postdata, '', '')
+    let resp = await AliHttp.Post(url, postData, '', '')
     let isgetpwd = false
 
     if (resp.body?.code == 'InvalidResource.SharePwd') {
       if (useSettingStore().yinsiLinkPassword) {
-        const serdata = await ServerHttp.PostToServer({ cmd: 'GetAliSharePwd', shareid })
+        const serdata = await ServerHttp.PostToServer({ cmd: 'GetAliSharePwd', shareid: share_id })
         if (serdata.password) {
           isgetpwd = true 
-          postdata.share_pwd = serdata.password
-          resp = await AliHttp.Post(url, postdata, '', '') 
+          postData.share_pwd = serdata.password
+          resp = await AliHttp.Post(url, postData, '', '') 
         }
       }
     }
@@ -133,16 +134,16 @@ export default class AliShare {
 
     
     if (AliHttp.IsSuccess(resp.code)) {
-      if (useSettingStore().yinsiLinkPassword && isgetpwd == false) ServerHttp.PostToServer({ cmd: 'PostAliShare', shareid, password: postdata.share_pwd }) 
+      if (useSettingStore().yinsiLinkPassword && isgetpwd == false) ServerHttp.PostToServer({ cmd: 'PostAliShare', shareid: share_id, password: postData.share_pwd }) 
       return (resp.body.share_token as string | undefined) || '，share_token错误'
     } else {
-      DebugLog.mSaveWarning('ApiGetShareToken err=' + shareid + ' ' + (resp.code || ''))
+      DebugLog.mSaveWarning('ApiGetShareToken err=' + share_id + ' ' + (resp.code || ''))
     }
     return '，网络错误请重试'
   }
 
   
-  static async ApiShareFileList(share_id: string, share_token: string, dir_id: string): Promise<IAliShareFileResp> {
+  static async ApiShareFileList(share_id: string, share_token: string, dirID: string): Promise<IAliShareFileResp> {
     const dir: IAliShareFileResp = {
       items: [],
       itemsKey: new Set(),
@@ -150,12 +151,12 @@ export default class AliShare {
       next_marker: '',
       m_user_id: '',
       m_share_id: share_id,
-      m_dir_id: dir_id,
-      m_dir_name: ''
+      dirID: dirID,
+      dirName: ''
     }
     do {
-      const isget = await AliShare.ApiShareFileListOnePage(dir, share_token)
-      if (isget != true) {
+      const isGet = await AliShare.ApiShareFileListOnePage(dir, share_token)
+      if (isGet != true) {
         break 
       }
     } while (dir.next_marker)
@@ -164,31 +165,31 @@ export default class AliShare {
   }
 
   
-  static async ApiShareFileListOnePage(dir: IAliShareFileResp, share_token: string) {
+  static async ApiShareFileListOnePage(dir: IAliShareFileResp, share_token: string): Promise<boolean> {
     const url =
       'adrive/v3/file/list?jsonmask=next_marker%2Cpunished_file_count%2Ctotal_count%2Citems(category%2Ccreated_at%2Cdomain_id%2Cdrive_id%2Cfile_extension%2Cfile_id%2Chidden%2Cmime_extension%2Cmime_type%2Cname%2Cparent_file_id%2Cpunish_flag%2Csize%2Cstarred%2Ctype%2Cupdated_at%2Cdescription)'
-    let postdata = {
+    let postData = {
       share_id: dir.m_share_id,
-      parent_file_id: dir.m_dir_id,
+      parent_file_id: dir.dirID,
       limit: 100,
       url_expire_sec: 14400,
       fields: 'thumbnail',
       order_by: 'name',
       order_direction: 'DESC'
     }
-    if (dir.next_marker) postdata = Object.assign(postdata, { marker: dir.next_marker })
-    const resp = await AliHttp.Post(url, postdata, '', share_token)
+    if (dir.next_marker) postData = Object.assign(postData, { marker: dir.next_marker })
+    const resp = await AliHttp.Post(url, postData, '', share_token)
     return AliShare._ShareFileListOnePage(dir, resp)
   }
 
-  static _ShareFileListOnePage(dir: IAliShareFileResp, resp: IUrlRespData) {
+  private static _ShareFileListOnePage(dir: IAliShareFileResp, resp: IUrlRespData): boolean {
     try {
       if (AliHttp.IsSuccess(resp.code)) {
         dir.next_marker = resp.body.next_marker
         for (let i = 0, maxi = resp.body.items.length; i < maxi; i++) {
           const item = resp.body.items[i] as IAliShareFileItem
           if (dir.itemsKey.has(item.file_id)) continue
-          const add = {
+          const add: IAliShareFileItem = {
             drive_id: item.drive_id,
             file_id: item.file_id,
             name: item.name,
@@ -201,8 +202,8 @@ export default class AliShare {
             size: item.size || 0,
             category: item.category || '',
             punish_flag: item.punish_flag || 0,
-            isdir: item.type == 'folder',
-            sizestr: item.type == 'folder' ? '' : humanSize(item.size),
+            isDir: item.type == 'folder',
+            sizeStr: item.type == 'folder' ? '' : humanSize(item.size),
             icon: getFileIcon(item.category, item.file_extension, item.mime_extension, item.mime_type, item.size)[1]
           }
           dir.items.push(add)
@@ -224,7 +225,7 @@ export default class AliShare {
         DebugLog.mSaveWarning('_ShareFileListOnePage err=' + (resp.code || ''))
       }
     } catch (err: any) {
-      DebugLog.mSaveDanger('_ShareFileListOnePage ' + dir.m_dir_id, err)
+      DebugLog.mSaveDanger('_ShareFileListOnePage ' + dir.dirID, err)
     }
     dir.next_marker = 'error ' + resp.code
     return false
@@ -236,8 +237,8 @@ export default class AliShare {
     
     if (!user_id || !drive_id || file_id_list.length == 0) return '创建分享链接失败数据错误'
     const url = 'adrive/v2/share_link/create'
-    const postdata = JSON.stringify({ drive_id, expiration, share_pwd: share_pwd, share_name: share_name, file_id_list })
-    const resp = await AliHttp.Post(url, postdata, user_id, '')
+    const postData = JSON.stringify({ drive_id, expiration, share_pwd: share_pwd, share_name: share_name, file_id_list })
+    const resp = await AliHttp.Post(url, postData, user_id, '')
     
     if (AliHttp.IsSuccess(resp.code)) {
       const item = resp.body as IAliShareItem
@@ -254,14 +255,15 @@ export default class AliShare {
     else if (resp.body?.code == 'InvalidParameter.FileIdList') return '选择文件过多，无法分享'
     else if (resp.body?.message && resp.body.message.indexOf('size of file_id_list') >= 0) return '选择文件过多，无法分享'
     else if (resp.body?.code == 'FileShareNotAllowed') return '这个文件禁止分享'
+    else if (resp.body?.code == 'FeatureTemporaryDisabled') return '分享功能维护中'
     else if (resp.body?.code) return resp.body.code.toString()
     else return '创建分享链接失败'
   }
 
   static async ApiCreatShareBatch(user_id: string, drive_id: string, expiration: string, share_pwd: string, file_id_list: string[]): Promise<IAliBatchResult> {
-    const batchlist: string[] = []
+    const batchList: string[] = []
     for (let i = 0, maxi = file_id_list.length; i < maxi; i++) {
-      const postdata: any = {
+      const postData: any = {
         body: {
           drive_id,
           expiration,
@@ -275,81 +277,81 @@ export default class AliShare {
         method: 'POST',
         url: '/share_link/create'
       }
-      batchlist.push(JSON.stringify(postdata))
+      batchList.push(JSON.stringify(postData))
     }
-    const result = await ApiBatch('', batchlist, user_id, '')
+    const result = await ApiBatch('', batchList, user_id, '')
     return result
   }
 
   
-  static async ApiCancelShareBatch(user_id: string, shareidlist: string[]): Promise<string[]> {
-    const batchlist = ApiBatchMaker('/share_link/cancel', shareidlist, (share_id: string) => {
+  static async ApiCancelShareBatch(user_id: string, share_idList: string[]): Promise<string[]> {
+    const batchList = ApiBatchMaker('/share_link/cancel', share_idList, (share_id: string) => {
       return { share_id: share_id }
     })
-    return ApiBatchSuccess(shareidlist.length > 1 ? '批量取消分享' : '取消分享', batchlist, user_id, '')
+    return ApiBatchSuccess(share_idList.length > 1 ? '批量取消分享' : '取消分享', batchList, user_id, '')
   }
 
   
-  static async ApiUpdateShareBatch(user_id: string, shareidlist: string[], expirationlist: string[], share_pwdlist: string[], share_namelist: string[] | undefined) {
+  static async ApiUpdateShareBatch(user_id: string, share_idList: string[], expirationList: string[], share_pwdList: string[], share_nameList: string[] | undefined): Promise<UpdateShareModel[]> {
     
 
     
 
-    if (!shareidlist || shareidlist.length == 0) return []
-    const batchlist: string[] = []
-    if (share_namelist != undefined) {
-      for (let i = 0, maxi = shareidlist.length; i < maxi; i++) {
-        batchlist.push(
+    if (!share_idList || share_idList.length == 0) return []
+    const batchList: string[] = []
+    if (share_nameList) {
+      for (let i = 0, maxi = share_idList.length; i < maxi; i++) {
+        batchList.push(
           JSON.stringify({
-            body: { share_id: shareidlist[i], share_pwd: share_pwdlist[i], expiration: expirationlist[i], share_name: share_namelist[i] },
+            body: { share_id: share_idList[i], share_pwd: share_pwdList[i], expiration: expirationList[i], share_name: share_nameList[i] },
             headers: { 'Content-Type': 'application/json' },
-            id: shareidlist[i],
+            id: share_idList[i],
             method: 'POST',
             url: '/share_link/update'
           })
         )
       }
     } else {
-      for (let i = 0, maxi = shareidlist.length; i < maxi; i++) {
-        batchlist.push(JSON.stringify({ body: { share_id: shareidlist[i], share_pwd: share_pwdlist[i], expiration: expirationlist[i] }, headers: { 'Content-Type': 'application/json' }, id: shareidlist[i], method: 'POST', url: '/share_link/update' }))
+      for (let i = 0, maxi = share_idList.length; i < maxi; i++) {
+        batchList.push(JSON.stringify({ body: { share_id: share_idList[i], share_pwd: share_pwdList[i], expiration: expirationList[i] }, headers: { 'Content-Type': 'application/json' }, id: share_idList[i], method: 'POST', url: '/share_link/update' }))
       }
     }
 
-    let successlist: UpdateShareModel[] = []
-    const result = await ApiBatch(shareidlist.length > 1 ? '批量更新分享链接' : '更新分享链接', batchlist, user_id, '')
-    result.reslut.map((t) => successlist.push({ share_id: t.share_id!, share_pwd: t.share_pwd!, expiration: t.expiration!, share_name: t.share_name! }))
-    return successlist
+    const successList: UpdateShareModel[] = []
+    const result = await ApiBatch(share_idList.length > 1 ? '批量更新分享链接' : '更新分享链接', batchList, user_id, '')
+    result.reslut.map((t) => successList.push({ share_id: t.share_id!, share_pwd: t.share_pwd!, expiration: t.expiration!, share_name: t.share_name! } as UpdateShareModel))
+    return successList
   }
 
   
-  static async ApiSaveShareFilesBatch(shareid: string, share_token: string, user_id: string, drive_id: string, parentid: string, files: string[]) {
+  static async ApiSaveShareFilesBatch(share_id: string, share_token: string, user_id: string, drive_id: string, parent_file_id: string, file_idList: string[]): Promise<string> {
     
 
     
     
     
-    if (!shareid || !share_token || !user_id || !drive_id || !parentid) return 'error'
-    if (!files || files.length == 0) return 'success'
-    const batchlist: string[] = []
-    for (let i = 0, maxi = files.length; i < maxi; i++) {
-      const postdata =
+    if (!share_id || !share_token || !user_id || !drive_id || !parent_file_id) return 'error'
+    if (!file_idList || file_idList.length == 0) return 'success'
+    const batchList: string[] = []
+    for (let i = 0, maxi = file_idList.length; i < maxi; i++) {
+      const postData =
         '{"body":{"share_id":"' +
-        shareid +
+        share_id +
         '","file_id_list":["' +
-        //files[i] +
+        // files[i] +
         '"],"file_id":"' +
-        files[i] +
+        file_idList[i] +
         '","to_drive_id":"' +
         drive_id +
         '","to_parent_file_id":"' +
-        parentid +
+        parent_file_id +
         '","auto_rename":true},"headers":{"Content-Type":"application/json"},"id":"' +
-        files[i] +
+        file_idList[i] +
         '","method":"POST","url":"/file/copy"}'
-      batchlist.push(postdata)
+      batchList.push(postData)
     }
-    const result = await ApiBatch('', batchlist, user_id, share_token)
-    if (result.count == files.length) {
+    const result = await ApiBatch('', batchList, user_id, share_token)
+    if (result.count == file_idList.length) {
       if (result.async_task.length > 0) return 'async'
       else return 'success'
     } else {
@@ -359,7 +361,6 @@ export default class AliShare {
       }
       return 'error'
     }
-
 
   }
 }

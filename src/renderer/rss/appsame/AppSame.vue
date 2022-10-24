@@ -14,98 +14,100 @@ import 'ant-design-vue/es/checkbox/style/css'
 
 const winStore = useWinStore()
 const userStore = useUserStore()
-const TreeHeight = computed(() => winStore.height - 268)
+const treeHeight = computed(() => winStore.height - 268)
 
-const ScanLoading = ref(false)
-const ScanLoaded = ref(false)
-const DelLoading = ref(false)
+const scanLoading = ref(false)
+const scanLoaded = ref(false)
+const delLoading = ref(false)
 const Processing = ref(0)
-const ScanCount = ref(0)
-const TotalDirCount = ref(0)
-const TotalFileCount = ref(0)
+const scanCount = ref(0)
+const totalDirCount = ref(0)
+const totalFileCount = ref(0)
 
 const ScanPanData = NewScanDriver('')
 
 const checkedCount = ref(0)
 const checkedSize = ref(0)
 const checkedKeys = new Set<string>()
-const TreeData = ref<FileNodeData[]>([])
+const treeData = ref<FileNodeData[]>([])
 
 const handleReset = () => {
-  ScanLoading.value = false
-  ScanLoaded.value = false
-  DelLoading.value = false
+  scanLoading.value = false
+  scanLoaded.value = false
+  delLoading.value = false
   Processing.value = 0
-  ScanCount.value = 0
-  TotalDirCount.value = 0
+  scanCount.value = 0
+  totalDirCount.value = 0
 
   ResetScanDriver(ScanPanData)
 
   checkedKeys.clear()
   checkedCount.value = 0
   checkedSize.value = 0
-  TreeData.value = []
+  treeData.value = []
 }
 
 watch(userStore.$state, handleReset)
 
 const RefreshTree = () => {
   
-  let ShowData: FileNodeData[] = []
-  let entries = ScanPanData.SameDirMap.entries()
+  let showData: FileNodeData[] = []
+  const entries = ScanPanData.SameDirMap.entries()
   for (let i = 0, maxi = ScanPanData.SameDirMap.size; i < maxi; i++) {
-    let value = entries.next().value
+    const value = entries.next().value
     if (value[1].length > 1) {
-      let files = value[1] as FileData[]
+      const files = value[1] as FileData[]
       const add: FileNodeData = { hash: value[0], files: files.sort((a, b) => b.time - a.time) }
-      ShowData.push(add)
+      showData.push(add)
     }
   }
-  ShowData = ShowData.sort((a, b) => b.files[0].size - a.files[0].size)
-  Object.freeze(ShowData)
-  TreeData.value = ShowData
+  showData = showData.sort((a, b) => b.files[0].size - a.files[0].size)
+  Object.freeze(showData)
+  treeData.value = showData
   checkedKeys.clear()
   checkedCount.value = 0
   checkedSize.value = 0
-  ScanCount.value = ShowData.length
+  scanCount.value = showData.length
 }
 
 const handleCheck = (file_id: string) => {
   if (checkedKeys.has(file_id)) checkedKeys.delete(file_id)
   else checkedKeys.add(file_id)
-  TreeData.value = TreeData.value.concat() 
+  treeData.value = treeData.value.concat() 
   checkedCount.value = checkedKeys.size
   let size = 0
-  TreeData.value.map((t) => {
+  treeData.value.map((t) => {
     t.files.map((f) => {
       if (checkedKeys.has(f.file_id)) size += f.size
+      return true
     })
+    return true
   })
   checkedSize.value = size
 }
 
 const handleDelete = () => {
-  let user = UserDAL.GetUserToken(userStore.userID)
+  const user = UserDAL.GetUserToken(userStore.user_id)
   if (!user || !user.user_id) {
     message.error('账号错误')
     return
   }
-  DelLoading.value = true
-  let idlist = Array.from(checkedKeys)
-  AliFileCmd.ApiTrashBatch(user.user_id, user.default_drive_id, idlist).then((success: string[]) => {
-    DelLoading.value = false
+  delLoading.value = true
+  const idList = Array.from(checkedKeys)
+  AliFileCmd.ApiTrashBatch(user.user_id, user.default_drive_id, idList).then((success: string[]) => {
+    delLoading.value = false
     handleScan()
   })
 }
 
 const handleScan = () => {
-  let user = UserDAL.GetUserToken(userStore.userID)
+  const user = UserDAL.GetUserToken(userStore.user_id)
   if (!user || !user.user_id) {
     message.error('账号错误')
     return
   }
   handleReset()
-  ScanLoading.value = true
+  scanLoading.value = true
 
   const add = () => {
     if (Processing.value < 50) {
@@ -116,7 +118,7 @@ const handleScan = () => {
   setTimeout(add, 1500)
 
   const refresh = () => {
-    if (ScanLoading.value) {
+    if (scanLoading.value) {
       
       RefreshTree()
       setTimeout(refresh, 3000)
@@ -124,10 +126,10 @@ const handleScan = () => {
   }
   setTimeout(refresh, 3000)
 
-  LoadScanDir(user.user_id, user.default_drive_id, TotalDirCount, Processing, ScanPanData)
+  LoadScanDir(user.user_id, user.default_drive_id, totalDirCount, Processing, ScanPanData)
     .then(() => {
       
-      return GetSameFile(user.user_id, ScanPanData, Processing, ScanCount, TotalFileCount, ScanType.value)
+      return GetSameFile(user.user_id, ScanPanData, Processing, scanCount, totalFileCount, scanType.value)
     })
     .catch((err: any) => {
       message.error(err.message)
@@ -135,14 +137,14 @@ const handleScan = () => {
     })
     .then((data) => {
       
-      ScanLoading.value = false
+      scanLoading.value = false
       RefreshTree()
-      ScanLoaded.value = data
+      scanLoaded.value = data
       Processing.value = 0
     })
 }
 
-const ScanType = ref('all')
+const scanType = ref('all')
 </script>
 
 <script lang="ts"></script>
@@ -151,11 +153,11 @@ const ScanType = ref('all')
   <div class="scanfill rightbg">
     <div class="settingcard scanfix" style="padding: 12px 24px 8px 24px">
       <a-steps>
-        <a-step :description="ScanLoaded ? '扫描出 ' + ScanCount + ' 组重复文件' : ScanLoading ? '扫描进度：' + (Processing > 50 ? Math.floor((Processing * 100) / TotalDirCount) + '%' : Processing) : '点击 加载列表'">
+        <a-step :description="scanLoaded ? '扫描出 ' + scanCount + ' 组重复文件' : scanLoading ? '扫描进度：' + (Processing > 50 ? Math.floor((Processing * 100) / totalDirCount) + '%' : Processing) : '点击 加载列表'">
           加载
           <template #icon>
-            <MyLoading v-if="ScanLoading" />
-            <i class="iconfont iconrsearch" v-else />
+            <MyLoading v-if="scanLoading" />
+            <i v-else class="iconfont iconrsearch" />
           </template>
         </a-step>
         <a-step description="勾选 需要删除的">
@@ -175,14 +177,14 @@ const ScanType = ref('all')
 
     <div class="settingcard scanauto" style="padding: 4px; margin-top: 4px">
       <a-row justify="space-between" align="center" style="margin: 12px; height: 28px; flex-grow: 0; flex-shrink: 0; flex-wrap: nowrap; overflow: hidden">
-        <span v-if="ScanLoaded" class="checkedInfo">已选中 {{ checkedCount }} 个文件 {{ humanSize(checkedSize) }}</span>
+        <span v-if="scanLoaded" class="checkedInfo">已选中 {{ checkedCount }} 个文件 {{ humanSize(checkedSize) }}</span>
 
-        <span v-else-if="TotalDirCount > 0" class="checkedInfo">正在列出文件 {{ Processing }} </span>
+        <span v-else-if="totalDirCount > 0" class="checkedInfo">正在列出文件 {{ Processing }} </span>
         <span v-else class="checkedInfo">手机APP--容量管理--重复文件清理(仅阿里云盘会员可用)</span>
         <div style="flex: auto"></div>
 
-        <a-button v-if="ScanLoaded" size="small" tabindex="-1" @click="handleReset" style="margin-right: 12px">取消</a-button>
-        <a-select v-else size="small" tabindex="-1" :style="{ width: '136px' }" :disabled="ScanLoading" v-model:model-value="ScanType" style="margin-right: 12px">
+        <a-button v-if="scanLoaded" size="small" tabindex="-1" style="margin-right: 12px" @click="handleReset">取消</a-button>
+        <a-select v-else v-model:model-value="scanType" size="small" tabindex="-1" :style="{ width: '136px' }" :disabled="scanLoading" style="margin-right: 12px">
           <a-option value="all">全部</a-option>
           <a-option value="video">视频</a-option>
           <a-option value="image">图片</a-option>
@@ -191,28 +193,27 @@ const ScanType = ref('all')
           <a-option value="zip">压缩包</a-option>
           <a-option value="others">其他</a-option>
         </a-select>
-        <a-button v-if="ScanLoaded" type="primary" size="small" tabindex="-1" status="danger" @click="handleDelete" :loading="DelLoading" title="把选中的文件放入回收站">删除选中</a-button>
-        <a-button v-else type="primary" size="small" tabindex="-1" @click="handleScan" :loading="ScanLoading">加载列表</a-button>
+        <a-button v-if="scanLoaded" type="primary" size="small" tabindex="-1" status="danger" :loading="delLoading" title="把选中的文件放入回收站" @click="handleDelete">删除选中</a-button>
+        <a-button v-else type="primary" size="small" tabindex="-1" :loading="scanLoading" @click="handleScan">加载列表</a-button>
       </a-row>
-      <a-spin v-if="ScanLoading || ScanLoaded" :loading="ScanLoading" tip="耐心等待，很慢的..." :style="{ width: '100%', height: TreeHeight + 'px' }">
+      <a-spin v-if="scanLoading || scanLoaded" :loading="scanLoading" tip="耐心等待，很慢的..." :style="{ width: '100%', height: treeHeight + 'px' }">
         <a-list
           ref="viewlist"
           :bordered="false"
           :split="false"
-          :max-height="TreeHeight"
-          :virtualListProps="{
-            height: TreeHeight,
+          :max-height="treeHeight"
+          :virtual-list-props="{
+            height: treeHeight,
             itemKey: 'hash'
           }"
           style="width: 100%"
-          :data="TreeData"
-          tabindex="-1"
-        >
+          :data="treeData"
+          tabindex="-1">
           <template #empty><a-empty description="扫描结束 没找到重复文件" /></template>
           <template #item="{ item, index }">
-            <div class="sameitem" :key="item.hash">
-              <div class="samehash">#{{ index + 1 }} : {{ item.files[0].sizestr }} - {{ item.hash }}</div>
-              <div class="samefile" v-for="file in item.files">
+            <div :key="item.hash" class="sameitem">
+              <div class="samehash">#{{ index + 1 }} : {{ item.files[0].sizeStr }} - {{ item.hash }}</div>
+              <div v-for="file in item.files" :key="file.file_id" class="samefile">
                 <div class="samefileinfo">
                   <div class="samecheck">
                     <AntdCheckbox tabindex="-1" :checked="checkedKeys.has(file.file_id)" @click.stop.prevent="handleCheck(file.file_id)"></AntdCheckbox>
@@ -225,7 +226,7 @@ const ScanType = ref('all')
                       {{ file.name }}
                     </div>
                   </div>
-                  <div class="sametime">{{ file.timestr }}</div>
+                  <div class="sametime">{{ file.timeStr }}</div>
                 </div>
                 <div class="samepath" :title="file.parent_file_path">{{ file.parent_file_path }}</div>
               </div>

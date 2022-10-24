@@ -5,17 +5,17 @@ import { UserTokenMap } from '../../user/userdal'
 import { useUserStore, useWinStore } from '../../store'
 import { ICopyTreeNode, LoadDir, NewCopyTreeInfo } from './drivecopy'
 
-import { Checkbox as AntdCheckbox } from 'ant-design-vue'
+import { Checkbox as AntdCheckbox, Tree as AntdTree } from 'ant-design-vue'
 import 'ant-design-vue/es/checkbox/style/css'
-import { Tree as AntdTree } from 'ant-design-vue'
+
 import 'ant-design-vue/es/tree/style/css'
 import AliFileCmd from '../../aliapi/filecmd'
 
 const winStore = useWinStore()
 const userStore = useUserStore()
-const TreeHeight = computed(() => winStore.height - 268 - 34)
+const treeHeight = computed(() => winStore.height - 268 - 34)
 
-const CopyLoading = ref(false)
+const copyLoading = ref(false)
 
 const TreeState = reactive({
   LeftInfo: NewCopyTreeInfo(false),
@@ -25,14 +25,13 @@ const TreeState = reactive({
   LeftCheckedKeys: [] as string[]
 })
 
-const CopyTreeData = ref<ICopyTreeNode[]>([])
+const copyTreeData = ref<ICopyTreeNode[]>([])
 
 const handleReset = () => {
-  console.log('handleReset')
-  CopyLoading.value = false
+  copyLoading.value = false
   TreeState.LeftTreeData = []
   TreeState.RightTreeData = []
-  CopyTreeData.value = []
+  copyTreeData.value = []
   TreeState.LeftCheckedKeys = []
 
   TreeState.LeftInfo = NewCopyTreeInfo(false)
@@ -46,29 +45,31 @@ const handleCopy = () => {
     message.info('没有勾选要复制的文件或文件夹')
     return
   }
-  CopyLoading.value = true
+  copyLoading.value = true
 
   
-  let copyidlist: string[] = []
+  const copyidList: string[] = []
   TreeState.LeftCheckedKeys.map((t) => {
-    copyidlist.push(t.substring(t.indexOf('_') + 1))
+    copyidList.push(t.substring(t.indexOf('_') + 1))
+    return true
   })
 
-  AliFileCmd.ApiCopyBatch(TreeState.LeftInfo.user_id, TreeState.LeftInfo.drive_id, copyidlist, TreeState.RightInfo.drive_id, TreeState.RightInfo.dir_id).then((success) => {
-    if (success.length == copyidlist.length) {
+  AliFileCmd.ApiCopyBatch(TreeState.LeftInfo.user_id, TreeState.LeftInfo.drive_id, copyidList, TreeState.RightInfo.drive_id, TreeState.RightInfo.dirID).then((success) => {
+    if (success.length == copyidList.length) {
       handleRightTreeSelect(['refresh'])
       message.success('文件已复制')
     } else message.success('文件复制操作已开始异步执行！请稍后刷新文件夹查看结果', 10)
-    CopyLoading.value = false
+    copyLoading.value = false
   })
 }
 const handleSelectAll = () => {
   if (TreeState.LeftCheckedKeys.length == TreeState.LeftTreeData.length) {
     TreeState.LeftCheckedKeys = []
   } else {
-    let list: string[] = []
+    const list: string[] = []
     TreeState.LeftTreeData.map((t) => {
       list.push(t.key)
+      return true
     })
     TreeState.LeftCheckedKeys = list
   }
@@ -78,8 +79,8 @@ const handleLeftTreeSelect = (selectkeys: any) => {
   console.log('selectkeys', selectkeys)
   let key = selectkeys[0] as string
 
-  if (key == 'refresh') key = TreeState.LeftInfo.dir_id
-  else if (key == 'back') key = TreeState.LeftInfo.parent_id
+  if (key == 'refresh') key = TreeState.LeftInfo.dirID
+  else if (key == 'back') key = TreeState.LeftInfo.parentID
   else if (key == 'root') key = 'root'
   else if (!key.startsWith('dir_')) return
   TreeState.LeftCheckedKeys = []
@@ -88,34 +89,34 @@ const handleLeftTreeSelect = (selectkeys: any) => {
 const handleRightTreeSelect = (selectkeys: any) => {
   let key = selectkeys[0] as string
 
-  if (key == 'refresh') key = TreeState.RightInfo.dir_id
-  else if (key == 'back') key = TreeState.RightInfo.parent_id
+  if (key == 'refresh') key = TreeState.RightInfo.dirID
+  else if (key == 'back') key = TreeState.RightInfo.parentID
   else if (key == 'root') key = 'root'
   else if (!key.startsWith('dir_')) return
 
   LoadDir(key, TreeState.RightInfo, TreeState.RightTreeData, true)
 }
 
-const handleLeftUser = (drive_type: any) => {
-  const usertoken = UserTokenMap.get(userStore.userID)
-  if (!usertoken) return
-  TreeState.LeftInfo.user_id = usertoken.user_id
-  TreeState.LeftInfo.drive_type = drive_type
-  if (drive_type == 'pan') TreeState.LeftInfo.drive_id = usertoken.default_drive_id
-  if (drive_type == 'pic') TreeState.LeftInfo.drive_id = usertoken.pic_drive_id
-  if (drive_type == 'safe') TreeState.LeftInfo.drive_id = usertoken.default_sbox_drive_id
+const handleLeftUser = (driveType: any) => {
+  const userToken = UserTokenMap.get(userStore.user_id)
+  if (!userToken) return
+  TreeState.LeftInfo.user_id = userToken.user_id
+  TreeState.LeftInfo.driveType = driveType
+  if (driveType == 'pan') TreeState.LeftInfo.drive_id = userToken.default_drive_id
+  if (driveType == 'pic') TreeState.LeftInfo.drive_id = userToken.pic_drive_id
+  if (driveType == 'safe') TreeState.LeftInfo.drive_id = userToken.default_sbox_drive_id
   TreeState.LeftCheckedKeys = []
   LoadDir('root', TreeState.LeftInfo, TreeState.LeftTreeData, false)
 }
 
-const handleRightUser = (drive_type: any) => {
-  const usertoken = UserTokenMap.get(userStore.userID)
-  if (!usertoken) return
-  TreeState.RightInfo.user_id = usertoken.user_id
-  TreeState.RightInfo.drive_type = drive_type
-  if (drive_type == 'pan') TreeState.RightInfo.drive_id = usertoken.default_drive_id
-  if (drive_type == 'pic') TreeState.RightInfo.drive_id = usertoken.pic_drive_id
-  if (drive_type == 'safe') TreeState.RightInfo.drive_id = usertoken.default_sbox_drive_id
+const handleRightUser = (driveType: any) => {
+  const userToken = UserTokenMap.get(userStore.user_id)
+  if (!userToken) return
+  TreeState.RightInfo.user_id = userToken.user_id
+  TreeState.RightInfo.driveType = driveType
+  if (driveType == 'pan') TreeState.RightInfo.drive_id = userToken.default_drive_id
+  if (driveType == 'pic') TreeState.RightInfo.drive_id = userToken.pic_drive_id
+  if (driveType == 'safe') TreeState.RightInfo.drive_id = userToken.default_sbox_drive_id
   LoadDir('root', TreeState.RightInfo, TreeState.RightTreeData, true)
 }
 </script>
@@ -148,51 +149,50 @@ const handleRightUser = (drive_type: any) => {
     <div class="settingcard scanauto" style="padding: 4px; margin-top: 4px">
       <a-row justify="space-between" align="center" style="margin: 12px; height: 28px; flex-grow: 0; flex-shrink: 0; overflow: hidden">
         <span class="checkedInfo" style="margin-right: 12px">从</span>
-        <a-select size="small" tabindex="-1" :style="{ width: '130px' }" :disabled="CopyLoading" :model-value="TreeState.LeftInfo.drive_type" @change="handleLeftUser" placeholder="请选择" style="margin-right: 12px">
+        <a-select size="small" tabindex="-1" :style="{ width: '130px' }" :disabled="copyLoading" :model-value="TreeState.LeftInfo.driveType" placeholder="请选择" style="margin-right: 12px" @change="handleLeftUser">
           <a-option value="pic"> 相册 </a-option>
           <a-option value="pan"> 网盘 </a-option>
         </a-select>
         <span class="checkedInfo" style="margin-right: 12px">复制到</span>
-        <a-select size="small" tabindex="-1" :style="{ width: '130px' }" :disabled="CopyLoading" :model-value="TreeState.RightInfo.drive_type" @update:model-value="handleRightUser" placeholder="请选择" style="margin-right: 12px">
+        <a-select size="small" tabindex="-1" :style="{ width: '130px' }" :disabled="copyLoading" :model-value="TreeState.RightInfo.driveType" placeholder="请选择" style="margin-right: 12px" @update:model-value="handleRightUser">
           <a-option value="pic"> 相册 </a-option>
           <a-option value="pan"> 网盘 </a-option>
         </a-select>
 
         <div style="flex: auto"></div>
-        <a-button v-if="CopyLoading" size="small" tabindex="-1" @click="handleReset" style="margin-right: 12px">取消</a-button>
-        <a-button type="primary" size="small" tabindex="-1" @click="handleCopy" :loading="CopyLoading">开始复制</a-button>
+        <a-button v-if="copyLoading" size="small" tabindex="-1" style="margin-right: 12px" @click="handleReset">取消</a-button>
+        <a-button type="primary" size="small" tabindex="-1" :loading="copyLoading" @click="handleCopy">开始复制</a-button>
       </a-row>
 
-      <a-split :style="{ height: TreeHeight + 36 + 'px', width: '100%' }" min="300px" max="0.8">
+      <a-split :style="{ height: treeHeight + 36 + 'px', width: '100%' }" min="300px" max="0.8">
         <template #first>
           <div class="rsscopymenu">
             <a-button type="text" size="small" tabindex="-1" title="根目录" @click="handleLeftTreeSelect(['root'])"><i class="iconfont iconhome" /></a-button>
             <a-button type="text" size="small" tabindex="-1" title="返回上级" @click="handleLeftTreeSelect(['back'])"><i class="iconfont iconarrow-top-2-icon-copy" /></a-button>
             <a-button type="text" size="small" tabindex="-1" title="刷新" @click="handleLeftTreeSelect(['refresh'])"><i class="iconfont iconreload-1-icon" /></a-button>
-            <AntdCheckbox tabindex="-1" :disabled="TreeState.LeftInfo.loading" :checked="TreeState.LeftCheckedKeys.length > 0 && TreeState.LeftTreeData.length == TreeState.LeftCheckedKeys.length" @click.stop.prevent="handleSelectAll" style="margin-left: 7px">全选</AntdCheckbox>
+            <AntdCheckbox tabindex="-1" :disabled="TreeState.LeftInfo.loading" :checked="TreeState.LeftCheckedKeys.length > 0 && TreeState.LeftTreeData.length == TreeState.LeftCheckedKeys.length" style="margin-left: 7px" @click.stop.prevent="handleSelectAll">全选</AntdCheckbox>
 
             <span class="checkedInfo" style="margin-left: 8px">已选中 {{ TreeState.LeftCheckedKeys.length }}</span>
           </div>
-          <a-spin :loading="TreeState.LeftInfo.loading" :style="{ width: 'calc(100% + 10px)', height: TreeHeight + 'px', overflow: 'hidden', marginLeft: '-13px' }">
-            <a-empty v-if="TreeState.LeftTreeData.length == 0" description="空文件夹" style="margin-top: 30%" />
+          <a-spin :loading="TreeState.LeftInfo.loading" :style="{ width: 'calc(100% + 10px)', height: treeHeight + 'px', overflow: 'hidden', marginLeft: '-13px' }">
+            <a-empty v-if="TreeState.LeftTreeData.length == 0" description="空文件夹" style="margin-top: 25vh" />
             <AntdTree
               v-else
+              v-model:checkedKeys="TreeState.LeftCheckedKeys"
+              :tree-data="TreeState.LeftTreeData"
               :tabindex="-1"
               :focusable="false"
               class="dirtree"
-              blockNode
+              block-node
               selectable
-              :autoExpandParent="false"
-              showIcon
-              :height="TreeHeight"
-              :style="{ height: TreeHeight + 'px' }"
-              :itemHeight="30"
+              :auto-expand-parent="false"
+              show-icon
+              :height="treeHeight"
+              :style="{ height: treeHeight + 'px' }"
+              :item-height="30"
               checkable
-              :openAnimation="{}"
-              @select="handleLeftTreeSelect"
-              v-model:checkedKeys="TreeState.LeftCheckedKeys"
-              :treeData="TreeState.LeftTreeData"
-            >
+              :open-animation="{}"
+              @select="handleLeftTreeSelect">
               <template #title="{ dataRef }">
                 <span class="dirtitle">{{ dataRef.title }}</span>
               </template>
@@ -204,11 +204,25 @@ const handleRightUser = (drive_type: any) => {
             <a-button type="text" size="small" tabindex="-1" title="根目录" @click="handleRightTreeSelect(['root'])"><i class="iconfont iconhome" /></a-button>
             <a-button type="text" size="small" tabindex="-1" title="返回上级" @click="handleRightTreeSelect(['back'])"><i class="iconfont iconarrow-top-2-icon-copy" /></a-button>
             <a-button type="text" size="small" tabindex="-1" title="刷新" @click="handleRightTreeSelect(['refresh'])"><i class="iconfont iconreload-1-icon" /></a-button>
-            <span class="checkedInfo" style="margin-left: 8px; color: rgb(var(--success-6))">复制到 {{ TreeState.RightInfo.dir_name }}</span>
+            <span class="checkedInfo" style="margin-left: 8px; color: rgb(var(--success-6))">复制到 {{ TreeState.RightInfo.dirName }}</span>
           </div>
-          <a-spin :loading="TreeState.RightInfo.loading" :style="{ width: 'calc(100% + 10px)', height: TreeHeight + 'px', overflow: 'hidden', marginLeft: '-18px' }">
-            <a-empty v-if="TreeState.RightTreeData.length == 0" description="空文件夹" style="margin-top: 30%" />
-            <AntdTree v-else :tabindex="-1" :focusable="false" class="dirtree" blockNode selectable :autoExpandParent="false" showIcon :height="TreeHeight" :style="{ height: TreeHeight + 'px' }" :itemHeight="30" :openAnimation="{}" @select="handleRightTreeSelect" :treeData="TreeState.RightTreeData">
+          <a-spin :loading="TreeState.RightInfo.loading" :style="{ width: 'calc(100% + 10px)', height: treeHeight + 'px', overflow: 'hidden', marginLeft: '-18px' }">
+            <a-empty v-if="TreeState.RightTreeData.length == 0" description="空文件夹" style="margin-top: 25vh" />
+            <AntdTree
+              v-else
+              :tabindex="-1"
+              :focusable="false"
+              class="dirtree"
+              block-node
+              selectable
+              :auto-expandparent="false"
+              show-icon
+              :height="treeHeight"
+              :style="{ height: treeHeight + 'px' }"
+              :item-height="30"
+              :open-animation="{}"
+              :tree-data="TreeState.RightTreeData"
+              @select="handleRightTreeSelect">
               <template #title="{ dataRef }">
                 <span class="dirtitle">{{ dataRef.title }}</span>
               </template>

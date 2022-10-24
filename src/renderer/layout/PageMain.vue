@@ -31,9 +31,14 @@ DebugLog.aLoadFromDB()
 const handleHideClick = (_e: any) => {
   if (window.WebToElectron) window.WebToElectron({ cmd: useSettingStore().uiExitOnClose ? 'exit' : 'close' })
 }
+const handleMinClick = (_e: any) => {
+  if (window.WebToElectron) window.WebToElectron({ cmd: 'minsize' })
+}
 
 const handleHelpPage = () => {
-  const ourl = B64decode(useServerStore().HelpUrl)
+  window.WebOpenWindow({ page: 'PageHelp', theme: 'dark' })
+  return
+  const ourl = B64decode(useServerStore().helpUrl)
   if (ourl) openExternal(ourl)
 }
 
@@ -46,7 +51,8 @@ keyboardStore.$subscribe((_m: any, state: KeyboardState) => {
   if (TestAlt('4', state.KeyDownEvent, () => appStore.toggleTab('share'))) return
   if (TestAlt('5', state.KeyDownEvent, () => appStore.toggleTab('rss'))) return
   if (TestAlt('6', state.KeyDownEvent, () => appStore.toggleTab('setting'))) return
-  if (TestAlt('f4', state.KeyDownEvent, () => handleHideClick(null))) return
+  if (TestAlt('f4', state.KeyDownEvent, () => handleHideClick(undefined))) return
+  if (TestAlt('m', state.KeyDownEvent, () => handleMinClick(undefined))) return
 
   if (TestShift('tab', state.KeyDownEvent, () => appStore.toggleTabNext())) return
   if (TestCtrl('tab', state.KeyDownEvent, () => appStore.toggleTabNextMenu())) return
@@ -58,17 +64,17 @@ keyboardStore.$subscribe((_m: any, state: KeyboardState) => {
 })
 
 const onResize = throttle(() => {
-  let width = document.body.offsetWidth || 800
-  let height = document.body.offsetHeight || 600
+  const width = document.body.offsetWidth || 800
+  const height = document.body.offsetHeight || 600
 
   if (winStore.width != width || winStore.height != height) winStore.updateStore({ width, height })
-  //let ddsound = document.getElementById('ddsound') as { play: any } | null
-  //if (ddsound) ddsound.play()
+  // let ddsound = document.getElementById('ddsound') as { play: any } | undefined
+  // if (ddsound) ddsound.play()
 }, 50)
 
 const onKeyDown = (event: KeyboardEvent) => {
-  let ele = (event.srcElement || event.target) as any
-  let nodeName = ele && ele.nodeName
+  const ele = (event.srcElement || event.target) as any
+  const nodeName = ele && ele.nodeName
   if (event.key === 'Tab') {
     
     event.preventDefault()
@@ -80,8 +86,8 @@ const onKeyDown = (event: KeyboardEvent) => {
   if (document.body.getElementsByClassName('arco-modal-container').length) return 
   if (event.key == 'Control' || event.key == 'Shift' || event.key == 'Alt' || event.key == 'Meta') return
 
-  let IsInput = nodeName == 'INPUT' || nodeName == 'TEXTAREA' || false
-  if (!IsInput) {
+  const isInput = nodeName == 'INPUT' || nodeName == 'TEXTAREA' || false
+  if (!isInput) {
     onHideRightMenu()
     keyboardStore.KeyDown(event)
   }
@@ -105,7 +111,7 @@ onMounted(() => {
 
   window.addEventListener('click', onHideRightMenu, { passive: true })
 
-  let css = document.getElementById('usercsslink')
+  const css = document.getElementById('usercsslink')
   const csshref = getResourcesPath('theme.css')
   if (css) css.setAttribute('href', 'file:///' + csshref)
 })
@@ -147,6 +153,9 @@ const handleCheckVer = () => {
         <a-button type="text" tabindex="-1" title="设置 Alt+6" :class="appStore.appTab == 'setting' ? 'active' : ''" @click="appStore.toggleTab('setting')">
           <i class="iconfont iconsetting"></i>
         </a-button>
+        <a-button type="text" tabindex="-1" title="最小化 Alt+M" @click="handleMinClick">
+          <i class="iconfont iconzuixiaohua"></i>
+        </a-button>
         <a-button type="text" tabindex="-1" title="关闭 Alt+F4" @click="handleHideClick">
           <i class="iconfont iconclose"></i>
         </a-button>
@@ -164,7 +173,7 @@ const handleCheckVer = () => {
     </a-layout-content>
     <a-layout-footer id="xbyfoot" draggable="false">
       <div id="footer2">
-        <div id="footLoading" v-if="footStore.loadinginfo" class="footerBar fix" style="padding: 0 8px 0 0">
+        <div v-if="footStore.loadingInfo" id="footLoading" class="footerBar fix" style="padding: 0 8px 0 0">
           <div class="arco-spin">
             <div class="arco-spin-icon">
               <svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg" stroke="currentColor" class="arco-icon arco-icon-loading arco-icon-spin" stroke-width="4" stroke-linecap="butt" stroke-linejoin="miter">
@@ -172,7 +181,7 @@ const handleCheckVer = () => {
               </svg>
             </div>
           </div>
-          <span style="margin-right: 8px">{{ footStore.loadinginfo }}</span>
+          <span style="margin-right: 8px">{{ footStore.loadingInfo }}</span>
         </div>
         <div class="footinfo">
           {{ footStore.GetSpaceInfo }}
@@ -181,52 +190,30 @@ const handleCheckVer = () => {
           <audio id="ddsound" src="notify.wav"></audio>
         </div>
         <div :style="{ minWidth: footStore.rightWidth + 'px', display: 'flex', paddingRight: '16px', flexShrink: 0, flexGrow: 0 }">
-          <div class="footinfo">
-            {{ footStore.GetDirInfo }}
-          </div>
           <div class="flexauto"></div>
-          <div v-if="footStore.audiourl" style="width: 300px; display: flex; overflow: hidden">
-            <audio controls autoplay style="width: 360px; height: 24px; margin: 0 -50px 0 -12px" :src="footStore.audiourl">no audio</audio>
+          <div class="footinfo">
+            {{ footStore.GetInfo }}
           </div>
-          <div v-if="footStore.audiourl" class="footerBar fix" @click.stop="handleAudioStop()" title="关闭音频预览" style="cursor: pointer">
+          <div v-if="footStore.audioUrl" style="width: 300px; display: flex; overflow: hidden">
+            <audio controls autoplay style="width: 360px; height: 24px; margin: 0 -50px 0 -12px" :src="footStore.audioUrl">no audio</audio>
+          </div>
+          <div v-if="footStore.audioUrl" class="footerBar fix" title="关闭音频预览" style="cursor: pointer" @click.stop="handleAudioStop()">
             <i class="iconfont iconclose" />
           </div>
-          <a-popover trigger="click" position="top" class="footuploadlist">
-            <div class="footerBar fix" style="cursor: pointer">
-              <i class="iconfont iconshangchuansudu" />
-              <span id="footUploadSpeed"></span>
-            </div>
-            <template #content>
-              <div style="width: 360px; min-height: 120px; max-height: 50vh; overflow-y: auto; overflow-x: hidden">
-                <div v-for="item in footStore.uploadingList" class="asynclistitem">
-                  <div class="asynclistitem-content">
-                    <div class="asynclistitem-name" :title="item.LocalFilePath">
-                      <span class="arco-upload-list-item-file-icon"><i :class="'iconfont ' + item.icon" /></span>
-                      {{ item.name }}
-                    </div>
-                    <span class="asynclistitem-progress asynclistitem-icon-running">{{ item.SpeedStr }}</span>
-                  </div>
-                </div>
-                <a-empty v-if="footStore.uploadingList.length == 0" style="margin-top: 24px">没有正在执行的上传任务</a-empty>
-              </div>
-            </template>
-          </a-popover>
 
-          <a-popover trigger="click" position="top" class="footdownlist">
-            <div class="footerBar fix" style="cursor: pointer">
-              <i class="iconfont iconxiazaisudu" />
-              <span id="footDownSpeed"></span>
-            </div>
-            <template #content>
-              <div style="width: 360px; min-height: 120px; max-height: 50vh; overflow-y: auto; overflow-x: hidden">
-                <a-empty style="margin-top: 24px">没有正在执行的下载任务</a-empty>
-              </div>
-            </template>
-          </a-popover>
+          <div class="footerBar fix">
+            <i class="iconfont iconshangchuansudu" />
+            <span id="footUploadSpeed"></span>
+          </div>
+
+          <div class="footerBar fix">
+            <i class="iconfont iconxiazaisudu" />
+            <span id="footDownSpeed"></span>
+          </div>
 
           <div class="footerBar fix" style="padding: 0 8px; cursor: pointer" @click="handleCheckVer">{{ Config.appVersion }}</div>
 
-          <a-popover trigger="click" position="top" class="asynclist" v-model:popup-visible="footStore.taskVisible">
+          <a-popover v-model:popup-visible="footStore.taskVisible" trigger="click" position="top" class="asynclist">
             <div class="footerBar fix" style="cursor: pointer">
               <span :class="footStore.GetIsRunning ? 'shake' : ''">
                 <i class="iconfont icontongzhiblue" />
@@ -235,7 +222,7 @@ const handleCheckVer = () => {
             </div>
             <template #content>
               <div style="width: 360px; min-height: 120px; max-height: 50vh; overflow-y: auto; overflow-x: hidden">
-                <div v-for="item in footStore.taskList" class="asynclistitem">
+                <div v-for="item in footStore.taskList" :key="item.key" class="asynclistitem">
                   <div class="asynclistitem-content">
                     <div v-if="item.status == 'error'" class="asynclistitem-name danger" :title="item.title">{{ item.title }}</div>
                     <div v-else class="asynclistitem-name" :title="item.title">{{ item.title }}</div>
@@ -444,7 +431,7 @@ a {
 }
 
 .footinfo {
-  padding-left: 8px;
+  padding: 0 8px;
   opacity: 0.9;
 }
 body[arco-theme='dark'] .footinfo {

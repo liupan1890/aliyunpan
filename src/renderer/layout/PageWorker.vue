@@ -10,9 +10,6 @@ const handleHideClick = (_e: any) => {
         <div class="title">阿里云盘</div>
 
         <div class="flexauto"></div>
-        <ShutDown />
-        <UserInfo />
-        <UserLogin />
 
         <a-button type="text" tabindex="-1" @click="handleHideClick">
           <i class="iconfont iconclose"></i>

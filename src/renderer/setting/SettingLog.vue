@@ -8,7 +8,7 @@ import { copyToClipboard } from '../utils/electronhelper'
 const logStore = useLogStore()
 const winStore = useWinStore()
 
-const LogHeight = computed(() => winStore.height - 316)
+const logHeight = computed(() => winStore.height - 316)
 
 const handleSaveLogRefresh = () => {
   DebugLog.aLoadFromDB()
@@ -18,7 +18,7 @@ const handleSaveLogClear = () => {
 }
 const handleSaveLogCopy = () => {
   let logstr = ''
-  let logList = DebugLog.logList
+  const logList = DebugLog.logList
   for (let i = 0, maxi = logList.length; i < maxi; i++) {
     const item = logList[i]
     logstr += item.logtime + ' : ' + item.logtype + ' : ' + item.logmessage + '\n'
@@ -33,16 +33,16 @@ const handleSaveLogCopy = () => {
     <div class="settinghead">:运行日志</div>
 
     <a-list
-      :max-height="LogHeight"
-      :style="{ height: LogHeight + 'px' }"
+      :bordered="false"
+      :max-height="logHeight"
+      :style="{ height: logHeight + 'px' }"
       :data="DebugLog.logList"
       class="loglist"
       :data-refresh="logStore.logTime"
-      :virtualListProps="{
-        height: LogHeight,
+      :virtual-list-props="{
+        height: logHeight,
         threshold: 1
-      }"
-    >
+      }">
       <template #item="{ item, index }">
         <a-list-item :key="index">
           <a-typography-text :type="item.logtype"> [{{ item.logtime }}] </a-typography-text>
@@ -63,8 +63,13 @@ const handleSaveLogCopy = () => {
 </template>
 
 <style>
+.loglist {
+  box-sizing: content-box;
+  border: 1px solid var(--color-neutral-3);
+}
 .loglist .arco-list {
   height: 100%;
+  overflow-y: hidden !important;
 }
 .loglist .arco-list-item {
   padding: 4px 8px !important; /*8px 16px;*/

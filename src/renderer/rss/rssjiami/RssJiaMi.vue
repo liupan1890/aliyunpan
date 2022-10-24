@@ -16,11 +16,11 @@ const passwored = ref('')
 const mode = ref('加密')
 const matchExtList = ref<string[]>([])
 
-const handleAddExtList = (addlist: string[]) => {
-  let list: string[] = []
+const handleAddExtList = (addList: string[]) => {
+  const list: string[] = []
   let ext = ''
-  for (let i = 0, maxi = addlist.length; i < maxi; i++) {
-    ext = addlist[i].toLowerCase().trim()
+  for (let i = 0, maxi = addList.length; i < maxi; i++) {
+    ext = addList[i].toLowerCase().trim()
     while (ext.endsWith(' ') || ext.endsWith('.')) ext = ext.substring(0, ext.length - 1)
     while (ext.startsWith(' ') || ext.startsWith('.')) ext = ext.substr(1)
     if (!ext) continue
@@ -56,9 +56,9 @@ const handleClickXiMa = async () => {
   }
   Loading.value = true
 
-  const RunCount = await DoXiMa(dirPath.value, breakSmall.value, matchExtList.value)
+  const runCount = await DoXiMa(dirPath.value, breakSmall.value, matchExtList.value)
   await Sleep(2000)
-  if (RunCount > 0) message.success('成功加密 ' + RunCount + ' 个文件')
+  if (runCount > 0) message.success('成功加密 ' + runCount + ' 个文件')
   Loading.value = false
 }
 </script>
@@ -68,7 +68,7 @@ const handleClickXiMa = async () => {
     <div class="settingcard">
       <div class="settinghead">加密或解密文件</div>
       <div class="settingrow">
-        <a-radio-group type="button" tabindex="-1" v-model="mode">
+        <a-radio-group v-model="mode" type="button" tabindex="-1">
           <a-radio tabindex="-1" value="加密">加密文件</a-radio>
           <a-radio tabindex="-1" value="解密">解密文件</a-radio>
         </a-radio-group>
@@ -105,7 +105,7 @@ const handleClickXiMa = async () => {
         <div class="settingspace"></div>
         <div class="settinghead">6:设置一个解密的密码</div>
         <div class="settingrow">
-          <a-input tabindex="-1" :style="{ width: '257px' }" placeholder="可以不填" allow-clear v-model="passwored" />
+          <a-input v-model="passwored" tabindex="-1" :style="{ width: '257px' }" placeholder="可以不填" allow-clear />
           <div class="helptxt">默认不填，解密时无需密码直接解密</div>
           <div class="helptxt">可以填写任意字符串，解密时必须输入正确的密码才能解密</div>
         </div>
@@ -114,7 +114,7 @@ const handleClickXiMa = async () => {
         <div class="settingspace"></div>
         <div class="settinghead">2:解密的密码</div>
         <div class="settingrow">
-          <a-input tabindex="-1" :style="{ width: '257px' }" placeholder="没有不填" allow-clear v-model="passwored" />
+          <a-input v-model="passwored" tabindex="-1" :style="{ width: '257px' }" placeholder="没有不填" allow-clear />
           <div class="helptxt">如果文件加密时设置了密码，则解密必须提供密码</div>
         </div>
       </div>

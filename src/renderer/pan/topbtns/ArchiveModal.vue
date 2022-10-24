@@ -12,17 +12,17 @@ import AliFile from '../../aliapi/file'
 import ServerHttp from '../../aliapi/server'
 import AliArchive, { ILinkTxt, ILinkTxtFile } from '../../aliapi/archive'
 import DebugLog from '../../utils/debuglog'
-import { humanSize } from '../../utils/format'
-import { IAliFileItem } from 'src/renderer/aliapi/alimodels'
+import { humanSize, Sleep } from '../../utils/format'
+import { IAliFileItem } from '../../aliapi/alimodels'
 
 interface TreeNodeData {
   key: string
   title: string
-  filename: string
+  fileName: string
   isLeaf: boolean
   children: TreeNodeData[]
   icon: any
-  isdir: boolean
+  isDir: boolean
   size: number
 }
 
@@ -30,49 +30,52 @@ export interface CheckNode {
   file_id: string
   name: string
   halfChecked: boolean
-  isdir: boolean
+  isDir: boolean
   children: CheckNode[]
 }
 
-const foldericonfn = () => h('i', { class: 'iconfont iconfile-folder' })
-const fileiconfn = () => h('i', { class: 'iconfont iconwenjian' })
+const folderIconFn = () => h('i', { class: 'iconfont iconfile-folder' })
+const fileIconFn = () => h('i', { class: 'iconfont iconwenjian' })
 
-function getDirSize(sizeinfo: { size: number; dirCount: number; fileCount: number }, treedata: TreeNodeData[], LinkList: ILinkTxt[], dirmap: Set<string>) {
-  for (let n = 0; n < LinkList.length; n++) {
-    const item = LinkList[n]
+function getDirSize(sizeInfo: { size: number; dirCount: number; fileCount: number }, treeData: TreeNodeData[], linkList: ILinkTxt[], dirMap: Set<string>) {
+  for (let n = 0; n < linkList.length; n++) {
+    const item = linkList[n]
     const children: TreeNodeData[] = []
-    getDirSize(sizeinfo, children, item.DirList, dirmap)
-    sizeinfo.dirCount += item.DirList.length
-    sizeinfo.fileCount += item.FileList.length
-    for (let d = 0; d < item.FileList.length; d++) {
-      let fitem = item.FileList[d] as ILinkTxtFile
-      sizeinfo.size += fitem.Size
+    getDirSize(sizeInfo, children, item.dirList, dirMap)
+    sizeInfo.dirCount += item.dirList.length
+    sizeInfo.fileCount += item.fileList.length
+    for (let d = 0; d < item.fileList.length; d++) {
+      const fileItem = item.fileList[d] as ILinkTxtFile
+      sizeInfo.size += fileItem.size
       children.push({
-        key: fitem.Key,
-        title: fitem.Name + '　 - ' + humanSize(fitem.Size),
-        filename: fitem.Name,
-        icon: fileiconfn,
-        isdir: false,
+        key: fileItem.key,
+        title: fileItem.name + '　 - ' + humanSize(fileItem.size),
+        fileName: fileItem.name,
+        icon: fileIconFn,
+        isDir: false,
         isLeaf: true,
-        size: fitem.Size,
+        size: fileItem.size,
         children: []
-      })
+      } as TreeNodeData)
     }
-    treedata.push({
-      key: item.Key || '',
-      title: item.Name,
-      filename: item.Name,
-      icon: foldericonfn,
-      isdir: true,
+    treeData.push({
+      key: item.key || '',
+      title: item.name,
+      fileName: item.name,
+      icon: folderIconFn,
+      isDir: true,
       isLeaf: false,
       size: 0,
       children
-    })
-    dirmap.add(item.Key || '')
+    } as TreeNodeData)
+    dirMap.add(item.key || '')
   }
 }
 
 export default defineComponent({
+  components: {
+    AntdTree
+  },
   props: {
     visible: {
       type: Boolean,
@@ -103,29 +106,26 @@ export default defineComponent({
       required: true
     }
   },
-  components: {
-    AntdTree
-  },
   setup(props) {
     const winStore = useWinStore()
-    const TreeHeight = computed(() => (winStore.height * 8) / 10 - 126)
+    const treeHeight = computed(() => (winStore.height * 8) / 10 - 126)
     const okLoading = ref(false)
     const saveInfo = ref('')
-    const fileloading = ref(true)
-    const fileinfo = ref<IAliFileItem | undefined>(undefined)
+    const fileLoading = ref(true)
+    const fileInfo = ref<IAliFileItem | undefined>(undefined)
     const handleOpen = async () => {
-      TreeData.value = []
-      TreeExpandedKeys.value = []
-      TreeSelectedKeys.value = []
-      TreeCheckedKeys.value = []
+      treeData.value = []
+      treeExpandedKeys.value = []
+      treeSelectedKeys.value = []
+      treeCheckedKeys.value = []
       saveInfo.value = ''
-      fileinfo.value = await AliFile.ApiFileInfo(props.user_id, props.drive_id, props.file_id)
-      if (!fileinfo.value) {
+      fileInfo.value = await AliFile.ApiFileInfo(props.user_id, props.drive_id, props.file_id)
+      if (!fileInfo.value) {
         message.error('在线解压失败，操作取消')
         return
       }
-      if (useSettingStore().yinsiZipPassword) ServerHttp.PostToServer({ cmd: 'PostZipPwd', sha1: fileinfo.value.content_hash, size: fileinfo.value.size, password: props.password })
-      let resp = await AliArchive.ApiArchiveList(props.user_id, props.drive_id, props.file_id, fileinfo.value.domain_id, fileinfo.value.file_extension || '', props.password)
+      if (useSettingStore().yinsiZipPassword) ServerHttp.PostToServer({ cmd: 'PostZipPwd', sha1: fileInfo.value.content_hash, size: fileInfo.value.size, password: props.password })
+      const resp = await AliArchive.ApiArchiveList(props.user_id, props.drive_id, props.file_id, fileInfo.value.domain_id, fileInfo.value.file_extension || '', props.password)
       if (!resp) {
         message.error('在线预览失败 获取解压信息出错，操作取消')
         return
@@ -135,15 +135,16 @@ export default defineComponent({
         return
       }
       if (resp.state == 'Running') {
-        /** 轮询直到操作成功 */
-        fileloading.value = true
+        
+        fileLoading.value = true
         try {
           while (resp.state == 'Running') {
-            let status = await AliArchive.ApiArchiveStatus(props.user_id, props.drive_id, props.file_id, fileinfo.value.domain_id, resp.task_id)
+            const status = await AliArchive.ApiArchiveStatus(props.user_id, props.drive_id, props.file_id, fileInfo.value.domain_id, resp.task_id)
             if (!status) continue
             if (status.state == 'Running') {
-              /** 更新解压进度信息 */
+              
               saveInfo.value = '正在解析压缩包中，进度 ' + status.progress + '%'
+              await Sleep(500)
               continue
             } else if (status.state == 'Succeed') {
               resp.state = 'Succeed'
@@ -157,49 +158,48 @@ export default defineComponent({
         } catch (err: any) {
           DebugLog.mSaveDanger('解析压缩包出错', err)
         }
-        fileloading.value = false
+        fileLoading.value = false
       }
       if (resp.state != 'Succeed') {
         message.error('解析压缩包失败 ' + resp.state + '，操作取消')
         DebugLog.mSaveDanger('解析压缩包失败 ' + resp.state, props.drive_id + ' ' + props.file_id)
         return
       }
-      fileloading.value = false
-      /** 显示文件列表 */
-      const treelist: TreeNodeData[] = []
-      let sizeinfo = { size: 0, dirCount: 0, fileCount: 0 }
+      fileLoading.value = false
+      
+      const treeList: TreeNodeData[] = []
+      const sizeInfo = { size: 0, dirCount: 0, fileCount: 0 }
       try {
-        resp.file_list.Name = fileinfo.value.name
-        resp.file_list.Size = fileinfo.value.size
-        let dirmap = new Set<string>()
-        getDirSize(sizeinfo, treelist, [resp.file_list], dirmap)
-        Object.freeze(treelist)
-        TreeData.value = treelist
-        TreeExpandedKeys.value = Array.from(dirmap) /** 展开全部 */
-        TreeCheckedKeys.value = Array.from(dirmap) /** 选中全部 */
-       
+        resp.file_list.name = fileInfo.value.name
+        resp.file_list.size = fileInfo.value.size
+        const dirMap = new Set<string>()
+        getDirSize(sizeInfo, treeList, [resp.file_list], dirMap)
+        Object.freeze(treeList)
+        treeData.value = treeList
+        treeExpandedKeys.value = Array.from(dirMap) 
+        treeCheckedKeys.value = Array.from(dirMap) 
       } catch {}
-      saveInfo.value = '包含 ' + sizeinfo.dirCount.toString() + '个文件夹，' + sizeinfo.fileCount.toString() + '个文件，共 ' + humanSize(sizeinfo.size)
+      saveInfo.value = '包含 ' + sizeInfo.dirCount.toString() + '个文件夹，' + sizeInfo.fileCount.toString() + '个文件，共 ' + humanSize(sizeInfo.size)
     }
 
     const handleClose = () => {
-      /** 关闭窗口时，清理数据  */
+      
       if (okLoading.value) okLoading.value = false
 
-      TreeData.value = []
-      TreeExpandedKeys.value = []
-      TreeSelectedKeys.value = []
-      TreeCheckedKeys.value = []
+      treeData.value = []
+      treeExpandedKeys.value = []
+      treeSelectedKeys.value = []
+      treeCheckedKeys.value = []
       saveInfo.value = ''
     }
 
     const treeref = ref()
-    const TreeData = ref<TreeNodeData[]>([])
-    const TreeExpandedKeys = ref<string[]>([])
-    const TreeSelectedKeys = ref<string[]>([])
-    const TreeCheckedKeys = ref<string[]>([])
+    const treeData = ref<TreeNodeData[]>([])
+    const treeExpandedKeys = ref<string[]>([])
+    const treeSelectedKeys = ref<string[]>([])
+    const treeCheckedKeys = ref<string[]>([])
 
-    return { okLoading, fileloading, saveInfo, handleOpen, handleClose, TreeHeight, treeref, treeSelectToExpand, TreeData, TreeExpandedKeys, TreeSelectedKeys, TreeCheckedKeys, fileinfo }
+    return { okLoading, fileLoading, saveInfo, handleOpen, handleClose, treeHeight, treeref, treeSelectToExpand, treeData, treeExpandedKeys, treeSelectedKeys, treeCheckedKeys, fileInfo }
   },
   methods: {
     handleHide() {
@@ -208,20 +208,20 @@ export default defineComponent({
 
     handleOK(savetype: string) {
       const checkedKeys = savetype == 'all' ? [] : this.treeref.checkedKeys
-      const domain_id = (this.fileinfo as IAliFileItem).domain_id || ''
-      const file_extension = (this.fileinfo as IAliFileItem).file_extension || ''
-      modalSelectPanDir('unzip', this.parent_file_id, async (user_id: string, drive_id: string, dir_id: string) => {
-        if (!drive_id || !dir_id) return /** 没有选择，取消  */
+      const domain_id = (this.fileInfo as IAliFileItem).domain_id || ''
+      const file_extension = (this.fileInfo as IAliFileItem).file_extension || ''
+      modalSelectPanDir('unzip', this.parent_file_id, async (user_id: string, drive_id: string, dirID: string) => {
+        if (!drive_id || !dirID) return 
 
-        let result = await AliArchive.ApiArchiveUncompress(this.user_id, this.drive_id, this.file_id, domain_id, file_extension, drive_id, dir_id, this.password, checkedKeys)
+        const result = await AliArchive.ApiArchiveUncompress(this.user_id, this.drive_id, this.file_id, domain_id, file_extension, drive_id, dirID, this.password, checkedKeys)
         if (result) {
           if (result.state == 'Succeed') {
             message.success('在线解压成功')
-            PanDAL.GetDirFileList(user_id, drive_id, dir_id, '')
+            PanDAL.GetDirFileList(user_id, drive_id, dirID, '')
           } else if (result.state == 'Running') {
-            /** 异步执行 */
+            
             message.warning('在线解压异步执行中...')
-            useFootStore().mAddTaskZip(user_id, result.task_id, '解压', this.file_name, drive_id, dir_id, this.drive_id, this.file_id, domain_id)
+            useFootStore().mAddTaskZip(user_id, result.task_id, '解压', this.file_name, drive_id, dirID, this.drive_id, this.file_id, domain_id)
           } else {
             message.error('在线解压出错')
           }
@@ -235,47 +235,48 @@ export default defineComponent({
 </script>
 
 <template>
-  <a-modal :visible="visible" modal-class="modalclass showsharemodal" @cancel="handleHide" @before-open="handleOpen" @close="handleClose" title-align="start" :footer="false" :unmount-on-close="true" :mask-closable="false">
+  <a-modal :visible="visible" modal-class="modalclass showsharemodal" title-align="start" :footer="false" :unmount-on-close="true" :mask-closable="false" @cancel="handleHide" @before-open="handleOpen" @close="handleClose">
     <template #title>
       <div class="modaltitle">
         <span class="onerowtitle">{{ file_name }}</span>
       </div>
     </template>
     <div class="modalbody" style="width: 80vw; max-width: 860px; height: calc(80vh - 100px); padding-bottom: 16px">
-      <AntdTree
-        :tabindex="-1"
-        :focusable="false"
-        ref="treeref"
-        class="sharetree"
-        :checkable="true"
-        blockNode
-        selectable
-        :autoExpandParent="false"
-        showIcon
-        :height="TreeHeight"
-        :style="{ height: TreeHeight + 'px' }"
-        :showLine="{ showLeafIcon: false }"
-        @select="treeSelectToExpand"
-        v-model:expandedKeys="TreeExpandedKeys"
-        v-model:selectedKeys="TreeSelectedKeys"
-        v-model:checkedKeys="TreeCheckedKeys"
-        :treeData="TreeData"
-      >
-        <template #switcherIcon>
-          <i class="ant-tree-switcher-icon iconfont Arrow" />
-        </template>
-        <template #title="{ dataRef }">
-          <span class="sharetitleleft">{{ dataRef.title }}</span>
-          <span class="sharetitleright">{{ dataRef.sizestr }}</span>
-        </template>
-      </AntdTree>
+      <a-spin :loading="fileLoading" :style="{ width: 'calc(100%)', height: '100%', overflow: 'hidden' }" :tip="saveInfo">
+        <AntdTree
+          ref="treeref"
+          v-model:expandedKeys="treeExpandedKeys"
+          v-model:selectedKeys="treeSelectedKeys"
+          v-model:checkedKeys="treeCheckedKeys"
+          :tree-data="treeData"
+          :tabindex="-1"
+          :focusable="false"
+          class="sharetree"
+          :checkable="true"
+          block-node
+          selectable
+          :auto-expand-parent="false"
+          show-icon
+          :height="treeHeight"
+          :style="{ height: treeHeight + 'px' }"
+          :show-line="{ showLeafIcon: false }"
+          @select="treeSelectToExpand">
+          <template #switcherIcon>
+            <i class="ant-tree-switcher-icon iconfont Arrow" />
+          </template>
+          <template #title="{ dataRef }">
+            <span class="sharetitleleft">{{ dataRef.title }}</span>
+            <span class="sharetitleright">{{ dataRef.sizeStr }}</span>
+          </template>
+        </AntdTree>
+      </a-spin>
     </div>
     <div class="modalfoot">
       <div class="tips">{{ saveInfo }}</div>
       <div style="flex-grow: 1"></div>
       <a-button v-if="!okLoading" type="outline" size="small" tabindex="-1" @click="handleHide">取消</a-button>
-      <a-button :disabled="fileloading" type="outline" size="small" tabindex="-1" :loading="okLoading" @click="() => handleOK('check')">解压勾选的</a-button>
-      <a-button :disabled="fileloading" type="primary" size="small" tabindex="-1" :loading="okLoading" @click="() => handleOK('all')">解压全部</a-button>
+      <a-button :disabled="fileLoading" type="outline" size="small" tabindex="-1" :loading="okLoading" @click="() => handleOK('check')">解压勾选的</a-button>
+      <a-button :disabled="fileLoading" type="primary" size="small" tabindex="-1" :loading="okLoading" @click="() => handleOK('all')">解压全部</a-button>
     </div>
   </a-modal>
 </template>

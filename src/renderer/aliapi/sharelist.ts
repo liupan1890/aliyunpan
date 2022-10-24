@@ -15,7 +15,7 @@ export interface IAliShareResp {
 }
 export default class AliShareList {
   
-  static async ApiShareListAll(user_id: string) {
+  static async ApiShareListAll(user_id: string): Promise<IAliShareResp> {
     const dir: IAliShareResp = {
       items: [],
       itemsKey: new Set(),
@@ -25,17 +25,17 @@ export default class AliShareList {
     }
 
     do {
-      const isget = await AliShareList.ApiShareListOnePage(dir)
-      if (isget != true) {
+      const isGet = await AliShareList.ApiShareListOnePage(dir)
+      if (isGet != true) {
         break 
       }
     } while (dir.next_marker)
     return dir
   }
 
-  static async ApiShareListOnePage(dir: IAliShareResp) {
+  static async ApiShareListOnePage(dir: IAliShareResp): Promise<boolean> {
     const url = 'adrive/v3/share_link/list'
-    const postdata = {
+    const postData = {
       
       marker: dir.next_marker,
       creator: dir.m_user_id,
@@ -43,26 +43,26 @@ export default class AliShareList {
       order_by: 'created_at',
       order_direction: 'DESC'
     }
-    const resp = await AliHttp.Post(url, postdata, dir.m_user_id, '')
+    const resp = await AliHttp.Post(url, postData, dir.m_user_id, '')
     return AliShareList._ShareListOnePage(dir, resp)
   }
 
-  static _ShareListOnePage(dir: IAliShareResp, resp: IUrlRespData) {
+  static _ShareListOnePage(dir: IAliShareResp, resp: IUrlRespData): boolean {
     try {
       if (AliHttp.IsSuccess(resp.code)) {
         dir.next_marker = resp.body.next_marker
-        const downurl = 'https://api.aliyundrive.com/v2/file/download?t=' + Date.now().toString()
-        const timenow = new Date().getTime()
+        const downUrl = 'https://api.aliyundrive.com/v2/file/download?t=' + Date.now().toString()
+        const timeNow = new Date().getTime()
         for (let i = 0, maxi = resp.body.items.length; i < maxi; i++) {
           const item = resp.body.items[i] as IAliShareItem
           if (dir.itemsKey.has(item.share_id)) continue
           let icon = 'iconwenjian'
-          let first_file = undefined
+          let first_file
           if (item.first_file) {
-            first_file = AliDirFileList.getFileInfo(item.first_file, downurl)
+            first_file = AliDirFileList.getFileInfo(item.first_file, downUrl)
             icon = first_file.icon || 'iconwenjian'
           }
-          const add = Object.assign({}, item, { first_file, icon })
+          const add = Object.assign({}, item, { first_file, icon }) as IAliShareItem
           if (!add.share_msg) add.share_msg = ''
           if (!add.share_name) add.share_name = 'share_name'
           if (!add.share_pwd) add.share_pwd = ''
@@ -76,7 +76,7 @@ export default class AliShareList {
             add.created_at = ''
           }
 
-          add.share_msg = humanExpiration(item.expiration, timenow)
+          add.share_msg = humanExpiration(item.expiration, timeNow)
           if (item.status == 'forbidden') add.share_msg = '分享违规'
           dir.items.push(add)
           dir.itemsKey.add(add.share_id)
@@ -103,9 +103,9 @@ export default class AliShareList {
     return false
   }
 
-  static async ApiShareListUntilShareID(user_id: string, share_id: string) {
+  static async ApiShareListUntilShareID(user_id: string, share_id: string): Promise<boolean> {
     const url = 'adrive/v3/share_link/list'
-    const postdata = {
+    const postData = {
       
       marker: '',
       creator: user_id,
@@ -114,7 +114,7 @@ export default class AliShareList {
       order_direction: 'DESC'
     }
     for (let j = 0; j < 10; j++) {
-      const resp = await AliHttp.Post(url, postdata, user_id, '')
+      const resp = await AliHttp.Post(url, postData, user_id, '')
       try {
         if (AliHttp.IsSuccess(resp.code)) {
           for (let i = 0, maxi = resp.body.items.length; i < maxi; i++) {

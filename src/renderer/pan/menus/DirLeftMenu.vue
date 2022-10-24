@@ -10,10 +10,10 @@ export default defineComponent({
     const handleRefresh = () => PanDAL.aReLoadOneDirToShow('', 'refresh', false)
     const handleExpandAll = (isExpand: boolean) => {
       const pantreeStore = usePanTreeStore()
-      let drive_id = pantreeStore.drive_id
-      let dir_id = pantreeStore.selectDir.file_id
-      let diridlist = TreeStore.GetDirChildDirID(drive_id, dir_id)
-      pantreeStore.mTreeExpandAll(diridlist, isExpand)
+      const drive_id = pantreeStore.drive_id
+      const file_id = pantreeStore.selectDir.file_id
+      const diridList = TreeStore.GetDirChildDirID(drive_id, file_id)
+      pantreeStore.mTreeExpandAll(diridList, isExpand)
     }
     const istree = true
     return { istree, handleRefresh, handleExpandAll, menuCreatShare, menuTrashSelectFile, menuCopySelectedFile, modalRename, modalShuXing }
@@ -69,7 +69,7 @@ export default defineComponent({
             <template #icon> <i class="iconfont iconcopy" /> </template>
             <template #default>复制到...</template>
           </a-doption>
-          <a-doption @click="() => menuTrashSelectFile(istree, false)" class="danger">
+          <a-doption class="danger" @click="() => menuTrashSelectFile(istree, false)">
             <template #icon> <i class="iconfont icondelete" /> </template>
             <template #default>回收站</template>
           </a-doption>

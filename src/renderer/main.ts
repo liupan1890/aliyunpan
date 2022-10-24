@@ -57,8 +57,6 @@ app.config.errorHandler = function (err: any, vm, info) {
   } catch {}
   return true
 }
-app.config.compilerOptions.isCustomElement = (tag: string) => tag == 'webview'
-app.config.performance = true
 app.use(ArcoVue, {})
 app.use(store)
 app.mount('#app')
@@ -77,26 +75,38 @@ window.Electron.ipcRenderer.on('setPort', (_event: any, args: any) => {
   const [port] = _event.ports
   window.MainPort = port
   port.onmessage = (event: any) => {
-    window.WinMsg(event.data)
+    Promise.resolve().then(() => {
+      try {
+        if (window.WinMsg) window.WinMsg(event.data)
+      } catch {}
+    })
   }
 })
 window.Electron.ipcRenderer.on('setUploadPort', (_event: any, args: any) => {
   const [port] = _event.ports
   window.UploadPort = port
   port.onmessage = (event: any) => {
-    window.WinMsg(event.data)
+    Promise.resolve().then(() => {
+      try {
+        if (window.WinMsg) window.WinMsg(event.data)
+      } catch {}
+    })
   }
 })
 window.Electron.ipcRenderer.on('setDownloadPort', (_event: any, args: any) => {
   const [port] = _event.ports
   window.DownloadPort = port
   port.onmessage = (event: any) => {
-    window.WinMsg(event.data)
+    Promise.resolve().then(() => {
+      try {
+        if (window.WinMsg) window.WinMsg(event.data)
+      } catch {}
+    })
   }
 })
 
 window.Electron.ipcRenderer.on('setPage', (_event: any, args: any) => {
-  console.log('setPage')
+  console.log('setPage', args.page, args)
   const appStore = useAppStore()
   const settingStore = useSettingStore() 
   if (args.theme && settingStore) appStore.toggleTheme(args.theme)
@@ -131,19 +141,5 @@ try {
 
 
 
-
-
-/*
-setTimeout(() => {
-  let list = document.getElementsByTagName('input')
-  for (let i = 0; i < list.length; i++) {
-    list[i].setAttribute('tabindex', '-1')
-  }
-  let list2 = document.getElementsByTagName('button')
-  for (let i = 0; i < list2.length; i++) {
-    list2[i].setAttribute('tabindex', '-1')
-  }
-}, 2000)
-*/
 
 

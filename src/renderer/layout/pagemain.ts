@@ -2,15 +2,17 @@ import ServerHttp from '../aliapi/server'
 import { useAppStore, useFootStore, useSettingStore } from '../store'
 import AppCache from '../utils/appcache'
 import DownDAL from '../down/downdal'
-import UploadDAL from '../down/uploaddal'
+import UploadDAL from '../transfer/uploaddal'
 import ShareDAL from '../share/share/ShareDAL'
 
 import UserDAL from '../user/userdal'
 import DebugLog from '../utils/debuglog'
 import PanDAL from '../pan/pandal'
+import UploadingDAL from '../transfer/uploadingdal'
+import { Sleep } from '../utils/format'
 
 export function PageMain() {
-  if (window.WinMsg !== undefined) return
+  if (window.WinMsg) return
   window.WinMsg = WinMsg
   useSettingStore().WebSetProxy()
   Promise.resolve()
@@ -24,10 +26,11 @@ export function PageMain() {
       })
     })
     .then(async () => {
+      await Sleep(500)
       await DownDAL.aReloadDowning().catch((err: any) => {
         DebugLog.mSaveDanger('aReloadDowning', err)
       })
-      await UploadDAL.aReloadUploading().catch((err: any) => {
+      await UploadingDAL.aReloadUploading().catch((err: any) => {
         DebugLog.mSaveDanger('aReloadUploading', err)
       })
 
@@ -37,9 +40,10 @@ export function PageMain() {
       await UploadDAL.aReloadUploaded().catch((err: any) => {
         DebugLog.mSaveDanger('aReloadUploaded', err)
       })
+      await Sleep(500)
       
       await AppCache.aLoadCacheSize().catch((err: any) => {
-        DebugLog.mSaveDanger('AppCacheDALLDB', err)
+        DebugLog.mSaveDanger('AppCacheDALDB', err)
       })
 
       setTimeout(timeEvent, 1000) 
@@ -51,11 +55,11 @@ export function PageMain() {
 
 export const WinMsg = function (arg: any) {
   if (arg.cmd == 'MainUploadEvent') {
-    UploadDAL.aUploadEvent(arg.ReportList, arg.ErrorList, arg.SuccessList, arg.RunningKeys, arg.SpeedTotal)
-  } else if (arg.cmd == 'MainUploadDir') {
-    const parentid = arg.parentid as string
-    const Info = arg.Info
-    UploadDAL.UploadLocalDir(Info.user_id, Info.drive_id, parentid, Info.LocalFilePath)
+    if (arg.ReportList.length > 0 && arg.ReportList.length != arg.RunningKeys.length) console.log('RunningKeys', arg)
+    if (arg.StopKeys.length > 0) console.log('StopKeys', arg)
+    UploadingDAL.aUploadingEvent(arg.ReportList, arg.ErrorList, arg.SuccessList, arg.RunningKeys, arg.StopKeys, arg.LoadingKeys, arg.SpeedTotal)
+  } else if (arg.cmd == 'MainUploadAppendFiles') {
+    UploadingDAL.aUploadingAppendFiles(arg.TaskID, arg.UploadID, arg.CreatedDirID, arg.AppendList)
   } else if (arg.cmd == 'MainSaveAllDir') {
     PanDAL.aReLoadDriveSave(arg.OneDriver, arg.ErrorMessage)
   } else if (arg.cmd == 'MainShowAllDirProgress') {
@@ -75,7 +79,7 @@ let chkTaskTime = 0
 function timeEvent() {
   const settingStore = useSettingStore()
 
-  let nowTime = Math.floor(Date.now() / 1000)
+  const nowTime = Math.floor(Date.now() / 1000)
 
   
   if (nowTime - runTime > 60 * 60 * 24) {
@@ -143,7 +147,7 @@ function timeEvent() {
   })
   
   if (settingStore.downAutoShutDown == 2) {
-    if (DownDAL.QueryIsDowning() == false && UploadDAL.QueryIsUploading() == false) {
+    if (DownDAL.QueryIsDowning() == false && UploadingDAL.QueryIsUploading() == false) {
       settingStore.downAutoShutDown = 0 
       useAppStore().appShutDown = true 
     }

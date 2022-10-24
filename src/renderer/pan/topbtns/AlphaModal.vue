@@ -3,8 +3,6 @@ import { defineComponent, ref } from 'vue'
 
 export default defineComponent({
   setup(props) {
-    //let has = localStorage.getItem('alphamodal')
-    //console.log('alphamodal', has)
     const visible = ref(false)
     return { visible }
   },
@@ -22,7 +20,7 @@ export default defineComponent({
 </script>
 
 <template>
-  <a-modal :visible="visible" modal-class="modalclass alphamodal" :mask="false" @cancel="handleHide" :footer="false" :unmount-on-close="true" :mask-closable="false">
+  <a-modal :visible="visible" modal-class="modalclass alphamodal" :mask="false" :footer="false" :unmount-on-close="true" :mask-closable="false" @cancel="handleHide">
     <template #title>
       <span class="modaltitle">alpha</span>
     </template>
@@ -59,7 +57,7 @@ export default defineComponent({
   -webkit-background-clip: text;
   background-clip: text;
   -webkit-text-fill-color: transparent;
-  -webkit-box-decoration-break: clone;
+  box-decoration-break: clone;
   font-weight: bold;
 }
 .alphadesc {

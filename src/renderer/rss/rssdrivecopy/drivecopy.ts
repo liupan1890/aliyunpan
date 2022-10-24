@@ -6,25 +6,26 @@ import AliTrash from '../../aliapi/trash'
 
 export interface ICopyTreeInfo {
   user_id: string
-  drive_type: string
   drive_id: string
-  dir_id: string
-  dir_name: string
-  parent_id: string
+  driveType: string
+  dirID: string
+  dirName: string
+  parentID: string
   loading: boolean
-  onlydir: boolean
+  onlyDir: boolean
 }
-export function NewCopyTreeInfo(onlydir: boolean) {
-  return {
+export function NewCopyTreeInfo(onlyDir: boolean) {
+  const info: ICopyTreeInfo = {
     user_id: '',
-    drive_type: '',
+    driveType: '',
     drive_id: '',
-    dir_id: '',
-    dir_name: '',
-    parent_id: '',
+    dirID: '',
+    dirName: '',
+    parentID: '',
     loading: false,
-    onlydir: onlydir
+    onlyDir: onlyDir
   }
+  return info
 }
 
 export interface ICopyTreeNode {
@@ -36,39 +37,39 @@ export interface ICopyTreeNode {
   children?: ICopyTreeNode[]
 }
 
-export async function LoadDir(dir_id: string, DirData: ICopyTreeInfo, TreeData: ICopyTreeNode[], disabledfile: boolean) {
+export async function LoadDir(dirID: string, DirData: ICopyTreeInfo, treeData: ICopyTreeNode[], disabledFile: boolean): Promise<void> {
   DirData.loading = true
-  if (!dir_id) dir_id = 'root'
-  if (dir_id.startsWith('dir_')) dir_id = dir_id.substring('dir_'.length)
-  if (dir_id == 'root') {
-    DirData.dir_id = 'root'
-    DirData.dir_name = '根目录'
-    DirData.parent_id = 'root'
+  if (!dirID) dirID = 'root'
+  if (dirID.startsWith('dir_')) dirID = dirID.substring('dir_'.length)
+  if (dirID == 'root') {
+    DirData.dirID = 'root'
+    DirData.dirName = '根目录'
+    DirData.parentID = 'root'
   } else {
-    let getdir = await AliFile.ApiFileInfo(DirData.user_id, DirData.drive_id, dir_id)
-    if (getdir) {
-      DirData.dir_id = getdir.file_id
-      DirData.dir_name = getdir.name
-      DirData.parent_id = getdir.parent_file_id
+    const getDir = await AliFile.ApiFileInfo(DirData.user_id, DirData.drive_id, dirID)
+    if (getDir) {
+      DirData.dirID = getDir.file_id
+      DirData.dirName = getDir.name
+      DirData.parentID = getDir.parent_file_id
     } else {
       message.error('读取文件夹信息失败')
     }
   }
 
-  let resp = await AliTrash.ApiDirFileListNoLock(DirData.user_id, DirData.drive_id, dir_id, '', '', '')
+  const resp = await AliTrash.ApiDirFileListNoLock(DirData.user_id, DirData.drive_id, dirID, '', '', '')
   DirData.loading = false
-  let list: ICopyTreeNode[] = []
-  let items = resp.items
+  const list: ICopyTreeNode[] = []
+  const items = resp.items
   let item: IAliGetFileModel
   for (let i = 0, maxi = items.length; i < maxi; i++) {
     item = items[i]
     list.push({
-      key: (item.isdir ? 'dir_' : 'file_') + item.file_id,
+      key: (item.isDir ? 'dir_' : 'file_') + item.file_id,
       title: item.name,
-      disabled: item.isdir ? false : disabledfile,
-      icon: item.isdir ? foldericonfn : fileiconfn,
+      disabled: item.isDir ? false : disabledFile,
+      icon: item.isDir ? foldericonfn : fileiconfn,
       download_url: ''
-    })
+    } as ICopyTreeNode)
   }
-  TreeData.splice(0, TreeData.length, ...list)
+  treeData.splice(0, treeData.length, ...list)
 }

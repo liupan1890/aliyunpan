@@ -5,8 +5,6 @@ import { GetSelectedList, GetFocusNext, SelectAll, MouseSelectOne, KeyboardSelec
 import { HanToPin } from '../../utils/utils'
 
 type Item = IAliMyFollowingModel
-type State = MyFollowingState
-const KEY = 'user_id'
 
 export interface MyFollowingState {
   
@@ -30,6 +28,9 @@ export interface MyFollowingState {
   
   FollowingKeys: Set<string>
 }
+
+type State = MyFollowingState
+const KEY = 'user_id'
 
 const useMyFollowingStore = defineStore('myfollowing', {
   state: (): State => ({
@@ -75,20 +76,25 @@ const useMyFollowingStore = defineStore('myfollowing', {
       }
       this.ListDataRaw = list
       
-      let oldSelected = this.ListSelected
-      let newSelected = new Set<string>()
-      let map = new Set<string>()
+      const oldSelected = this.ListSelected
+      const newSelected = new Set<string>()
+      const map = new Set<string>()
       let key = ''
       let findFocusKey = false
-      let ListFocusKey = this.ListFocusKey
+      let findSelectKey = false
+      let listFocusKey = this.ListFocusKey
+      let listSelectKey = this.ListSelectKey
       for (let i = 0, maxi = list.length; i < maxi; i++) {
         key = list[i][KEY]
         if (oldSelected.has(key)) newSelected.add(key) 
-        if (key == ListFocusKey) findFocusKey = true
+        if (key == listFocusKey) findFocusKey = true
+        if (key == listSelectKey) findSelectKey = true
         map.add(key) 
       }
+      if (!findFocusKey) listFocusKey = ''
+      if (!findSelectKey) listSelectKey = ''
       
-      this.$patch({ FollowingKeys: map, ListSelected: newSelected, ListFocusKey: findFocusKey ? ListFocusKey : '', ListSelectKey: '', ListSearchKey: '' })
+      this.$patch({ FollowingKeys: map, ListSelected: newSelected, ListFocusKey: listFocusKey, ListSelectKey: listSelectKey, ListSearchKey: '' })
       this.mRefreshListDataShow(true) 
     },
     
@@ -98,24 +104,24 @@ const useMyFollowingStore = defineStore('myfollowing', {
       this.mRefreshListDataShow(true) 
     },
     
-    mSetFollowing(followingid: string, following: boolean) {
+    mSetFollowing(followingid: string, isFollowing: boolean) {
       
-      if (following) this.FollowingKeys.add(followingid)
+      if (isFollowing) this.FollowingKeys.add(followingid)
       else if (this.FollowingKeys.has(followingid)) this.FollowingKeys.delete(followingid)
       
-      if (following) {
+      if (isFollowing) {
         
       } else {
         
-        let listnew: Item[] = []
-        const listold = this.ListDataRaw 
-        for (let i = 0, maxi = listold.length; i < maxi; i++) {
-          if (listold[i].user_id !== followingid) {
-            listnew.push(listold[i])
+        const listNew: Item[] = []
+        const listOld = this.ListDataRaw 
+        for (let i = 0, maxi = listOld.length; i < maxi; i++) {
+          if (listOld[i].user_id !== followingid) {
+            listNew.push(listOld[i])
           }
         }
-        if (listnew.length != listold.length) {
-          this.ListDataRaw = listnew
+        if (listNew.length != listOld.length) {
+          this.ListDataRaw = listNew
           this.mRefreshListDataShow(true) 
         }
         if (this.ListSelected.has(followingid)) this.ListSelected.delete(followingid) 
@@ -124,37 +130,37 @@ const useMyFollowingStore = defineStore('myfollowing', {
     
     mRefreshListDataShow(refreshRaw: boolean) {
       if (!refreshRaw) {
-        let ListDataShow = this.ListDataShow.concat() 
-        Object.freeze(ListDataShow)
-        this.ListDataShow = ListDataShow
+        const listDataShow = this.ListDataShow.concat() 
+        Object.freeze(listDataShow)
+        this.ListDataShow = listDataShow
         return
       }
       if (this.ListSearchKey) {
         
-        let searchlist: Item[] = []
-        let results = fuzzysort.go(this.ListSearchKey, this.ListDataRaw, {
+        const searchList: Item[] = []
+        const results = fuzzysort.go(this.ListSearchKey, this.ListDataRaw, {
           threshold: -200000,
           keys: ['nick_name', 'SearchName', 'description'],
           scoreFn: (a) => Math.max(a[0] ? a[0].score : -200000, a[1] ? a[1].score : -200000, a[2] ? a[2].score - 100 : -200000)
         })
         for (let i = 0, maxi = results.length; i < maxi; i++) {
-          if (results[i].score > -200000) searchlist.push(results[i].obj)
+          if (results[i].score > -200000) searchList.push(results[i].obj)
         }
-        Object.freeze(searchlist)
-        this.ListDataShow = searchlist
+        Object.freeze(searchList)
+        this.ListDataShow = searchList
       } else {
         
-        let ListDataShow = this.ListDataRaw.concat() 
-        Object.freeze(ListDataShow)
-        this.ListDataShow = ListDataShow
+        const listDataShow = this.ListDataRaw.concat() 
+        Object.freeze(listDataShow)
+        this.ListDataShow = listDataShow
       }
       
-      let freezelist = this.ListDataShow
-      let oldSelected = this.ListSelected
-      let newSelected = new Set<string>()
+      const freezeList = this.ListDataShow
+      const oldSelected = this.ListSelected
+      const newSelected = new Set<string>()
       let key = ''
-      for (let i = 0, maxi = freezelist.length; i < maxi; i++) {
-        key = freezelist[i][KEY]
+      for (let i = 0, maxi = freezeList.length; i < maxi; i++) {
+        key = freezeList[i][KEY]
         if (oldSelected.has(key)) newSelected.add(key) 
       }
       this.ListSelected = newSelected
@@ -166,13 +172,13 @@ const useMyFollowingStore = defineStore('myfollowing', {
     },
     mMouseSelect(key: string, Ctrl: boolean, Shift: boolean) {
       if (this.ListDataShow.length == 0) return
-      const data = MouseSelectOne(this.ListDataShow, KEY, this.ListSelected, this.ListFocusKey, this.ListSelectKey, key, Ctrl, Shift)
+      const data = MouseSelectOne(this.ListDataShow, KEY, this.ListSelected, this.ListFocusKey, this.ListSelectKey, key, Ctrl, Shift, '')
       this.$patch({ ListSelected: data.selectedNew, ListFocusKey: data.focusLast, ListSelectKey: data.selectedLast })
       this.mRefreshListDataShow(false) 
     },
     mKeyboardSelect(key: string, Ctrl: boolean, Shift: boolean) {
       if (this.ListDataShow.length == 0) return
-      const data = KeyboardSelectOne(this.ListDataShow, KEY, this.ListSelected, this.ListFocusKey, this.ListSelectKey, key, Ctrl, Shift)
+      const data = KeyboardSelectOne(this.ListDataShow, KEY, this.ListSelected, this.ListFocusKey, this.ListSelectKey, key, Ctrl, Shift, '')
       this.$patch({ ListSelected: data.selectedNew, ListFocusKey: data.focusLast, ListSelectKey: data.selectedLast })
       this.mRefreshListDataShow(false) 
     },
@@ -183,7 +189,7 @@ const useMyFollowingStore = defineStore('myfollowing', {
     },
     
     GetSelectedFirst() {
-      let list = GetSelectedList(this.ListDataShow, KEY, this.ListSelected)
+      const list = GetSelectedList(this.ListDataShow, KEY, this.ListSelected)
       if (list.length > 0) return list[0]
       return undefined
     },
@@ -193,12 +199,12 @@ const useMyFollowingStore = defineStore('myfollowing', {
     },
     
     mGetFocus() {
-      if (this.ListFocusKey == '' && this.ListDataShow.length > 0) return this.ListDataShow[0][KEY]
+      if (!this.ListFocusKey && this.ListDataShow.length > 0) return this.ListDataShow[0][KEY]
       return this.ListFocusKey
     },
     
     mGetFocusNext(position: string) {
-      return GetFocusNext(this.ListDataShow, KEY, this.ListFocusKey, position)
+      return GetFocusNext(this.ListDataShow, KEY, this.ListFocusKey, position, '')
     }
   }
 })

@@ -18,17 +18,16 @@ export default defineComponent({
     const okLoading = ref(false)
     const formRef = ref()
     const form = reactive({
-      filename: '',
-      filecontext: ''
+      fileName: '',
+      fileContext: ''
     })
     const handleOpen = () => {
       setTimeout(() => {
-        const autofocus = document.getElementById('CreatNewFileInput')
-        if (autofocus) autofocus.focus()
+        document.getElementById('CreatNewFileInput')?.focus()
       }, 200)
 
-      form.filename = ''
-      form.filecontext = ''
+      form.fileName = ''
+      form.fileContext = ''
     }
 
     const handleClose = () => {
@@ -43,7 +42,7 @@ export default defineComponent({
       { maxLength: 100, message: '文件名太长(100)' },
       {
         validator: (value: string, cb: any) => {
-          let chk = CheckFileName(value)
+          const chk = CheckFileName(value)
           if (chk) cb('文件名' + chk)
         }
       }
@@ -65,14 +64,14 @@ export default defineComponent({
           return
         }
 
-        let newname = ClearFileName(this.form.filename)
-        if (!newname) {
+        const newName = ClearFileName(this.form.fileName)
+        if (!newName) {
           message.error('新建文件失败 文件名不能为空')
           return
         }
 
         this.okLoading = true
-        AliUploadMem.UploadMem(pantreeStore.user_id, pantreeStore.drive_id, pantreeStore.selectDir.file_id, newname, this.form.filecontext)
+        AliUploadMem.UploadMem(pantreeStore.user_id, pantreeStore.drive_id, pantreeStore.selectDir.file_id, newName, this.form.fileContext)
           .then((data) => {
             this.okLoading = false
             if (data && data == 'success') {
@@ -95,18 +94,18 @@ export default defineComponent({
 </script>
 
 <template>
-  <a-modal :visible="visible" modal-class="modalclass" @cancel="handleHide" @close="handleClose" @before-open="handleOpen" :footer="false" :unmount-on-close="true" :mask-closable="false">
+  <a-modal :visible="visible" modal-class="modalclass" :footer="false" :unmount-on-close="true" :mask-closable="false" @cancel="handleHide" @close="handleClose" @before-open="handleOpen">
     <template #title>
       <span class="modaltitle">新建文本文件</span>
     </template>
     <div class="modalbody" style="width: 80vw; max-width: 860px; height: calc(80vh - 100px)">
       <a-form ref="formRef" :model="form" layout="vertical" style="height: 100%; display: flex">
-        <a-form-item field="filename" :rules="rules">
+        <a-form-item field="fileName" :rules="rules">
           <template #label>文件名：<span class="opblue" style="margin-left: 16px; font-size: 12px"> 不要有特殊字符 &lt; > : * ? \\ / \' " </span> </template>
-          <a-input v-model.trim="form.filename" placeholder="例如：今天工作计划.txt" allow-clear :input-attrs="{ id: 'CreatNewFileInput', autofocus: 'autofocus' }" />
+          <a-input v-model.trim="form.fileName" placeholder="例如：今天工作计划.txt" allow-clear :input-attrs="{ id: 'CreatNewFileInput', autofocus: 'autofocus' }" />
         </a-form-item>
-        <a-form-item field="filecontext" label="文件内容：" class="textareafill">
-          <a-textarea v-model="form.filecontext" placeholder="粘贴内容" show-word-limit @keydown="(e) => e.stopPropagation()" />
+        <a-form-item field="fileContext" label="文件内容：" class="textareafill">
+          <a-textarea v-model="form.fileContext" placeholder="粘贴内容" show-word-limit @keydown="(e:any) => e.stopPropagation()" />
         </a-form-item>
       </a-form>
     </div>

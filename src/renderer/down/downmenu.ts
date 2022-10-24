@@ -1,5 +1,6 @@
 import DownDAL from './downdal'
-import UploadDAL from './uploaddal'
+import UploadDAL from '../transfer/uploaddal'
+import UploadingDAL from '../transfer/uploadingdal'
 
 export function topStartDown(isdown: boolean) {
   if (isdown) {
@@ -31,7 +32,7 @@ export function topDeleteDown(isdown: boolean) {
   if (isdown) {
     DownDAL.DowningDelete(false)
   } else {
-    UploadDAL.aUploadingDelete(false)
+    UploadingDAL.aUploadingDelete(false)
   }
 }
 
@@ -39,7 +40,7 @@ export function topDeleteDownAll(isdown: boolean) {
   if (isdown) {
     DownDAL.DowningDelete(true)
   } else {
-    UploadDAL.aUploadingDelete(true)
+    UploadingDAL.aUploadingDelete(true)
   }
 }
 

@@ -16,7 +16,7 @@ export default defineComponent({
   setup(props) {
     const okLoading = ref(false)
 
-    const DriveDetails = ref({
+    const driveDetails = ref({
       drive_used_size: 0,
       drive_total_size: 0,
       default_drive_used_size: 0,
@@ -25,12 +25,12 @@ export default defineComponent({
       sbox_drive_used_size: 0,
       share_album_drive_used_size: 0
     })
-    const CapacityDetails = ref<IAliUserDriveCapacity[]>([])
-    const CapacityDetailsDay = ref<{ day: string; sizestr: string; height: number }[]>([])
+    const capacityDetails = ref<IAliUserDriveCapacity[]>([])
+    const capacityDetailsDay = ref<{ day: string; sizeStr: string; height: number }[]>([])
 
-    const CapacityTotal = ref<{ total: number; last: number }>({ total: 0, last: 0 })
+    const capacityTotal = ref<{ total: number; last: number }>({ total: 0, last: 0 })
 
-    const DriveFileCount = reactive({
+    const driveFileCount = reactive({
       video: 0,
       image: 0,
       audio: 0,
@@ -41,64 +41,63 @@ export default defineComponent({
       file: 0
     })
 
-    const UserVip = ref('')
+    const userVip = ref('')
 
     const handleOpen = async () => {
       const userStore = useUserStore()
       const token = userStore.GetUserToken
-      console.log(token)
-      UserVip.value = (token.vipname || '') + '  ' + (token.vipexpire || '')
-      await AliUser.ApiUserDriveDetails(userStore.userID).then((details) => {
-        DriveDetails.value = details
+      userVip.value = (token.vipname || '') + '  ' + (token.vipexpire || '')
+      await AliUser.ApiUserDriveDetails(userStore.user_id).then((details) => {
+        driveDetails.value = details
       })
 
-      AliUser.ApiUserCapacityDetails(userStore.userID).then((result) => {
-        CapacityDetails.value = result
-        let map: { [key: string]: number } = {}
-        let sizemax = Math.max(1, DriveDetails.value.drive_total_size || 0)
-        let sizetotal = Math.max(1, DriveDetails.value.drive_total_size || 0)
+      AliUser.ApiUserCapacityDetails(userStore.user_id).then((result) => {
+        capacityDetails.value = result
+        const map: { [key: string]: number } = {}
+        const sizeMax = Math.max(1, driveDetails.value.drive_total_size || 0)
+        let sizeTotal = Math.max(1, driveDetails.value.drive_total_size || 0)
 
         for (let i = 0, maxi = result.length; i < maxi; i++) {
-          let item = result[i]
+          const item = result[i]
           if (item.expiredstr == '已过期') continue 
-          let day = humanDateTimeDateStrYMD(item.expired)
+          const day = humanDateTimeDateStrYMD(item.expired)
           if (day) {
-            let size = (map[day] || 0) + item.size
+            const size = (map[day] || 0) + item.size
             map[day] = size
           }
         }
 
-        let keys = Object.keys(map).sort() 
-        let days: { day: string; sizestr: string; height: number }[] = []
-        days.push({ day: '现在', sizestr: humanSize(sizetotal), height: parseFloat(((sizetotal * 100) / sizemax).toFixed(2)) })
+        const keys = Object.keys(map).sort() 
+        const days: { day: string; sizeStr: string; height: number }[] = []
+        days.push({ day: '现在', sizeStr: humanSize(sizeTotal), height: parseFloat(((sizeTotal * 100) / sizeMax).toFixed(2)) })
 
         for (let i = 0, maxi = keys.length; i < maxi; i++) {
-          let day = keys[i]
-          let size = map[day] || 0
-          sizetotal = sizetotal - size
-          days.push({ day, sizestr: humanSize(sizetotal), height: parseFloat(((sizetotal * 100) / sizemax).toFixed(2)) })
+          const day = keys[i]
+          const size = map[day] || 0
+          sizeTotal = sizeTotal - size
+          days.push({ day, sizeStr: humanSize(sizeTotal), height: parseFloat(((sizeTotal * 100) / sizeMax).toFixed(2)) })
         }
-        CapacityTotal.value = { total: sizemax, last: sizetotal }
+        capacityTotal.value = { total: sizeMax, last: sizeTotal }
         while (days.length < 20) {
-          days.push({ day: '', sizestr: humanSize(sizetotal), height: parseFloat(((sizetotal * 100) / sizemax).toFixed(2)) })
+          days.push({ day: '', sizeStr: humanSize(sizeTotal), height: parseFloat(((sizeTotal * 100) / sizeMax).toFixed(2)) })
         }
-        CapacityDetailsDay.value = days
+        capacityDetailsDay.value = days
       })
 
-      AliUser.ApiUserDriveFileCount(userStore.userID, 'video', '').then((total) => (DriveFileCount.video = total))
-      AliUser.ApiUserDriveFileCount(userStore.userID, 'audio', '').then((total) => (DriveFileCount.audio = total))
-      AliUser.ApiUserDriveFileCount(userStore.userID, 'zip', '').then((total) => (DriveFileCount.zip = total))
-      AliUser.ApiUserDriveFileCount(userStore.userID, 'doc', '').then((total) => (DriveFileCount.doc = total))
-      AliUser.ApiUserDriveFileCount(userStore.userID, 'image', '').then((total) => (DriveFileCount.image = total))
-      AliUser.ApiUserDriveFileCount(userStore.userID, 'others', '').then((total) => (DriveFileCount.others = total))
-      AliUser.ApiUserDriveFileCount(userStore.userID, '', 'folder').then((total) => (DriveFileCount.folder = total))
-      AliUser.ApiUserDriveFileCount(userStore.userID, '', 'file').then((total) => (DriveFileCount.file = total))
+      AliUser.ApiUserDriveFileCount(userStore.user_id, 'video', '').then((total) => (driveFileCount.video = total))
+      AliUser.ApiUserDriveFileCount(userStore.user_id, 'audio', '').then((total) => (driveFileCount.audio = total))
+      AliUser.ApiUserDriveFileCount(userStore.user_id, 'zip', '').then((total) => (driveFileCount.zip = total))
+      AliUser.ApiUserDriveFileCount(userStore.user_id, 'doc', '').then((total) => (driveFileCount.doc = total))
+      AliUser.ApiUserDriveFileCount(userStore.user_id, 'image', '').then((total) => (driveFileCount.image = total))
+      AliUser.ApiUserDriveFileCount(userStore.user_id, 'others', '').then((total) => (driveFileCount.others = total))
+      AliUser.ApiUserDriveFileCount(userStore.user_id, '', 'folder').then((total) => (driveFileCount.folder = total))
+      AliUser.ApiUserDriveFileCount(userStore.user_id, '', 'file').then((total) => (driveFileCount.file = total))
     }
 
     const handleClose = () => {
       
       if (okLoading.value) okLoading.value = false
-      DriveDetails.value = {
+      driveDetails.value = {
         drive_used_size: 0,
         drive_total_size: 0,
         default_drive_used_size: 0,
@@ -107,19 +106,19 @@ export default defineComponent({
         sbox_drive_used_size: 0,
         share_album_drive_used_size: 0
       }
-      CapacityDetails.value = []
-      CapacityDetailsDay.value = []
-      CapacityTotal.value = { total: 0, last: 0 }
+      capacityDetails.value = []
+      capacityDetailsDay.value = []
+      capacityTotal.value = { total: 0, last: 0 }
 
-      DriveFileCount.video = 0
-      DriveFileCount.image = 0
-      DriveFileCount.audio = 0
-      DriveFileCount.zip = 0
-      DriveFileCount.doc = 0
-      DriveFileCount.others = 0
+      driveFileCount.video = 0
+      driveFileCount.image = 0
+      driveFileCount.audio = 0
+      driveFileCount.zip = 0
+      driveFileCount.doc = 0
+      driveFileCount.others = 0
     }
 
-    return { okLoading, handleOpen, handleClose, UserVip, DriveDetails, CapacityDetails, CapacityDetailsDay, CapacityTotal, DriveFileCount, humanSize }
+    return { okLoading, handleOpen, handleClose, userVip, driveDetails, capacityDetails, capacityDetailsDay, capacityTotal, driveFileCount, humanSize }
   },
   methods: {
     handleHide() {
@@ -131,46 +130,46 @@ export default defineComponent({
 </script>
 
 <template>
-  <a-modal :visible="visible" modal-class="modalclass userspacemodal" @cancel="handleHide" @before-open="handleOpen" @close="handleClose" :footer="false" :unmount-on-close="true" :mask-closable="false">
+  <a-modal :visible="visible" modal-class="modalclass userspacemodal" :footer="false" :unmount-on-close="true" :mask-closable="false" @cancel="handleHide" @before-open="handleOpen" @close="handleClose">
     <template #title>
       <span class="modaltitle">容量详情</span>
     </template>
     <div class="modalbody" style="width: 660px; height: calc(80vh); overflow-y: auto; padding-right: 6px">
       <a-card :bordered="false">
         <div class="arco-card-header-title">
-          网盘合计<span class="headinfo">{{ UserVip }}</span>
+          网盘合计<span class="headinfo">{{ userVip }}</span>
         </div>
         <div class="mt-5">
-          <b class="font-extrabold text-3xl textjianbian" style="margin-right: 8px"> {{ humanSize(DriveDetails.drive_used_size) }} </b>
-          <b class="mt-0.5 text-sm dark:text-gray-500 text-gray-400"> Total of {{ humanSize(DriveDetails.drive_total_size) }} Used </b>
+          <b class="font-extrabold text-3xl textjianbian" style="margin-right: 8px"> {{ humanSize(driveDetails.drive_used_size) }} </b>
+          <b class="mt-0.5 text-sm dark:text-gray-500 text-gray-400"> Total of {{ humanSize(driveDetails.drive_total_size) }} Used </b>
         </div>
         <div class="mt-5">
           <div class="mb-4 flex h-2.5 items-center rounded bg-light-300 dark:bg-2x-dark-foreground" style="display: flex">
-            <div class="chart-wrapper" :style="{ minWidth: '10px', width: ((DriveDetails.default_drive_used_size * 100) / DriveDetails.drive_total_size).toFixed(2) + '%' }">
+            <div class="chart-wrapper" :style="{ minWidth: '10px', width: ((driveDetails.default_drive_used_size * 100) / driveDetails.drive_total_size).toFixed(2) + '%' }">
               <span class="chart-progress block h-2.5 w-full rounded-tl-lg rounded-bl-lg border-r-2 border-white dark:border-gray-800 border-r-2 border-white dark:border-gray-800 success"></span>
             </div>
-            <div class="chart-wrapper" :style="{ minWidth: '10px', width: ((DriveDetails.album_drive_used_size * 100) / DriveDetails.drive_total_size).toFixed(2) + '%' }">
+            <div class="chart-wrapper" :style="{ minWidth: '10px', width: ((driveDetails.album_drive_used_size * 100) / driveDetails.drive_total_size).toFixed(2) + '%' }">
               <span class="chart-progress block h-2.5 w-full border-r-2 border-white dark:border-gray-800 info"></span>
             </div>
-            <div class="chart-wrapper" :style="{ minWidth: '10px', width: ((DriveDetails.note_drive_used_size * 100) / DriveDetails.drive_total_size).toFixed(2) + '%' }">
+            <div class="chart-wrapper" :style="{ minWidth: '10px', width: ((driveDetails.note_drive_used_size * 100) / driveDetails.drive_total_size).toFixed(2) + '%' }">
               <span class="chart-progress block h-2.5 w-full border-r-2 border-white dark:border-gray-800 purple"></span>
             </div>
-            <div class="chart-wrapper" :style="{ minWidth: '10px', width: ((DriveDetails.sbox_drive_used_size * 100) / DriveDetails.drive_total_size).toFixed(2) + '%' }">
+            <div class="chart-wrapper" :style="{ minWidth: '10px', width: ((driveDetails.sbox_drive_used_size * 100) / driveDetails.drive_total_size).toFixed(2) + '%' }">
               <span class="chart-progress block h-2.5 w-full rounded-tr-lg rounded-br-lg border-r-2 border-white dark:border-gray-800 warning"></span>
             </div>
           </div>
           <footer class="flex w-full items-center overflow-x-auto">
             <div class="label mr-5">
-              <span class="label-dot success"></span> <b class="label-title"> 网盘 </b><span class="label-size">{{ humanSize(DriveDetails.default_drive_used_size) }}</span>
+              <span class="label-dot success"></span> <b class="label-title"> 网盘 </b><span class="label-size">{{ humanSize(driveDetails.default_drive_used_size) }}</span>
             </div>
             <div class="label mr-5">
-              <span class="label-dot info"></span> <b class="label-title"> 相册 </b><span class="label-size">{{ humanSize(DriveDetails.album_drive_used_size) }}</span>
+              <span class="label-dot info"></span> <b class="label-title"> 相册 </b><span class="label-size">{{ humanSize(driveDetails.album_drive_used_size) }}</span>
             </div>
             <div class="label mr-5">
-              <span class="label-dot purple"></span> <b class="label-title"> 笔记 </b><span class="label-size">{{ humanSize(DriveDetails.note_drive_used_size) }}</span>
+              <span class="label-dot purple"></span> <b class="label-title"> 笔记 </b><span class="label-size">{{ humanSize(driveDetails.note_drive_used_size) }}</span>
             </div>
             <div class="label">
-              <span class="label-dot warning"></span> <b class="label-title"> 密码箱 </b><span class="label-size">{{ humanSize(DriveDetails.sbox_drive_used_size) }}</span>
+              <span class="label-dot warning"></span> <b class="label-title"> 密码箱 </b><span class="label-size">{{ humanSize(driveDetails.sbox_drive_used_size) }}</span>
             </div>
           </footer>
         </div>
@@ -179,29 +178,29 @@ export default defineComponent({
       <a-card :bordered="false">
         <div class="arco-card-header-title">
           网盘明细
-          <span class="headinfo">{{ DriveFileCount.folder.toLocaleString() }}个文件夹 / {{ DriveFileCount.file.toLocaleString() }}个文件</span>
+          <span class="headinfo">{{ driveFileCount.folder.toLocaleString() }}个文件夹 / {{ driveFileCount.file.toLocaleString() }}个文件</span>
         </div>
         <div class="mt-5">
           <footer class="flex w-full items-center overflow-x-auto">
             <div class="label mr-5">
-              <span class="label-dot success"></span> <b class="label-title s2"> 视频 </b><span class="label-size">{{ DriveFileCount.video.toLocaleString() }}</span>
+              <span class="label-dot success"></span> <b class="label-title s2"> 视频 </b><span class="label-size">{{ driveFileCount.video.toLocaleString() }}</span>
             </div>
             <div class="label mr-5">
-              <span class="label-dot info"></span> <b class="label-title s2"> 图片 </b><span class="label-size">{{ DriveFileCount.image.toLocaleString() }}</span>
+              <span class="label-dot info"></span> <b class="label-title s2"> 图片 </b><span class="label-size">{{ driveFileCount.image.toLocaleString() }}</span>
             </div>
             <div class="label mr-5">
-              <span class="label-dot purple"></span> <b class="label-title s2"> 音频 </b><span class="label-size">{{ DriveFileCount.audio.toLocaleString() }}</span>
+              <span class="label-dot purple"></span> <b class="label-title s2"> 音频 </b><span class="label-size">{{ driveFileCount.audio.toLocaleString() }}</span>
             </div>
             <div class="label">
-              <span class="label-dot warning"></span> <b class="label-title s2"> 文档 </b><span class="label-size">{{ DriveFileCount.doc.toLocaleString() }}</span>
+              <span class="label-dot warning"></span> <b class="label-title s2"> 文档 </b><span class="label-size">{{ driveFileCount.doc.toLocaleString() }}</span>
             </div>
           </footer>
           <footer class="flex w-full items-center overflow-x-auto">
             <div class="label mr-5">
-              <span class="label-dot danger"></span> <b class="label-title s2"> 压缩包 </b><span class="label-size">{{ DriveFileCount.zip.toLocaleString() }}</span>
+              <span class="label-dot danger"></span> <b class="label-title s2"> 压缩包 </b><span class="label-size">{{ driveFileCount.zip.toLocaleString() }}</span>
             </div>
             <div class="label">
-              <span class="label-dot secondary"></span> <b class="label-title s2"> 其他 </b><span class="label-size">{{ DriveFileCount.others.toLocaleString() }}</span>
+              <span class="label-dot secondary"></span> <b class="label-title s2"> 其他 </b><span class="label-size">{{ driveFileCount.others.toLocaleString() }}</span>
             </div>
           </footer>
         </div>
@@ -212,8 +211,8 @@ export default defineComponent({
         <div class="arco-card-header-title">容量合计</div>
         <div class="mt-5">
           <div class="h-28 flex items-end justify-between">
-            <div v-for="item in CapacityDetailsDay" class="relative flex items-center justify-center cursor-pointer w-2" :style="{ minHeight: '8px', height: item.height + '%' }">
-              <a-tooltip :content="item.day + ' ' + item.sizestr" mini>
+            <div v-for="item in capacityDetailsDay" :key="item.day" class="relative flex items-center justify-center cursor-pointer w-2" :style="{ minHeight: '8px', height: item.height + '%' }">
+              <a-tooltip :content="item.day + ' ' + item.sizeStr" mini>
                 <span v-if="item.day" class="block h-full w-full rounded-lg bg-theme" style="max-width: 8px"></span>
                 <span v-else class="block h-full w-full rounded-lg dark:bg-gray-700 bg-gray-200" style="max-width: 8px"></span>
               </a-tooltip>
@@ -221,11 +220,11 @@ export default defineComponent({
           </div>
 
           <div class="flex items-end justify-between">
-            <span class="capacityDesc">现在{{ humanSize(CapacityTotal.total) }}</span>
+            <span class="capacityDesc">现在{{ humanSize(capacityTotal.total) }}</span>
             <span style="flex: auto"></span>
             <span class="capacityDesc">-- 过期 --></span>
             <span style="flex: auto"></span>
-            <span class="capacityDesc">永久{{ humanSize(CapacityTotal.last) }}</span>
+            <span class="capacityDesc">永久{{ humanSize(capacityTotal.last) }}</span>
           </div>
         </div>
       </a-card>
@@ -234,11 +233,11 @@ export default defineComponent({
         <div class="arco-card-header-title">容量明细</div>
         <div class="mt-5">
           <a-list class="capacitylist" size="small" :bordered="false">
-            <a-list-item v-for="item in CapacityDetails">
+            <a-list-item v-for="(item, index) in capacityDetails" :key="'cd-' + index">
               <div :class="'capacity' + (item.expiredstr == '已过期' ? ' outdate' : '')">
                 <div class="capacityTitle">{{ item.description }}</div>
                 <div style="flex: auto"></div>
-                <div class="capacitySize">{{ item.sizestr }}</div>
+                <div class="capacitySize">{{ item.sizeStr }}</div>
                 <div class="capacityDate">{{ item.expiredstr }}</div>
               </div>
             </a-list-item>

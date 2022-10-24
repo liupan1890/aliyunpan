@@ -1,11 +1,10 @@
 <script lang="ts">
 import { defineComponent, ref } from 'vue'
 import { useWinStore, WinState } from '../store'
-import { throttle } from '../utils/debounce'
 
 export default defineComponent({
   emits: ['splitSize'],
-  setup(props, ctx) {
+  setup() {
     const leftMinWidth = 304
     const rightMinWidth = 380
     const winStore = useWinStore()
@@ -15,20 +14,15 @@ export default defineComponent({
     const splitSizeMax = ref(bodyWidth.value - rightMinWidth)
 
     winStore.$subscribe((_m: any, state: WinState) => {
-      let width = state.width
+      const width = state.width
       if (width > 0 && bodyWidth.value != width) {
         bodyWidth.value = width
         splitSizeMax.value = width - rightMinWidth
-        let tempSize = parseInt(splitSize.value, 10)
+        const tempSize = parseInt(splitSize.value, 10)
         if (tempSize < leftMinWidth) splitSize.value = leftMinWidth.toString() + 'px'
         else if (tempSize > leftMinWidth && tempSize > splitSizeMax.value) splitSize.value = splitSizeMax.value.toString() + 'px'
       }
     })
-
-    const emitsize = throttle(() => {
-      ctx.emit('splitSize', splitSize.value)
-    }, 1000)
-
 
     return { splitSize, leftMinWidth, splitSizeMax, splitMoveing }
   }
@@ -36,7 +30,7 @@ export default defineComponent({
 </script>
 
 <template>
-  <a-split class="MySplit" style="height: 100%; width: 100%" v-model:size="splitSize" :min="leftMinWidth" :max="splitSizeMax" @move-start="splitMoveing = true" @move-end="splitMoveing = false" tabindex="-1">
+  <a-split v-model:size="splitSize" class="MySplit" style="height: 100%; width: 100%" :min="leftMinWidth" :max="splitSizeMax" tabindex="-1" @move-start="splitMoveing = true" @move-end="splitMoveing = false">
     <template #first>
       <slot name="first">first</slot>
     </template>

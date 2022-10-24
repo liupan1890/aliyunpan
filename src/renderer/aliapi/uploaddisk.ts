@@ -1,4 +1,3 @@
-import DB from '../utils/db'
 import { IUploadingUI } from '../utils/dbupload'
 import DebugLog from '../utils/debuglog'
 import { OpenFileHandle } from '../utils/filehelper'
@@ -8,37 +7,42 @@ import AliUpload from './upload'
 import HttpsProxyAgent from 'https-proxy-agent'
 import { SocksProxyAgent } from 'socks-proxy-agent'
 import { useSettingStore } from '../store'
+import DBCache from '../utils/dbcache'
+import UserDAL from '../user/userdal'
+import { Sleep } from '../utils/format'
+import AliUploadHashPool from './uploadhashpool'
 const nodehttps = window.require('https')
-const fs = window.require('fs')
+const path = window.require('path')
 
 
-const fileposMap = new Map<string, number>()
+const filePosMap = new Map<number, number>()
 let UploadSpeedTotal = 0
 export default class AliUploadDisk {
   
-  static async UploadOneFile(uploadinfo: IUploadInfo, item: IUploadingUI): Promise<string> {
-    if (uploadinfo.part_info_list.length > 1) return AliUploadDisk.UploadOneFileBig(uploadinfo, item) 
-    const upload_url = uploadinfo.part_info_list[0].upload_url
-    const filehandle = await OpenFileHandle(item.Task.LocalFilePath)
-    if (filehandle.error) return filehandle.error
+  static async UploadOneFile(uploadInfo: IUploadInfo, fileui: IUploadingUI): Promise<string> {
+    if (uploadInfo.part_info_list.length > 1) return AliUploadDisk.UploadOneFileBig(uploadInfo, fileui) 
+    const upload_url = uploadInfo.part_info_list[0].upload_url
+    const fileHandle = await OpenFileHandle(path.join(fileui.localFilePath, fileui.File.partPath))
+    if (fileHandle.error) return fileHandle.error
 
-    fileposMap.set(item.UploadID, 0)
+    filePosMap.set(fileui.UploadID, 0)
     let isok = ''
     for (let i = 0; i < 3; i++) {
-      isok = await AliUploadDisk.UploadOneFilePartNode(item.Task.user_id, item.UploadID, filehandle.handle, 0, item.Task.size, upload_url)
+      isok = await AliUploadDisk.UploadOneFilePartNode(fileui.user_id, fileui.UploadID, fileHandle.handle, 0, fileui.File.size, upload_url)
       if (isok == 'success') {
         break
       }
     }
-    if (filehandle.handle) await filehandle.handle.close()
+    if (fileHandle.handle) await fileHandle.handle.close()
+
     
-    return AliUpload.UploadFileComplete(item.Task.user_id, item.Task.drive_id, item.Info.up_file_id, item.Info.up_upload_id, item.Task.size)
-      .then((issuccess) => {
-        item.Task.uploaded_file_id = item.Info.up_file_id
-        item.Task.uploaded_is_rapid = false
-        item.Info.up_file_id = ''
-        item.Info.up_upload_id = ''
-        if (issuccess) return 'success'
+    return AliUpload.UploadFileComplete(fileui.user_id, fileui.drive_id, fileui.Info.up_file_id, fileui.Info.up_upload_id, fileui.File.size, uploadInfo.sha1)
+      .then((isSuccess) => {
+        fileui.File.uploaded_file_id = fileui.Info.up_file_id
+        fileui.File.uploaded_is_rapid = false
+        fileui.Info.up_file_id = ''
+        fileui.Info.up_upload_id = ''
+        if (isSuccess) return 'success'
         else return '合并文件时出错，请重试'
       })
       .catch((err: any) => {
@@ -46,23 +50,24 @@ export default class AliUploadDisk {
         return '合并文件时出错，请重试'
       })
   }
+
   
-  static async UploadOneFileBig(uploadinfo: IUploadInfo, file: IUploadingUI): Promise<string> {
-    fileposMap.set(file.UploadID, 0) 
-    const filehandle = await OpenFileHandle(file.Task.LocalFilePath)
-    if (filehandle.error) return filehandle.error
+  static async UploadOneFileBig(uploadInfo: IUploadInfo, fileui: IUploadingUI): Promise<string> {
+    filePosMap.set(fileui.UploadID, 0) 
+    const fileHandle = await OpenFileHandle(path.join(fileui.localFilePath, fileui.File.partPath))
+    if (fileHandle.error) return fileHandle.error
 
-    const filesize = file.Task.size
+    const fileSize = fileui.File.size
 
-    for (let i = 0, maxi = uploadinfo.part_info_list.length; i < maxi; i++) {
-      let part = uploadinfo.part_info_list[i]
+    for (let i = 0, maxi = uploadInfo.part_info_list.length; i < maxi; i++) {
+      let part = uploadInfo.part_info_list[i]
 
-      const partstart = (part.part_number - 1) * part.part_size
-      const partend = partstart + part.part_size
-      const part_size = partend > filesize ? filesize - partstart : part.part_size
+      const partStart = (part.part_number - 1) * part.part_size
+      const partEnd = partStart + part.part_size
+      const part_size = partEnd > fileSize ? fileSize - partStart : part.part_size
 
       if (part.isupload) {
-        fileposMap.set(file.UploadID, partstart + part_size) 
+        filePosMap.set(fileui.UploadID, partStart + part_size) 
       } else {
         
 
@@ -70,44 +75,55 @@ export default class AliUploadDisk {
         const url = part.upload_url
         let expires = url.substring(url.indexOf('x-oss-expires=') + 'x-oss-expires='.length)
         expires = expires.substring(0, expires.indexOf('&'))
-        const lasttime = parseInt(expires) - Date.now() / 1000 
+        const lastTime = parseInt(expires) - Date.now() / 1000 
 
-        if (lasttime < 5 * 60) {
+        if (lastTime < 5 * 60) {
           
-          await AliUpload.UploadFilePartUrl(file.Task.user_id, file.Task.drive_id, file.Info.up_file_id, file.Info.up_upload_id, file.Task.size, uploadinfo).catch(() => {})
-          part = uploadinfo.part_info_list[i]
+          await AliUpload.UploadFilePartUrl(fileui.user_id, fileui.drive_id, fileui.Info.up_file_id, fileui.Info.up_upload_id, fileui.File.size, uploadInfo).catch(() => {})
+          if (uploadInfo.part_info_list.length == 0) return '获取分片信息失败，请重试' 
+          part = uploadInfo.part_info_list[i]
         }
         let isok = ''
         for (let j = 0; j < 3; j++) {
-          isok = await AliUploadDisk.UploadOneFilePartNode(file.Task.user_id, file.UploadID, filehandle.handle, partstart, part_size, part.upload_url)
-          //isok = await AliUploadDisk.UploadOneFilePartNodeXHR(file.File.user_id, file.UploadID, filehandle.handle, partstart, part_size, part.upload_url)
+          isok = await AliUploadDisk.UploadOneFilePartNode(fileui.user_id, fileui.UploadID, fileHandle.handle, partStart, part_size, part.upload_url)
+          // isok = await AliUploadDisk.UploadOneFilePartNodeXHR(file.File.user_id, file.UploadID, fileHandle.handle, partStart, part_size, part.upload_url)
 
           if (isok == 'success') {
             part.isupload = true
             break
           }
-          if (!file.IsRunning) break 
+          if (!fileui.IsRunning) break 
         }
-        if (!file.IsRunning) break 
+        if (!fileui.IsRunning) break 
         if (part.isupload == false) {
-          if (filehandle.handle) await filehandle.handle.close()
+          if (fileHandle.handle) await fileHandle.handle.close()
           return isok 
         }
       }
     }
-    if (filehandle.handle) await filehandle.handle.close()
-    if (!file.IsRunning) return '已暂停' 
+    if (fileHandle.handle) await fileHandle.handle.close()
+    if (!fileui.IsRunning) return '已暂停' 
 
-    for (let i = 0, maxi = uploadinfo.part_info_list.length; i < maxi; i++) {
-      if (uploadinfo.part_info_list[i].isupload == false) {
+    for (let i = 0, maxi = uploadInfo.part_info_list.length; i < maxi; i++) {
+      if (uploadInfo.part_info_list[i].isupload == false) {
         return '有分片上传失败，请重试' 
       }
     }
 
+    if (!uploadInfo.sha1) {
+      if (fileui.File.size >= 1024000) {
+        
+        const prehash = await AliUploadHashPool.GetFilePreHash(path.join(fileui.localFilePath, fileui.File.partPath))
+        if (fileui.File.size >= 10240000 && !prehash.startsWith('error')) {
+          uploadInfo.sha1 = await DBCache.getFileHash(fileui.File.size, fileui.File.mtime, prehash, path.basename(fileui.File.name))
+        }
+      }
+    }
+
     
-    return AliUpload.UploadFileComplete(file.Task.user_id, file.Task.drive_id, file.Info.up_file_id, file.Info.up_upload_id, file.Task.size)
-      .then((issuccess) => {
-        if (issuccess) return 'success'
+    return AliUpload.UploadFileComplete(fileui.user_id, fileui.drive_id, fileui.Info.up_file_id, fileui.Info.up_upload_id, fileui.File.size, uploadInfo.sha1)
+      .then((isSuccess) => {
+        if (isSuccess) return 'success'
         else return '合并文件时出错，请重试'
       })
       .catch((err: any) => {
@@ -117,9 +133,9 @@ export default class AliUploadDisk {
   }
 
   
-  static UploadOneFilePartNode(user_id: string, UploadID: string, filehandle: FileHandle, partstart: number, partsize: number, upload_url: string) {
+  static UploadOneFilePartNode(user_id: string, UploadID: number, fileHandle: FileHandle, partStart: number, partSize: number, upload_url: string): Promise<string> {
     return new Promise<string>(async (resolve) => {
-      let token = await DB.getUser(user_id)
+      const token = await UserDAL.GetUserTokenFromDB(user_id)
       if (!token || !token.access_token) {
         resolve('找不到上传token，请重试')
         return
@@ -132,26 +148,26 @@ export default class AliUploadDisk {
         timeout: 15000 ,
         headers: {
           'Content-Type': '' ,
-          'Content-Length': partsize,
+          'Content-Length': partSize,
           'Transfer-Encoding': 'chunked' ,
           Authorization: token.token_type + ' ' + token.access_token,
           Connection: 'keep-alive' 
         }
       }
 
-      let settingStore = useSettingStore()
-      let proxy = settingStore.proxyUseProxy ? settingStore.getProxy() : undefined
+      const settingStore = useSettingStore()
+      const proxy = settingStore.proxyUseProxy ? settingStore.getProxy() : undefined
       if (proxy) {
         if (settingStore.proxyType.startsWith('http')) {
-          var agenth = HttpsProxyAgent(proxy)
+          const agenth = HttpsProxyAgent(proxy)
           option = Object.assign(option, { agent: agenth })
         } else {
-          var agents = new SocksProxyAgent(proxy)
+          const agents = new SocksProxyAgent(proxy)
           option = Object.assign(option, { agent: agents })
         }
       }
 
-      const winfo = { UploadID, isstop: false, partsize, partstart, buff: Buffer.alloc(40960) }
+      const winfo = { UploadID, isstop: false, partSize, partStart, buff: Buffer.alloc(40960) }
       const req = nodehttps.request(upload_url, option, function (res: any) {
         let _data = ''
         res.on('data', function (chunk: string) {
@@ -177,8 +193,8 @@ export default class AliUploadDisk {
         resolve('分片上传失败，稍后重试' + message)
       })
 
-      while (winfo.partsize > 0 && winfo.isstop == false) {
-        const result = await AliUploadDisk._WriteToRequest(req, filehandle, winfo)
+      while (winfo.partSize > 0 && winfo.isstop == false) {
+        const result = await AliUploadDisk._WriteToRequest(req, fileHandle, winfo)
         if (result != 'success') {
           resolve('读取文件数据失败，请重试')
           break
@@ -188,21 +204,26 @@ export default class AliUploadDisk {
     })
   }
 
-  static async _WriteToRequest(req: any, filehandle: FileHandle, winfo: { UploadID: string; isstop: boolean; partsize: number; partstart: number; buff: Buffer }) {
+  static async _WriteToRequest(req: any, fileHandle: FileHandle, winfo: { UploadID: number; isstop: boolean; partSize: number; partStart: number; buff: Buffer }): Promise<string> {
     return new Promise<string>((resolve) => {
       try {
-        let redlen = Math.min(40960, winfo.partsize)
-        if (redlen != winfo.buff.length) winfo.buff = Buffer.alloc(redlen)
-        filehandle
-          .read(winfo.buff, 0, redlen, winfo.partstart)
+        const redLen = Math.min(40960, winfo.partSize)
+        if (redLen != winfo.buff.length) winfo.buff = Buffer.alloc(redLen)
+        fileHandle
+          .read(winfo.buff, 0, redLen, winfo.partStart)
           .then((rbuff: FileReadResult<Buffer>) => {
-            if (redlen == rbuff.bytesRead) {
-              winfo.partstart += redlen
-              winfo.partsize -= redlen
-              const uploadpos = winfo.partstart
-              req.write(rbuff.buffer, function () {
-                fileposMap.set(winfo.UploadID, uploadpos)
-                UploadSpeedTotal += redlen
+            if (redLen == rbuff.bytesRead) {
+              winfo.partStart += redLen
+              winfo.partSize -= redLen
+              const uploadpos = winfo.partStart
+              req.write(rbuff.buffer, async function () {
+                filePosMap.set(winfo.UploadID, uploadpos)
+                UploadSpeedTotal += redLen
+                window.speedLimte -= redLen
+                for (let i = 0; i < 10; i++) {
+                  if (window.speedLimte <= 0) await Sleep(100)
+                  else break
+                }
                 resolve('success')
               }) 
             } else {
@@ -221,40 +242,40 @@ export default class AliUploadDisk {
     })
   }
 
-  static UploadOneFilePartNodeXHR(user_id: string, UploadID: string, filehandle: FileHandle, partstart: number, partsize: number, upload_url: string) {
+  static UploadOneFilePartNodeXHR(user_id: string, UploadID: number, fileHandle: FileHandle, partStart: number, partSize: number, upload_url: string): Promise<string> {
     return new Promise<string>(async (resolve) => {
-      let token = await DB.getUser(user_id)
+      const token = await UserDAL.GetUserTokenFromDB(user_id)
       if (!token || !token.access_token) {
         resolve('找不到上传token，请重试')
         return
       }
-      const winfo = { UploadID, isstop: false, partsize, partstart, buff: Buffer.alloc(40960) }
-      var client = new XMLHttpRequest()
+      const winfo = { UploadID, isstop: false, partSize: partSize, partStart: partStart, buff: Buffer.alloc(40960) }
+      const client = new XMLHttpRequest()
       client.open('PUT', upload_url)
       client.timeout = 15000
-      client.setRequestHeader('Content-Length', partsize.toString())
+      client.setRequestHeader('ContenpartSize', partSize.toString())
       client.setRequestHeader('Content-Type', '')
       client.onreadystatechange = function () {
         switch (client.readyState) {
-          case 1: //OPENED
-            //do something
+          case 1: // OPENED
+            // do something
             break
-          case 2: //HEADERS_RECEIVED
-            //do something
+          case 2: // HEADERS_RECEIVED
+            // do something
             break
-          case 3: //LOADING
-            //do something
+          case 3: // LOADING
+            // do something
             break
-          case 4: //DONE
-            //do something
+          case 4: // DONE
+            // do something
             break
         }
       }
       client.upload.onprogress = function updateProgress(event) {
         if (event.lengthComputable) {
-          var completedPercent = event.loaded / event.total
-          console.log('onprogress', event)
-          fileposMap.set(winfo.UploadID, partstart + event.loaded)
+          const completedPercent = event.loaded / event.total
+          console.log('onprogress', event, completedPercent)
+          filePosMap.set(winfo.UploadID, partStart + event.loaded)
         }
       }
 
@@ -278,7 +299,7 @@ export default class AliUploadDisk {
         }
       }
 
-      let data = await this._ReadPartBuffer(filehandle, winfo)
+      const data = await this._ReadPartBuffer(fileHandle, winfo)
       if (data != 'success') resolve(data) 
       else {
         try {
@@ -291,15 +312,15 @@ export default class AliUploadDisk {
     })
   }
 
-  static async _ReadPartBuffer(filehandle: FileHandle, winfo: { UploadID: string; isstop: boolean; partsize: number; partstart: number; buff: Buffer }) {
+  static async _ReadPartBuffer(fileHandle: FileHandle, winfo: { UploadID: number; isstop: boolean; partSize: number; partStart: number; buff: Buffer }): Promise<string> {
     return new Promise<string>((resolve) => {
       try {
-        let redlen = winfo.partsize
-        if (redlen != winfo.buff.length) winfo.buff = Buffer.alloc(redlen)
-        filehandle
-          .read(winfo.buff, 0, redlen, winfo.partstart)
+        const redLen = winfo.partSize
+        if (redLen != winfo.buff.length) winfo.buff = Buffer.alloc(redLen)
+        fileHandle
+          .read(winfo.buff, 0, redLen, winfo.partStart)
           .then((rbuff: FileReadResult<Buffer>) => {
-            if (redlen == rbuff.bytesRead) {
+            if (redLen == rbuff.bytesRead) {
               resolve('success')
             } else {
               winfo.isstop = true
@@ -318,18 +339,19 @@ export default class AliUploadDisk {
   }
 
   
-  static GetFileUploadSpeed(UploadID: string) {
-    return fileposMap.get(UploadID) || 0
+  static GetFileUploadSpeed(UploadID: number): number {
+    return filePosMap.get(UploadID) || 0
   }
+
   
-  static DelFileUploadSpeed(UploadID: string) {
-    fileposMap.delete(UploadID)
+  static DelFileUploadSpeed(UploadID: number): void {
+    filePosMap.delete(UploadID)
   }
+
   
-  static GetFileUploadSpeedTotal() {
-    let speed = UploadSpeedTotal + 0
+  static GetFileUploadSpeedTotal(): number {
+    const speed = UploadSpeedTotal + 0
     UploadSpeedTotal = 0
     return speed
   }
 }
-var STREAM_HIGH_WATER_MARK = 512 * 1024 

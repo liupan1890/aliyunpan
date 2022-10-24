@@ -39,31 +39,31 @@ export interface ITokenInfo {
 }
 
 export interface UserState {
-  userID: string
+  user_id: string
   userLogined: boolean
   userShowLogin: boolean
 }
 
 const useUserStore = defineStore('user', {
   state: (): UserState => ({
-    userID: '',
+    user_id: '',
     userLogined: false,
     userShowLogin: false
   }),
 
   getters: {
     GetUserToken(state: UserState): ITokenInfo {
-      return UserDAL.GetUserToken(state.userID)
+      return UserDAL.GetUserToken(state.user_id)
     }
   },
 
   actions: {
-    userLogin(userID: string) {
-      this.userID = userID
+    userLogin(user_id: string) {
+      this.user_id = user_id
       this.userLogined = true
     },
     userLogOff() {
-      this.userID = ''
+      this.user_id = ''
       this.userLogined = false
     }
   }

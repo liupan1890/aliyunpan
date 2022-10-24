@@ -23,8 +23,8 @@ export interface KeyboardState {
 
 const useKeyboardStore = defineStore('keyboard', {
   state: (): KeyboardState => ({
-    KeyDownEvent: { Ctrl: false, Shift: false, Alt: false, Repeat: false, IsInput: false, Code: '', Key: '', IsEnmpty: true },
-    KeyUpEvent: { Ctrl: false, Shift: false, Alt: false, Repeat: false, IsInput: false, Code: '', Key: '', IsEnmpty: true }
+    KeyDownEvent: { Ctrl: false, Shift: false, Alt: false, Repeat: false, IsInput: false, Code: '', Key: '', IsEnmpty: true } as KeyboardMessage,
+    KeyUpEvent: { Ctrl: false, Shift: false, Alt: false, Repeat: false, IsInput: false, Code: '', Key: '', IsEnmpty: true } as KeyboardMessage
   }),
 
   getters: {},

@@ -59,11 +59,11 @@ export default defineComponent({
       <a-dsubmenu id="rightpansubbiaoji" class="rightmenu" trigger="hover">
         <template #default>
           <div @click.stop="() => {}">
-            <span class="arco-dropdown-option-icon"><i class="iconfont iconcheckbox-full" style="opacity: 0.8"></i></span>标记
+            <span class="arco-dropdown-option-icon"><i class="iconfont iconwbiaoqian" style="opacity: 0.8"></i></span>标记
           </div>
         </template>
         <template #content>
-          <a-doption v-for="item in settingStore.uiFileColorArray" @click="() => menuFileColorChange(istree, item.key)">
+          <a-doption v-for="item in settingStore.uiFileColorArray" :key="item.key" @click="() => menuFileColorChange(istree, item.key)">
             <template #icon> <i class="iconfont iconcheckbox-full" :style="{ color: item.key }" /> </template>
             <template #default>{{ item.title || item.key }}</template>
           </a-doption>
@@ -93,7 +93,7 @@ export default defineComponent({
             <template #icon> <i class="iconfont iconcopy" /> </template>
             <template #default>复制到...</template>
           </a-doption>
-          <a-doption @click="() => menuTrashSelectFile(istree, false)" class="danger">
+          <a-doption class="danger" @click="() => menuTrashSelectFile(istree, false)">
             <template #icon> <i class="iconfont icondelete" /> </template>
             <template #default>回收站</template>
           </a-doption>

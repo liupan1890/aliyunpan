@@ -12,7 +12,7 @@ const cb = (val: any) => {
   <div class="settingcard">
     <div class="settinghead">:上传时 最大并行任务数</div>
     <div class="settingrow">
-      <a-select tabindex="-1" :style="{ width: '252px' }" :model-value="settingStore.uploadFileMax" @update:model-value="cb({ uploadFileMax: $event })" :popup-container="'#SettingDiv'">
+      <a-select tabindex="-1" :style="{ width: '252px' }" :model-value="settingStore.uploadFileMax" :popup-container="'#SettingDiv'" @update:model-value="cb({ uploadFileMax: $event })">
         <a-option :value="1">
           同时上传 1 个文件
           <template #suffix>大文件</template>
@@ -26,35 +26,41 @@ const cb = (val: any) => {
         <a-option :value="20">同时上传20个文件</a-option>
         <a-option :value="30">同时上传30个文件<template #suffix>大量小文件</template></a-option>
         <a-option :value="50">同时上传50个文件</a-option>
-        <a-option :value="100">同时上传100个文件</a-option>
       </a-select>
     </div>
+
     <div class="settingspace"></div>
-    <div class="settinghead">:上传时 遇到重名文件冲突</div>
-    <div class="settingrow">
-      <a-select tabindex="-1" :style="{ width: '252px' }" :model-value="settingStore.downUploadWhatExist" @update:model-value="cb({ downUploadWhatExist: $event })" :popup-container="'#SettingDiv'">
-        <a-option value="ignore">删除网盘内文件，继续上传</a-option>
-        <a-option value="overwrite">覆盖网盘内文件，继续上传</a-option>
-        <a-option value="auto_rename">保留网盘内文件，继续上传，重命名</a-option>
-        <a-option value="refuse">保留网盘内文件，不上传了</a-option>
-      </a-select>
+    <div class="settinghead">:上传时 总上传速度限制</div>
+    <div class="settingrow" style="display: flex; align-items: center">
+      <a-input-number
+        tabindex="-1"
+        :style="{ width: '128px' }"
+        mode="button"
+        :min="0"
+        :max="settingStore.uploadGlobalSpeedM == 'MB' ? 100 : 999"
+        :step="settingStore.uploadGlobalSpeedM == 'MB' ? 1 : 40"
+        :model-value="settingStore.uploadGlobalSpeed"
+        @update:model-value="cb({ uploadGlobalSpeed: $event })">
+      </a-input-number>
+      <div style="height: 32px; border-left: 1px solid var(--color-neutral-3)"></div>
+      <a-radio-group type="button" tabindex="-1" :model-value="settingStore.uploadGlobalSpeedM" @update:model-value="cb({ uploadGlobalSpeedM: $event, uploadGlobalSpeed: 0 })">
+        <a-radio tabindex="-1" value="MB">MB/s</a-radio>
+        <a-radio tabindex="-1" value="KB">KB/s</a-radio>
+      </a-radio-group>
       <a-popover position="bottom">
         <i class="iconfont iconbulb" />
         <template #content>
-          <div>
-            默认：<span class="opred">删除网盘内文件，继续上传</span>
+          <div :style="{ width: '360px' }">
+            默认：<span class="opred">0 (不限速，满速上传)</span>
             <hr />
-            如果要上传的文件和网盘内已存在的文件重名了<br /><br />
-            当内容完全一致(sha1相同)时，则<span class="opred">无需</span>处理<br />
-            反之，需要<span class="opred">决定</span>如何处理<br />
-            <hr />
-            删除网盘内文件和覆盖网盘内文件区别是：<br />
-            删除会在回收站有已删除记录可以还原文件<br />
-            覆盖在回收站没有记录
+            <span class="opred">0-100MB/s</span> 百兆宽带最高跑到 12MB/s<br />
+            <span class="opred">0-999KB/s</span> 超慢的宽带请选择KB/s (1MB/s=1000KB/s)<br />
+            适当的限速可以不影响其他人上网
           </div>
         </template>
       </a-popover>
     </div>
+
     <div class="settingspace"></div>
     <div class="settinghead">:上传时 使用秒传模式</div>
     <div class="settingrow">
@@ -74,36 +80,52 @@ const cb = (val: any) => {
   </div>
 
   <div class="settingcard">
-    <div class="settinghead">:本次上传下载 完成后自动关机</div>
+    <div class="settinghead">:上传下载完 自动关机</div>
     <div class="settingrow">
-      <MySwitch :value="settingStore.downAutoShutDown > 0" @update:value="cb({ downAutoShutDown: $event ? 1 : 0 })"> 下载中&&上传中 的任务全部完成后自动关机</MySwitch>
+      <MySwitch :value="settingStore.downAutoShutDown > 0" @update:value="cb({ downAutoShutDown: $event ? 1 : 0 })"> 下载中/上传中 的任务全部完成后自动关机</MySwitch>
       <a-popover position="bottom">
         <i class="iconfont iconbulb" />
         <template #content>
           <div>
             默认：<span class="opred">关闭</span>
             <hr />
-            启用后，下载完会弹窗提示：倒数60秒后关机<br />
+            启用后，全部传输完成后会弹窗提示：倒数60秒后关机<br />
             倒数结束前，随时可以取消关机
           </div>
         </template>
       </a-popover>
     </div>
+    <div class="settingspace"></div>
+    <div class="settinghead">:上传下载完 声音提示</div>
+    <div class="settingrow">
+      <MySwitch :value="settingStore.downFinishAudio" @update:value="cb({ downFinishAudio: $event })"> 下载中/上传中 的任务全部完成后声音提示</MySwitch>
+    </div>
   </div>
 
   <div class="settingcard">
-    <div class="settinghead">:上传下载完 声音提示</div>
+    <div class="settinghead">:上传下载时 优先传输小文件</div>
     <div class="settingrow">
-      <MySwitch :value="settingStore.downFinishAudio" @update:value="cb({ downFinishAudio: $event })"> 下载中 | 上传中 的任务全部完成后声音提示</MySwitch>
+      <MySwitch :value="settingStore.downSmallFileFirst" @update:value="cb({ downSmallFileFirst: $event })"> 下载中/上传中 优先传输小于100MB的文件</MySwitch>
+      <a-popover position="right">
+        <i class="iconfont iconbulb" />
+        <template #content>
+          <div>
+            默认：<span class="opred">关闭</span>
+            <hr />
+            当有很多文件需要上传下载时<br />着急用小文件，可以开启此选项
+          </div>
+        </template>
+      </a-popover>
     </div>
+
     <div class="settingspace"></div>
     <div class="settinghead">:上传下载时 任务栏显示总进度</div>
     <div class="settingrow">
-      <MySwitch :value="settingStore.downSaveShowPro" @update:value="cb({ downSaveShowPro: $event })"> 下载中&&上传中 在任务栏显示总进度</MySwitch>
+      <MySwitch :value="settingStore.downSaveShowPro" @update:value="cb({ downSaveShowPro: $event })"> 下载中/上传中 在任务栏显示总进度</MySwitch>
     </div>
     <div class="settingspace"></div>
     <div class="settinghead">
-      :上传下载时 过滤文件
+      :上传下载时 预先过滤文件
       <a-popover position="bottom">
         <i class="iconfont iconbulb" />
         <template #content>
@@ -117,7 +139,7 @@ const cb = (val: any) => {
             5. 最多可以配置30个规则 <br />
             <div class="hrspace"></div>
             <div class="hrspace"></div>
-            <a-typography-text mark> 　if(　filename.toLower().endWith('<span class="opred">.mp3</span>')　) break 　</a-typography-text>
+            <a-typography-text mark> 　if(　fileName.toLower().endWith('<span class="opred">.mp3</span>')　) break 　</a-typography-text>
             <br />
             例如：填<span class="opred">.mp3</span>,则上传/下载时会跳过以 .mp3 结尾的文件<br />
             例如：填<span class="opred">001.ppt.txt</span>,则上传/下载时会跳过以 001.ppt.txt 结尾的文件

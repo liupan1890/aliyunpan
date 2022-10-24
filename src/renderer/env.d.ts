@@ -1,3 +1,4 @@
+/* eslint-disable no-unused-vars */
 /// <reference types="vite/client" />
 
 declare module '*.vue' {
@@ -7,45 +8,19 @@ declare module '*.vue' {
   export default component
 }
 
-declare type Drive =
-  | 'pan' //网盘
-  | 'pic' //相册
-  | 'safe' //密码箱
-
-declare type AsyncType = '解压' | '复制' | '导入分享' | '回收站还原' | '异步' | '放回收站' | '彻底删除' 
-
 declare enum TaskState {
-  Success, //已成功
-  Error, //出错停止
-  Running, //上传中
-  Stoped, //已暂停
-  Waiting, //排队中
-  Autotry //稍后自动重试
+  Success, // 已成功
+  Error, // 出错停止
+  Running, // 上传中
+  Stoped, // 已暂停
+  Waiting, // 排队中
+  Autotry // 稍后自动重试
 }
 
-declare type UploadState =
-  | '读取中' //读取文件夹包含的文件列表
-  | '排队中' // 排队中， 等待上传
-  | 'hashing' // 计算hash，预秒传，秒传
-  | 'running' // 上传中
-  | '已暂停' // 已暂停
-  | 'success' // 上传成功
-  | 'error' // 上传失败
-
-// DownloadState
-declare type DownloadState =
-  | '排队中' // 排队中， 等待下载
-  | 'running' // 下载中
-  | 'hashing' // 计算hash，校验完整性
-  | '已暂停' // 已暂停
-  | 'success' // 下载成功
-  | 'error' // 下载失败
-
-declare type ProxyType = 'none' | 'http' | 'https' | 'socks4' | 'socks4a' | 'socks5' | 'socks5h'
 declare type CheckNameMode =
-  | 'overwrite' //overwrite (直接覆盖，以后多版本有用)
-  | 'auto_rename' //auto_rename (自动换一个随机名称)
-  | 'refuse' //refuse (不会创建，告诉你已经存在)
+  | 'overwrite' // overwrite (直接覆盖，以后多版本有用)
+  | 'auto_rename' // auto_rename (自动换一个随机名称)
+  | 'refuse' // refuse (不会创建，告诉你已经存在)
   | 'ignore' // ignore (会创建重名的)
 
 declare type FileType =

@@ -7,12 +7,7 @@ export interface IStateDebugLog {
   logtype: string
   logmessage: string
 }
-enum LogLeve {
-  secondary,
-  success,
-  warning,
-  danger
-}
+
 class DebugLogC {
   public logList: IStateDebugLog[] = []
   public logTime: number = 0
@@ -29,9 +24,11 @@ class DebugLogC {
   mSaveDanger(logmessage: string, err: any = undefined) {
     this.mSaveLog('danger', logmessage, err)
   }
+
   mSaveWarning(logmessage: string, err: any = undefined) {
     this.mSaveLog('warning', logmessage, err)
   }
+
   mSaveSuccess(logmessage: string, err: any = undefined) {
     this.mSaveLog('success', logmessage, err)
   }
@@ -39,13 +36,13 @@ class DebugLogC {
   mSaveLog(logtype: string, logmessage: string, err: any) {
     if (!logmessage && !err) return
     if (logmessage && typeof logmessage == 'string' && logmessage.length > 500) logmessage = logmessage.substring(0, 500) + '...'
-    let time = new Date()
+    const time = new Date()
     if (this.logList.length > 500) {
       this.logList.splice(400)
       DBCache.deleteLogOutCount(400)
     }
     
-    let log = {
+    const log = {
       logid: time.getTime(),
       logtime: time.getDate().toString().padStart(2, '0') + ' ' + time.getHours().toString().padStart(2, '0') + ':' + time.getMinutes().toString().padStart(2, '0') + ':' + time.getSeconds().toString().padStart(2, '0'),
       logtype: logtype,

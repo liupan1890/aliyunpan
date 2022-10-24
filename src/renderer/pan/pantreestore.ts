@@ -70,13 +70,13 @@ const usePanTreeStore = defineStore('pantree', {
     
     mTreeExpand(key: string) {
       console.log('mTreeExpand', key)
-      let arr = this.treeExpandedKeys
+      const arr = this.treeExpandedKeys
       if (arr.includes(key)) {
         
-        let dirpath = TreeStore.GetDirPath(this.drive_id, this.selectDir.file_id)
-        let needselectnew = dirpath.filter((t) => t.parent_file_id == key).length > 0
+        const dirPath = TreeStore.GetDirPath(this.drive_id, this.selectDir.file_id)
+        const needSelectNew = dirPath.filter((t) => t.parent_file_id == key).length > 0
         this.treeExpandedKeys = arr.filter((t) => t != key)
-        if (needselectnew) PanDAL.aReLoadOneDirToShow('', key, false) 
+        if (needSelectNew) PanDAL.aReLoadOneDirToShow('', key, false) 
       } else {
         
         this.treeExpandedKeys = arr.concat([key])
@@ -84,16 +84,15 @@ const usePanTreeStore = defineStore('pantree', {
       }
     },
     
-    mTreeExpandAll(keylist: string[], isExpaned: boolean) {
-      let arr = new Set(this.treeExpandedKeys)
-      let t = ''
+    mTreeExpandAll(keyList: string[], isExpaned: boolean) {
+      const arr = new Set(this.treeExpandedKeys)
       if (isExpaned) {
-        for (let i = 0, maxi = keylist.length; i < maxi; i++) {
-          arr.add(keylist[i])
+        for (let i = 0, maxi = keyList.length; i < maxi; i++) {
+          arr.add(keyList[i])
         }
       } else {
-        for (let i = 0, maxi = keylist.length; i < maxi; i++) {
-          arr.delete(keylist[i])
+        for (let i = 0, maxi = keyList.length; i < maxi; i++) {
+          arr.delete(keyList[i])
         }
       }
       this.treeExpandedKeys = Array.from(arr)
@@ -109,10 +108,10 @@ const usePanTreeStore = defineStore('pantree', {
       this.$patch({ selectDir: dir, selectDirPath: dirPath, treeSelectedKeys: treeSelectedKeys, treeExpandedKeys: treeExpandedKeys })
     },
     
-    mSaveTreeAllNode(drive_id: string, root: TreeNodeData, rootmap: Map<string, TreeNodeData>) {
+    mSaveTreeAllNode(drive_id: string, root: TreeNodeData, rootMap: Map<string, TreeNodeData>) {
       if (this.drive_id !== drive_id) return
 
-      let list: TreeNodeData[] = []
+      const list: TreeNodeData[] = []
       for (let i = 0, maxi = this.treeData.length; i < maxi; i++) {
         if (this.treeData[i].key == root.key) {
           list.push(root)
@@ -120,42 +119,42 @@ const usePanTreeStore = defineStore('pantree', {
       }
 
       this.treeData = list
-      treeDataMap = rootmap
+      treeDataMap = rootMap
     },
     
-    mSaveTreeOneDirNode(drive_id: string, dir_id: string, dirnode: TreeNodeData, dirmap: Map<string, TreeNodeData>) {
-      console.log('刷新Tree', dirnode)
+    mSaveTreeOneDirNode(drive_id: string, dirID: string, dirNode: TreeNodeData, dirMap: Map<string, TreeNodeData>) {
+      console.log('刷新Tree', dirNode)
       if (this.drive_id !== drive_id) return
 
       
-      const finddir = treeDataMap.get(dir_id)
-      if (finddir) {
-        finddir.children = dirnode.children
-        let keys = dirmap.entries()
-        for (let i = 0, maxi = dirmap.size; i < maxi; i++) {
-          let key = keys.next().value
+      const findDir = treeDataMap.get(dirID)
+      if (findDir) {
+        findDir.children = dirNode.children
+        const keys = dirMap.entries()
+        for (let i = 0, maxi = dirMap.size; i < maxi; i++) {
+          const key = keys.next().value
           treeDataMap.set(key[0], key[1])
         }
         this.treeData = this.treeData.concat()
       }
     },
     
-    mRenameFiles(filelist: { file_id: string; parent_file_id: string; name: string; isdir: boolean }[]) {
+    mRenameFiles(fileList: { file_id: string; parent_file_id: string; name: string; isDir: boolean }[]) {
       let isChange = false
       let isPath = false
       
-      let diridlist: string[] = []
-      for (let i = 0, maxi = filelist.length; i < maxi; i++) {
-        let item = filelist[i]
-        if (!item.isdir) continue 
-        diridlist.push(item.file_id)
-        let findnode = treeDataMap.get(item.file_id)
-        if (findnode) {
-          findnode.title = item.name
+      const diridList: string[] = []
+      for (let i = 0, maxi = fileList.length; i < maxi; i++) {
+        const item = fileList[i]
+        if (!item.isDir) continue 
+        diridList.push(item.file_id)
+        const findNode = treeDataMap.get(item.file_id)
+        if (findNode) {
+          findNode.title = item.name
           isChange = true
         }
         if (this.selectDir.file_id == item.file_id) {
-          this.selectDir = Object.assign({}, this.selectDir, { name: item.name })
+          this.selectDir = Object.assign({}, this.selectDir, { name: item.name }) as IAliGetDirModel
           isChange = true
         }
         
@@ -164,6 +163,7 @@ const usePanTreeStore = defineStore('pantree', {
             t.name = item.name
             isPath = true
           }
+          return true
         })
       }
 
@@ -171,26 +171,26 @@ const usePanTreeStore = defineStore('pantree', {
       if (isPath) this.selectDirPath = this.selectDirPath.concat()
 
       
-      TreeStore.RenameDirs(this.drive_id, filelist)
+      TreeStore.RenameDirs(this.drive_id, fileList)
     },
     mSaveQuick(list: { key: string; title: string }[]) {
-      let nodelist: TreeNodeData[] = []
+      const nodeList: TreeNodeData[] = []
       for (let i = 0; i < list.length; i++) {
-        nodelist.push({
+        nodeList.push({
           __v_skip: true,
           key: list[i].key,
           title: list[i].title || list[i].key,
           namesearch: i < 9 ? '快捷键 Ctrl+' + (i + 1) : '',
           children: [],
           isLeaf: true
-        })
+        } as TreeNodeData)
       }
-      Object.freeze(nodelist)
-      this.quickData = nodelist
+      Object.freeze(nodeList)
+      this.quickData = nodeList
     },
-    mSaveTreeScrollTo(dir_id: string) {
-      if (dir_id == 'refresh') dir_id = this.selectDir.file_id
-      this.scrollToDir = dir_id
+    mSaveTreeScrollTo(dirID: string) {
+      if (dirID == 'refresh') dirID = this.selectDir.file_id
+      this.scrollToDir = dirID
     }
   }
 })

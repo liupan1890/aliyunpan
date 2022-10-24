@@ -147,7 +147,7 @@ body[arco-theme='dark'] .ant-tree-list-scrollbar-thumb:hover[style] {
   word-wrap: break-word;
 }
 
-.ant-tree .ant-tree-node-content-wrapper .ant-tree-iconEle{
+.ant-tree .ant-tree-node-content-wrapper .ant-tree-iconEle {
   flex-shrink: 0;
 }
 
@@ -180,7 +180,6 @@ body[arco-theme='dark'] .ant-tree-list-scrollbar-thumb:hover[style] {
   font-size: 12px;
 }
 
-
-.ant-tabs{
+.ant-tabs {
   color: var(--color-text-2);
 }

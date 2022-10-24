@@ -1,11 +1,13 @@
-export function getFromClipboard() {
+import { throttle } from './debounce'
+
+export function getFromClipboard(): string {
   return window.Electron.clipboard.readText() as string
 }
 
-export function copyToClipboard(text: string) {
+export function copyToClipboard(text: string): void {
   window.Electron.clipboard.writeText(text, 'clipboard')
 }
-export function openExternal(url: string) {
+export function openExternal(url: string): void {
   window.Electron.shell.openExternal(url)
 }
 
@@ -26,7 +28,7 @@ const ElectronPath = {
 }
 
 
-function LoadElectronPath() {
+function LoadElectronPath(): void {
   if (!ElectronPath.AppUserData) {
     ElectronPath.AppPlatform = process.platform
     ElectronPath.AppArch = process.arch
@@ -46,25 +48,53 @@ function LoadElectronPath() {
   }
 }
 
-export function getUserData() {
+export function getUserData(): string {
   LoadElectronPath()
   return ElectronPath.AppUserData
 }
+
 const path = window.require('path')
-export function getResourcesPath(filename: string) {
+export function getResourcesPath(fileName: string): string {
   try {
     LoadElectronPath()
-    return path.join(ElectronPath.AppResourcesPath, filename)
+    return path.join(ElectronPath.AppResourcesPath, fileName) as string
   } catch {
     return ''
   }
 }
 
-export function getAppNewPath() {
+export function getAppNewPath(): string {
   try {
     LoadElectronPath()
-    return path.join(ElectronPath.AppResourcesPath, 'app.new')
+    return path.join(ElectronPath.AppResourcesPath, 'app.new') as string
   } catch {
     return ''
+  }
+}
+
+let ProgressBarBy = ''
+let ProgressBarValue = -1
+let ProgressBarNew = -1
+const setProgressBar = throttle(() => {
+  ProgressBarValue = ProgressBarNew
+  const mode = ProgressBarValue < 0 ? 'none' : ProgressBarBy == 'download' ? 'normal' : 'paused'
+  if (window.WebSetProgressBar) window.WebSetProgressBar({ pro: ProgressBarValue, mode })
+}, 5000)
+
+
+export function SetProgressBar(value: number, by: string): void {
+  if (value < 0) value = -1
+  if (ProgressBarValue == value && ProgressBarBy == by) return
+
+  ProgressBarNew = value
+  ProgressBarBy = by
+  if (value < 0 || (ProgressBarValue < 0 && value > 0)) {
+    
+    const mode = value < 0 ? 'none' : ProgressBarBy == 'download' ? 'normal' : 'paused'
+    ProgressBarValue = value
+    if (window.WebSetProgressBar) window.WebSetProgressBar({ pro: ProgressBarValue, mode: mode })
+  } else {
+    
+    setProgressBar()
   }
 }

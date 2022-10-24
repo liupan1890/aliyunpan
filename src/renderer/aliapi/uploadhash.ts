@@ -3,7 +3,7 @@ import { IUploadingUI } from '../utils/dbupload'
 import { OpenFileHandle } from '../utils/filehelper'
 import DBCache from '../utils/dbcache'
 
-const fspromises = window.require('fs/promises')
+const path = window.require('path')
 const crypto = window.require('crypto')
 
 const os = window.require('os')
@@ -11,11 +11,11 @@ const os = window.require('os')
 const CPU = Math.min(8, Math.max(4, os.cpus().length / 2))
 
 
-const sha1posMap = new Map<string, number>()
+const sha1PosMap = new Map<number, number>()
 
 export default class AliUploadHash {
   
-  static async GetBuffHashProof(access_token: string, buff: Buffer) {
+  static async GetBuffHashProof(access_token: string, buff: Buffer): Promise<{ sha1: string; proof_code: string }> {
     if (buff.length == 0) return { sha1: 'DA39A3EE5E6B4B0D3255BFEF95601890AFD80709', proof_code: '' }
     let hash = crypto.createHash('sha1').update(buff).digest('hex')
     hash = hash.toUpperCase()
@@ -31,17 +31,17 @@ export default class AliUploadHash {
   }
 
   
-  static async GetFilePreHash(filepath: string): Promise<string> {
+  static async GetFilePreHash(filePath: string): Promise<string> {
     let hash = ''
-    const filehandle = await OpenFileHandle(filepath)
-    if (filehandle.error) return 'error' + filehandle.error
+    const fileHandle = await OpenFileHandle(filePath)
+    if (fileHandle.error) return 'error' + fileHandle.error
 
-    if (filehandle.handle) {
+    if (fileHandle.handle) {
       const buff = Buffer.alloc(1024)
-      await filehandle.handle.read(buff, 0, buff.length, null)
+      await fileHandle.handle.read(buff, 0, buff.length, null)
       hash = crypto.createHash('sha1').update(buff).digest('hex')
       hash = hash.toUpperCase()
-      await filehandle.handle.close()
+      await fileHandle.handle.close()
     } else {
       hash = 'error读取文件失败'
     }
@@ -49,39 +49,37 @@ export default class AliUploadHash {
   }
 
   
-  static async GetFileHashProof(prehash: string, access_token: string, item: IUploadingUI): Promise<{ sha1: string; proof_code: string; error: string }> {
+  static async GetFileHashProof(prehash: string, access_token: string, fileui: IUploadingUI): Promise<{ sha1: string; proof_code: string; error: string }> {
     let hash = ''
     let proof_code = ''
     let error = ''
-    const size = item.Task.size
+    const size = fileui.File.size
     if (size == 0) return { sha1: 'DA39A3EE5E6B4B0D3255BFEF95601890AFD80709', proof_code: '', error: '' }
 
     if (size > 1024000) {
       
-      return this.GetFileHashProofWorker(prehash, access_token, item, size > 1024 * 1024 * 300)
+      return this.GetFileHashProofWorker(prehash, access_token, fileui, size > 1024 * 1024 * 300)
     }
 
     const sha1 = crypto.createHash('sha1')
-    const filehandle = await OpenFileHandle(item.Task.LocalFilePath)
-    if (filehandle.error) {
-      return { sha1: 'error', proof_code: '', error: filehandle.error }
+    const fileHandle = await OpenFileHandle(path.join(fileui.localFilePath, fileui.File.partPath))
+    if (fileHandle.error) {
+      return { sha1: 'error', proof_code: '', error: fileHandle.error }
     }
 
-    if (filehandle.handle) {
+    if (fileHandle.handle) {
       const buff = Buffer.alloc(1024 * 1024)
-      let readlen = 0
       while (true) {
-        if (!item.IsRunning) break
-        const len = await filehandle.handle.read(buff, 0, buff.length, null)
+        if (!fileui.IsRunning) break
+        const len = await fileHandle.handle.read(buff, 0, buff.length, null)
         if (len.bytesRead > 0 && len.bytesRead == buff.length) {
           sha1.update(buff)
         } else if (len.bytesRead > 0) {
           sha1.update(buff.slice(0, len.bytesRead))
         }
-        readlen += len.bytesRead
         if (len.bytesRead <= 0) break
       }
-      if (item.IsRunning) {
+      if (fileui.IsRunning) {
         hash = sha1.digest('hex')
         hash = hash.toUpperCase()
         const m = unescape(encodeURIComponent(access_token))
@@ -90,7 +88,7 @@ export default class AliUploadHash {
         const start = Number(BigInt('0x' + md5a.substr(0, 16)) % BigInt(size))
         const end = Math.min(start + 8, size)
         const buffb = Buffer.alloc(end - start)
-        await filehandle.handle.read(buffb, 0, buffb.length, start)
+        await fileHandle.handle.read(buffb, 0, buffb.length, start)
         proof_code = buffb.toString('base64')
         error = ''
       } else {
@@ -99,7 +97,7 @@ export default class AliUploadHash {
         proof_code = ''
         error = ''
       }
-      await filehandle.handle.close()
+      await fileHandle.handle.close()
       return { sha1: hash, proof_code, error }
     } else {
       return { sha1: 'error', proof_code: '', error: '读取文件失败' }
@@ -107,61 +105,59 @@ export default class AliUploadHash {
   }
 
   
-  static async GetFileHashProofWorker(prehash: string, access_token: string, item: IUploadingUI, needSleep: boolean): Promise<{ sha1: string; proof_code: string; error: string }> {
+  static async GetFileHashProofWorker(prehash: string, access_token: string, fileui: IUploadingUI, needSleep: boolean): Promise<{ sha1: string; proof_code: string; error: string }> {
     let hash = ''
     let proof_code = ''
     let error = ''
-    const size = item.Task.size
+    const size = fileui.File.size
     if (size == 0) return { sha1: 'DA39A3EE5E6B4B0D3255BFEF95601890AFD80709', proof_code: '', error: '' }
 
-    if (prehash) {
-      let hashlist = await DBCache.getFileHashList(item.Task.size, item.Task.mtime)
-      for (let i = 0, maxi = hashlist.length; i < maxi; i++) {
-        if (hashlist[i].presha1 == prehash && hashlist[i].name == item.Task.name) {
-          
-          const filehandle = await OpenFileHandle(item.Task.LocalFilePath)
-          if (filehandle.error) {
-            return { sha1: 'error', proof_code: '', error: filehandle.error }
-          }
-          const m = unescape(encodeURIComponent(access_token))
-          const buffa = Buffer.from(m)
-          const md5a = crypto.createHash('md5').update(buffa).digest('hex')
-          const start = Number(BigInt('0x' + md5a.substr(0, 16)) % BigInt(size))
-          const end = Math.min(start + 8, size)
-          const buffb = Buffer.alloc(end - start)
-          await filehandle.handle.read(buffb, 0, buffb.length, start)
-          await filehandle.handle.close()
-          let proof_code = buffb.toString('base64')
-          return { sha1: hashlist[i].sha1, proof_code, error: '' }
+    if (fileui.File.size >= 10240000 && !prehash.startsWith('error')) {
+      const sha1 = await DBCache.getFileHash(fileui.File.size, fileui.File.mtime, prehash, path.basename(fileui.File.name))
+      if (sha1) {
+        
+        const fileHandle = await OpenFileHandle(path.join(fileui.localFilePath, fileui.File.partPath))
+        if (fileHandle.error) {
+          return { sha1: 'error', proof_code: '', error: fileHandle.error }
         }
+        const m = unescape(encodeURIComponent(access_token))
+        const buffa = Buffer.from(m)
+        const md5a = crypto.createHash('md5').update(buffa).digest('hex')
+        const start = Number(BigInt('0x' + md5a.substr(0, 16)) % BigInt(size))
+        const end = Math.min(start + 8, size)
+        const buffb = Buffer.alloc(end - start)
+        await fileHandle.handle.read(buffb, 0, buffb.length, start)
+        await fileHandle.handle.close()
+        const proof_code = buffb.toString('base64')
+        return { sha1, proof_code, error: '' }
       }
     }
 
     if (needSleep) {
-      item.Info.FailedMessage = '等待计算sha1'
-      while (sha1posMap.size >= CPU) {
+      fileui.Info.failedMessage = '等待计算sha1'
+      while (sha1PosMap.size >= CPU) {
         await Sleep(200) 
       }
-      item.Info.FailedMessage = ''
+      fileui.Info.failedMessage = ''
     }
-    sha1posMap.set(item.UploadID, 0)
-    item.Info.UploadSize = 0 
+    sha1PosMap.set(fileui.UploadID, 0)
+    fileui.Info.uploadSize = 0 
     const worker: any = new Worker('./sha1filework.js')
-    await new Promise((resolve) => {
+    await new Promise<void>((resolve) => {
       worker.addEventListener('message', (event: any) => {
         if (event.data.hash == 'sha1') {
           if (event.data.readlen) {
             
-            if (!item.IsRunning) worker.postMessage({ stop: true }) 
-            sha1posMap.set(item.UploadID, event.data.readlen as number)
-            item.Task.size = event.data.size as number
+            if (!fileui.IsRunning) worker.postMessage({ stop: true }) 
+            sha1PosMap.set(fileui.UploadID, event.data.readlen as number)
+            fileui.File.size = event.data.size as number
           }
           if (event.data.sha1) {
             
             hash = event.data.sha1
             proof_code = event.data.proof_code
             error = event.data.error
-            resolve(null)
+            resolve()
           }
         }
       })
@@ -169,30 +165,30 @@ export default class AliUploadHash {
         hash = 'error'
         proof_code = ''
         error = event.data.error
-        resolve(null)
+        resolve()
       })
-      worker.postMessage({ hash: 'sha1', localFilePath: item.Task.LocalFilePath, access_token })
+      worker.postMessage({ hash: 'sha1', localFilePath: path.join(fileui.localFilePath, fileui.File.partPath), access_token })
     })
       .catch((err: any) => {
         error = err.message || 'workercatch'
       })
       .then(() => {
-        sha1posMap.delete(item.UploadID)
+        sha1PosMap.delete(fileui.UploadID)
         worker.postMessage({ close: true })
       })
 
-    item.Info.UploadSize = 0
-    if (!item.IsRunning) return { sha1: 'error', proof_code: '', error: '' }
+    fileui.Info.uploadSize = 0
+    if (!fileui.IsRunning) return { sha1: 'error', proof_code: '', error: '' }
 
     
     if (hash != 'error' && prehash) {
-      DBCache.saveFileHash({ size: item.Task.size, mtime: item.Task.mtime, presha1: prehash, sha1: hash, name: item.Task.name })
+      DBCache.saveFileHash({ size: fileui.File.size, mtime: fileui.File.mtime, presha1: prehash, sha1: hash, name: path.basename(fileui.File.name) })
     }
 
     return { sha1: hash, proof_code, error }
   }
 
-  static GetFileHashProofSpeed(UploadID: string) {
-    return sha1posMap.get(UploadID) || 0
+  static GetFileHashProofSpeed(UploadID: number): number {
+    return sha1PosMap.get(UploadID) || 0
   }
 }

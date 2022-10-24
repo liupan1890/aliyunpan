@@ -14,7 +14,7 @@ export default defineComponent({
     }
     const appStore = useAppStore()
     const videoPlayer = ref()
-    let player: any = undefined
+    let player: any
 
     const options = {
       fill: true,
@@ -26,11 +26,11 @@ export default defineComponent({
         children: ['playToggle', 'currentTimeDisplay', 'timeDivider', 'durationDisplay', 'progressControl', 'volumePanel', 'qualitySelector', 'playbackRateMenuButton', 'subsCapsButton', 'audioTrackButton', 'PictureInPictureToggle', 'fullscreenToggle']
       }
     }
-    let pageVideo = appStore.pageVideo!
+    const pageVideo = appStore.pageVideo!
     onMounted(() => {
       window.addEventListener('keydown', onKeyDown, true)
 
-      let name = appStore.pageVideo?.file_name || '文档在线预览'
+      const name = appStore.pageVideo?.file_name || '文档在线预览'
       setTimeout(() => {
         document.title = name
       }, 1000)
@@ -38,41 +38,42 @@ export default defineComponent({
         document.title = name
       }, 10000)
 
+      // eslint-disable-next-line no-undef
       player = videojs(videoPlayer.value, options, () => {})
 
       AliFile.ApiVideoPreviewUrl(pageVideo.user_id, pageVideo.drive_id, pageVideo.file_id).then((data) => {
         if (data) {
-          let urllist: { src: string; type: string; label: string; selected?: boolean }[] = []
-          if (data.url_FHD) urllist.push({ src: data.url_FHD, type: 'application/x-mpegURL', label: '1080P' })
-          if (data.url_HD) urllist.push({ src: data.url_HD, type: 'application/x-mpegURL', label: '720P' })
-          if (data.url_SD) urllist.push({ src: data.url_SD, type: 'application/x-mpegURL', label: '540P' })
-          if (data.url_LD) urllist.push({ src: data.url_LD, type: 'application/x-mpegURL', label: '480P' })
-          urllist[0].selected = true
+          const urlList: { src: string; type: string; label: string; selected?: boolean }[] = []
+          if (data.urlFHD) urlList.push({ src: data.urlFHD, type: 'application/x-mpegURL', label: '1080P' })
+          if (data.urlHD) urlList.push({ src: data.urlHD, type: 'application/x-mpegURL', label: '720P' })
+          if (data.urlSD) urlList.push({ src: data.urlSD, type: 'application/x-mpegURL', label: '540P' })
+          if (data.urlLD) urlList.push({ src: data.urlLD, type: 'application/x-mpegURL', label: '480P' })
+          urlList[0].selected = true
 
-          player.src(urllist)
+          player.src(urlList)
 
           AliFile.ApiFileInfo(pageVideo.user_id, pageVideo.drive_id, pageVideo.file_id).then((info) => {
             try {
               if (info?.play_cursor) {
                 player.currentTime(info?.play_cursor)
               } else if (info?.user_meta) {
-                let meta = JSON.parse(info?.user_meta)
+                const meta = JSON.parse(info?.user_meta)
                 if (meta.play_cursor) {
-                  let time = parseFloat(meta.play_cursor)
+                  const time = parseFloat(meta.play_cursor)
                   player.currentTime(time)
                 }
               }
             } catch {}
-            let volume = localStorage.getItem('videojsvolume')
+            const volume = localStorage.getItem('videojsvolume')
             if (volume) player.volume(parseFloat(volume))
-            let muted = localStorage.getItem('videojsmuted')
+            const muted = localStorage.getItem('videojsmuted')
             if (muted) player.muted(muted === 'true')
             player.play()
           })
 
           if (data.subtitles.length > 0) {
             for (let i = 0; i < data.subtitles.length; i++) {
-              let sub =
+              const sub =
                 i == 0
                   ? {
                       label: data.subtitles[i].language + '_' + i,
@@ -150,7 +151,7 @@ export default defineComponent({
       </div>
     </a-layout-header>
     <a-layout-content style="height: calc(100vh - 42px)">
-      <div class="doc-preview" id="doc-preview" style="width: 100%; height: 100%">
+      <div id="doc-preview" class="doc-preview" style="width: 100%; height: 100%">
         <video ref="videoPlayer" class="video-js vjs-big-play-centered"></video>
       </div>
     </a-layout-content>
@@ -170,22 +171,20 @@ export default defineComponent({
   display: none;
 }
 
-.vjs-playback-rate .vjs-menu{
-      width: 6em;
-    left: -1em;
+.vjs-playback-rate .vjs-menu {
+  width: 6em;
+  left: -1em;
 }
-.vjs-playback-rate .vjs-menu .vjs-menu-content{
+.vjs-playback-rate .vjs-menu .vjs-menu-content {
   max-height: 24em !important;
 }
 
 .video-js .vjs-progress-control .vjs-progress-holder,
 .video-js .vjs-progress-control:hover .vjs-progress-holder {
-    font-size: 2em
+  font-size: 2em;
 }
 
 .video-js .vjs-progress-control .vjs-progress-holder.disabled {
-    font-size: 1em
+  font-size: 1em;
 }
-
-
 </style>

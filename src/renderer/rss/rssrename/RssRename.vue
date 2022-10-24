@@ -24,6 +24,7 @@ const handleSelectDir = () => {
   }
 }
 
+// eslint-disable-next-line no-unused-vars
 const handleClickRename = async () => {
   if (renameLoading.value) return
   if (!dirPath.value) {
@@ -32,7 +33,7 @@ const handleClickRename = async () => {
   }
   renameLoading.value = true
 
-  //todo:: 批量重命名本地文件
+  // todo:: 批量重命名本地文件
 
   renameLoading.value = false
 }

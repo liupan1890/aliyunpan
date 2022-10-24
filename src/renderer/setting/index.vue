@@ -48,7 +48,7 @@ onUnmounted(() => {
   <a-layout style="height: 100%">
     <a-layout-sider hide-trigger :width="158" class="xbyleft" tabindex="-1" @keydown.tab.prevent="() => true">
       <div class="headdesc">APP 设置项</div>
-      <a-menu :selected-keys="[appStore.GetAppTabMenu]" @update:selected-keys="appStore.toggleTabMenu('setting', $event[0])" :style="{ width: '100%' }" class="xbyleftmenu">
+      <a-menu :selected-keys="[appStore.GetAppTabMenu]" :style="{ width: '100%' }" class="xbyleftmenu" @update:selected-keys="appStore.toggleTabMenu('setting', $event[0])">
         <a-menu-item key="SettingUI">
           <template #icon><i class="iconfont iconui" /></template>
           APP
@@ -168,7 +168,8 @@ onUnmounted(() => {
   user-select: none;
   -webkit-user-drag: none;
 }
-.settingcard .iconbulb {
+.settingcard .iconbulb,
+.settingrow .iconbulb {
   display: inline-block;
   height: 22px;
   margin-left: 4px;

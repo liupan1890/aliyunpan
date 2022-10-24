@@ -7,11 +7,11 @@ import message from '../../utils/message'
 import { Ref } from 'vue'
 import { FileData, IScanDriverModel } from '../ScanDAL'
 
-export async function GetDuplicateInfo(user_id: string, PanData: IScanDriverModel, ScanType: string) {
+export async function GetDuplicateInfo(user_id: string, PanData: IScanDriverModel, scanType: string): Promise<string> {
   if (!user_id) return '查询出错'
   const url = 'adrive/v1/file/getDuplicateInfo'
-  const postdata = { category: ScanType, drive_id: PanData.drive_id }
-  const resp = await AliHttp.Post(url, postdata, user_id, '')
+  const postData = { category: scanType, drive_id: PanData.drive_id }
+  const resp = await AliHttp.Post(url, postData, user_id, '')
   try {
     if (AliHttp.IsSuccess(resp.code)) {
       
@@ -26,60 +26,61 @@ export async function GetDuplicateInfo(user_id: string, PanData: IScanDriverMode
 }
 
 
-export async function GetSameFile(user_id: string, PanData: IScanDriverModel, Processing: Ref<number>, ScanCount: Ref<number>, TotalFileCount: Ref<number>, ScanType: string) {
-  ScanCount.value = 0
+export async function GetSameFile(user_id: string, PanData: IScanDriverModel, Processing: Ref<number>, scanCount: Ref<number>, totalFileCount: Ref<number>, scanType: string): Promise<boolean> {
+  scanCount.value = 0
 
   
-  let filelist = await ApiDuplicateList(user_id, PanData.drive_id, ScanType == 'all' ? '' : ScanType, Processing)
-  if (!filelist) return false
-  TotalFileCount.value += filelist.length
+  const fileList = await ApiDuplicateList(user_id, PanData.drive_id, scanType == 'all' ? '' : scanType, Processing)
+  if (!fileList) return false
+  totalFileCount.value += fileList.length
   
-  for (let j = 0, maxj = filelist.length; j < maxj; j++) {
-    let fileitem = filelist[j]
-    let hash = fileitem.namesearch
+  for (let j = 0, maxj = fileList.length; j < maxj; j++) {
+    const fileItem = fileList[j]
+    const hash = fileItem.namesearch
     if (hash) {
-      let savelist = PanData.SameDirMap.get(hash)
-      if (!savelist) savelist = []
+      let saveList = PanData.SameDirMap.get(hash)
+      if (!saveList) saveList = []
 
-      if (savelist.length < 50) {
+      if (saveList.length < 50) {
         
-        savelist.push({
-          file_id: fileitem.file_id,
-          name: fileitem.name,
-          parent_file_id: fileitem.parent_file_id,
-          size: fileitem.size,
-          sizestr: fileitem.sizestr,
-          time: fileitem.time,
-          timestr: fileitem.timestr,
-          icon: fileitem.icon,
+        saveList.push({
+          file_id: fileItem.file_id,
+          name: fileItem.name,
+          parent_file_id: fileItem.parent_file_id,
+          size: fileItem.size,
+          sizeStr: fileItem.sizeStr,
+          time: fileItem.time,
+          timeStr: fileItem.timeStr,
+          icon: fileItem.icon,
           parent_file_path: ''
-        })
-        PanData.SameDirMap.set(hash, savelist)
+        } as FileData)
+        PanData.SameDirMap.set(hash, saveList)
       }
     }
   }
 
   
-  let SameDirMap = new Map<string, FileData[]>()
-  let entries = PanData.SameDirMap.entries()
+  const sameDirMap = new Map<string, FileData[]>()
+  const entries = PanData.SameDirMap.entries()
   for (let i = 0, maxi = PanData.SameDirMap.size; i < maxi; i++) {
-    let value = entries.next().value
-    let arr = value[1] as FileData[]
+    const value = entries.next().value
+    const arr = value[1] as FileData[]
     if (arr.length > 1) {
       arr.map((a) => {
         a.parent_file_path = GetParentPath(PanData, a.parent_file_id)
+        return true
       })
       arr.sort((a, b) => b.time - a.time)
-      SameDirMap.set(value[0], arr)
+      sameDirMap.set(value[0], arr)
     }
   }
-  PanData.SameDirMap = SameDirMap
-  ScanCount.value = SameDirMap.size
+  PanData.SameDirMap = sameDirMap
+  scanCount.value = sameDirMap.size
   return true
 }
-/*计算出完整的路径* */
+/* 计算出完整的路径* */
 function GetParentPath(PanData: IScanDriverModel, file_id: string) {
-  let path: string[] = []
+  const path: string[] = []
   let dir: IAliGetDirModel | undefined
   while (true) {
     dir = PanData.DirMap.get(file_id)
@@ -96,22 +97,22 @@ function GetParentPath(PanData: IScanDriverModel, file_id: string) {
 async function ApiDuplicateList(user_id: string, drive_id: string, category: string, Processing: Ref<number>) {
   if (!user_id || !drive_id) return []
   let next_marker = ''
-  let items: IAliGetFileModel[] = []
+  const items: IAliGetFileModel[] = []
   do {
     const url = 'adrive/v1/file/duplicateList'
-    let postdata = { drive_id: drive_id, marker: next_marker }
-    if (category) postdata = Object.assign(postdata, { category: category })
-    const resp = await AliHttp.Post(url, postdata, user_id, '')
+    let postData = { drive_id: drive_id, marker: next_marker }
+    if (category) postData = Object.assign(postData, { category: category })
+    const resp = await AliHttp.Post(url, postData, user_id, '')
 
     Processing.value += 1
     try {
       if (AliHttp.IsSuccess(resp.code)) {
         next_marker = resp.body.next_marker
         for (let i = 0, maxi = resp.body.items.length; i < maxi; i++) {
-          const oneitems = resp.body.items[i].items as IAliFileItem[]
-          for (let j = 0; j < oneitems.length; j++) {
-            const add = AliDirFileList.getFileInfo(oneitems[j], '')
-            add.namesearch = oneitems[j].content_hash
+          const oneItems = resp.body.items[i].items as IAliFileItem[]
+          for (let j = 0; j < oneItems.length; j++) {
+            const add = AliDirFileList.getFileInfo(oneItems[j], '')
+            add.namesearch = oneItems[j].content_hash
             items.push(add)
           }
         }

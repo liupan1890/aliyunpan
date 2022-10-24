@@ -28,8 +28,8 @@ export default class AliUser {
     const url = 'token/refresh'
     
 
-    const postdata = { refresh_token: token.refresh_token }
-    const resp = await AliHttp.Post(url, postdata, '', '')
+    const postData = { refresh_token: token.refresh_token }
+    const resp = await AliHttp.Post(url, postData, '', '')
     TokenLockMap.delete(token.user_id)
     if (AliHttp.IsSuccess(resp.code)) {
       TokenReTimeMap.set(resp.body.user_id, Date.now())
@@ -81,8 +81,8 @@ export default class AliUser {
 
     const url = 'https://auth.aliyundrive.com/v2/account/token'
     
-    const postdata = { refresh_token: token.refresh_token, grant_type: 'refresh_token' }
-    const resp = await AliHttp.Post(url, postdata, '', '')
+    const postData = { refresh_token: token.refresh_token, grant_type: 'refresh_token' }
+    const resp = await AliHttp.Post(url, postData, '', '')
     TokenLockMap.delete(token.user_id)
     if (AliHttp.IsSuccess(resp.code)) {
       TokenReTimeMap.set(resp.body.user_id, Date.now())
@@ -108,10 +108,12 @@ export default class AliUser {
       UserDAL.SaveUserToken(token)
       return true
     } else {
-      DebugLog.mSaveWarning('ApiTokenRefreshAccount err=' + (resp.code || ''))
+      if (resp.body?.code != 'InvalidParameter.RefreshToken') DebugLog.mSaveWarning('ApiTokenRefreshAccount err=' + (resp.code || '') + ' ' + (resp.body?.code || ''))
       if (showMessage) {
         message.error('刷新账号[' + token.user_name + '] token 失败,需要重新登录')
         UserDAL.UserLogOff(token.user_id)
+      } else {
+        UserDAL.UserClearFromDB(token.user_id)
       }
     }
     return false
@@ -121,8 +123,8 @@ export default class AliUser {
   static async ApiUserInfo(token: ITokenInfo): Promise<boolean> {
     if (!token.user_id) return false
     const url = 'v2/databox/get_personal_info'
-    const postdata = ''
-    const resp = await AliHttp.Post(url, postdata, token.user_id, '')
+    const postData = ''
+    const resp = await AliHttp.Post(url, postData, token.user_id, '')
     if (AliHttp.IsSuccess(resp.code)) {
       token.used_size = resp.body.personal_space_info.used_size
       token.total_size = resp.body.personal_space_info.total_size
@@ -145,8 +147,8 @@ export default class AliUser {
     const url = 'business/v1.0/users/vip/info'
     
 
-    const postdata = {}
-    const resp = await AliHttp.Post(url, postdata, token.user_id, '')
+    const postData = {}
+    const resp = await AliHttp.Post(url, postData, token.user_id, '')
     if (AliHttp.IsSuccess(resp.code)) {
       let vipList = resp.body.vipList || []
       vipList = vipList.sort((a: any, b: any) => b.expire - a.expire)
@@ -163,14 +165,15 @@ export default class AliUser {
     }
     return false
   }
+
   
   static async ApiUserPic(token: ITokenInfo): Promise<boolean> {
     if (!token.user_id) return false
     const url = 'adrive/v1/user/albums_info'
     
 
-    const postdata = {}
-    const resp = await AliHttp.Post(url, postdata, token.user_id, '')
+    const postData = {}
+    const resp = await AliHttp.Post(url, postData, token.user_id, '')
     if (AliHttp.IsSuccess(resp.code)) {
       token.pic_drive_id = resp.body.data.driveId
       return true
@@ -182,7 +185,7 @@ export default class AliUser {
 
   
   static async ApiUserDriveDetails(user_id: string): Promise<IAliUserDriveDetails> {
-    let detail: IAliUserDriveDetails = {
+    const detail: IAliUserDriveDetails = {
       drive_used_size: 0,
       drive_total_size: 0,
       default_drive_used_size: 0,
@@ -193,8 +196,8 @@ export default class AliUser {
     }
     if (!user_id) return detail
     const url = 'adrive/v1/user/driveCapacityDetails'
-    const postdata = '{}'
-    const resp = await AliHttp.Post(url, postdata, user_id, '')
+    const postData = '{}'
+    const resp = await AliHttp.Post(url, postData, user_id, '')
     if (AliHttp.IsSuccess(resp.code)) {
       detail.drive_used_size = resp.body.drive_used_size || 0
       detail.drive_total_size = resp.body.drive_total_size || 0
@@ -211,10 +214,10 @@ export default class AliUser {
 
   static async ApiUserDriveFileCount(user_id: string, category: string, type: string): Promise<number> {
     if (!user_id) return 0
-    let token = await UserDAL.GetUserTokenFromDB(user_id)
+    const token = await UserDAL.GetUserTokenFromDB(user_id)
     if (!token) return 0
-    let url = 'adrive/v3/file/search'
-    let postdata = {
+    const url = 'adrive/v3/file/search'
+    const postData = {
       drive_id_list: [token?.default_drive_id, token?.pic_drive_id],
       marker: '',
       limit: 1,
@@ -224,7 +227,7 @@ export default class AliUser {
       query: type ? 'type="' + type + '"' : 'category="' + category + '"',
       return_total_count: true
     }
-    const resp = await AliHttp.Post(url, postdata, user_id, '')
+    const resp = await AliHttp.Post(url, postData, user_id, '')
     try {
       if (AliHttp.IsSuccess(resp.code)) {
         return resp.body.total_count || 0
@@ -242,19 +245,19 @@ export default class AliUser {
     let result: IAliUserDriveCapacity[] = []
     if (!user_id) return result
     const url = 'adrive/v1/user/capacityDetails'
-    const postdata = '{}'
-    const resp = await AliHttp.Post(url, postdata, user_id, '')
+    const postData = '{}'
+    const resp = await AliHttp.Post(url, postData, user_id, '')
     if (AliHttp.IsSuccess(resp.code)) {
-      let list = resp.body.capacity_details || []
-      let today = new Date()
+      const list = resp.body.capacity_details || []
+      const today = new Date()
       for (let i = 0, maxi = list.length; i < maxi; i++) {
-        let item = list[i]
+        const item = list[i]
         let expiredstr = ''
 
         if (item.expired == 'permanent_condition') expiredstr = '永久有效，每年激活'
         else if (item.expired == 'permanent') expiredstr = '永久有效'
         else {
-          let data = new Date(item.expired)
+          const data = new Date(item.expired)
 
           if (data > today) expiredstr = humanDateTimeDateStr(item.expired) + ' 到期'
           else expiredstr = '已过期'
@@ -263,12 +266,12 @@ export default class AliUser {
         result.push({
           type: item.type,
           size: item.size,
-          sizestr: humanSize(item.size),
+          sizeStr: humanSize(item.size),
           expired: item.expired,
           expiredstr: expiredstr,
           description: item.description,
           latest_receive_time: humanDateTimeDateStr(item.latest_receive_time)
-        })
+        } as IAliUserDriveCapacity)
       }
       result = result.sort((a, b) => a.latest_receive_time.localeCompare(b.latest_receive_time))
     } else {

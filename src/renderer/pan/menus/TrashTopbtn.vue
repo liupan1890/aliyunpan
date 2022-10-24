@@ -19,15 +19,15 @@ export default defineComponent({
 </script>
 
 <template>
-  <div class="toppanbtn" v-show="dirtype == 'trash'">
-    <a-button type="text" size="small" tabindex="-1" @click="topTrashDeleteAll" class="danger"><i class="iconfont iconqingkong" />清空回收站</a-button>
+  <div v-show="dirtype == 'trash'" class="toppanbtn">
+    <a-button type="text" size="small" tabindex="-1" class="danger" @click="topTrashDeleteAll"><i class="iconfont iconqingkong" />清空回收站</a-button>
   </div>
-  <div class="toppanbtn" v-show="dirtype == 'trash' && isselected">
+  <div v-show="dirtype == 'trash' && isselected" class="toppanbtn">
     <a-button type="text" size="small" tabindex="-1" @click="topRestoreSelectedFile"><i class="iconfont iconrecover" />还原选中</a-button>
-    <a-button type="text" size="small" tabindex="-1" @click="() => menuTrashSelectFile(false, true)" class="danger"><i class="iconfont iconrest" />彻底删除</a-button>
+    <a-button type="text" size="small" tabindex="-1" class="danger" @click="() => menuTrashSelectFile(false, true)"><i class="iconfont iconrest" />彻底删除</a-button>
   </div>
 
-  <div class="toppanbtn" v-show="dirtype == 'recover' && isselected">
+  <div v-show="dirtype == 'recover' && isselected" class="toppanbtn">
     <a-button type="text" size="small" tabindex="-1" @click="topRecoverSelectedFile"><i class="iconfont iconrecover" />恢复选中</a-button>
   </div>
 </template>

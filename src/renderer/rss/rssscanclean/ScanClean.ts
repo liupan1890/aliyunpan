@@ -9,66 +9,66 @@ import { h, Ref } from 'vue'
 import { foldericonfn, IScanDriverModel, TreeNodeData } from '../ScanDAL'
 
 
-export async function GetCleanFile(user_id: string, PanData: IScanDriverModel, Processing: Ref<number>, ScanCount: Ref<number>, TotalFileCount: Ref<number>, ScanType: string) {
-  ScanCount.value = 0
-  let keys = PanData.DirMap.keys() 
-  let dirlist: IAliDirBatchResp[] = []
+export async function GetCleanFile(user_id: string, PanData: IScanDriverModel, Processing: Ref<number>, scanCount: Ref<number>, totalFileCount: Ref<number>, scanType: string) {
+  scanCount.value = 0
+  const keys = PanData.DirMap.keys() 
+  let dirList: IAliDirBatchResp[] = []
   Processing.value = 0
   while (true) {
     let add = 0
-    while (dirlist.length < 20) {
-      let key = keys.next()
+    while (dirList.length < 20) {
+      const key = keys.next()
       if (!key.done) {
         add++
-        dirlist.push({ dir_id: key.value, next_marker: '', items: [], itemsKey: new Set() })
+        dirList.push({ dirID: key.value, next_marker: '', items: [], itemsKey: new Set() } as IAliDirBatchResp)
       } else break
     }
     Processing.value += add
-    if (dirlist.length == 0) break
+    if (dirList.length == 0) break
     if (!PanData.drive_id) break 
 
-    let isget = await ApiBatchDirFileList(user_id, PanData.drive_id, dirlist, ScanType)
-    if (isget) {
-      let list: IAliDirBatchResp[] = []
-      for (let i = 0, maxi = dirlist.length; i < maxi; i++) {
-        if (dirlist[i].next_marker && dirlist[i].items.length < 2000) {
-          list.push(dirlist[i]) 
+    const isGet = await ApiBatchDirFileList(user_id, PanData.drive_id, dirList, scanType)
+    if (isGet) {
+      const list: IAliDirBatchResp[] = []
+      for (let i = 0, maxi = dirList.length; i < maxi; i++) {
+        if (dirList[i].next_marker && dirList[i].items.length < 2000) {
+          list.push(dirList[i]) 
         } else {
-          let dir_id = dirlist[i].dir_id
+          const dirID = dirList[i].dirID
           
-          let filelist = dirlist[i].items
-          TotalFileCount.value += filelist.length
-          let savelist: IAliGetDirModel[] = []
+          const fileList = dirList[i].items
+          totalFileCount.value += fileList.length
+          let saveList: IAliGetDirModel[] = []
           
-          for (let j = 0, maxj = filelist.length; j < maxj; j++) {
-            let fileitem = filelist[j]
-            savelist.push({
+          for (let j = 0, maxj = fileList.length; j < maxj; j++) {
+            const fileItem = fileList[j]
+            saveList.push({
               __v_skip: true,
-              drive_id: fileitem.drive_id,
-              file_id: fileitem.file_id,
-              parent_file_id: fileitem.parent_file_id,
-              name: fileitem.name,
-              namesearch: fileitem.namesearch || HanToPin(fileitem.name),
-              size: fileitem.size,
-              time: fileitem.time,
+              drive_id: fileItem.drive_id,
+              file_id: fileItem.file_id,
+              parent_file_id: fileItem.parent_file_id,
+              name: fileItem.name,
+              namesearch: fileItem.namesearch || HanToPin(fileItem.name),
+              size: fileItem.size,
+              time: fileItem.time,
               
-              description: fileitem.icon
-            })
+              description: fileItem.icon
+            } as IAliGetDirModel)
           }
-          if (savelist.length > 0) {
+          if (saveList.length > 0) {
             
-            let node = PanData.DirChildrenMap.get(dir_id)
+            const node = PanData.DirChildrenMap.get(dirID)
             if (node && node.length > 0) {
               node.sort((a, b) => a.name.localeCompare(b.name))
-              savelist.sort((a, b) => b.size - a.size)
-              savelist = node.concat(savelist)
+              saveList.sort((a, b) => b.size - a.size)
+              saveList = node.concat(saveList)
             } else {
-              savelist.sort((a, b) => b.size - a.size)
+              saveList.sort((a, b) => b.size - a.size)
             }
-            PanData.DirChildrenMap.set(dir_id, savelist)
+            PanData.DirChildrenMap.set(dirID, saveList)
           }
-          if (savelist.length > 0) {
-            let dir = PanData.DirMap.get(dir_id)
+          if (saveList.length > 0) {
+            let dir = PanData.DirMap.get(dirID)
             if (dir) {
               PanData.CleanDirMap.set(dir.file_id, 'clean')
               while (true) {
@@ -80,45 +80,46 @@ export async function GetCleanFile(user_id: string, PanData: IScanDriverModel, P
           }
         }
       }
-      dirlist.length = 0
-      dirlist = list
+      dirList.length = 0
+      dirList = list
     }
   }
   Processing.value = PanData.DirMap.size
 }
 
-async function ApiBatchDirFileList(user_id: string, drive_id: string, dirlist: IAliDirBatchResp[], ScanType: string) {
-  if (!user_id || !drive_id || dirlist.length == 0) return false
-  let postdata = '{"requests":['
-  for (let i = 0, maxi = dirlist.length; i < maxi; i++) {
-    if (i > 0) postdata = postdata + ','
+async function ApiBatchDirFileList(user_id: string, drive_id: string, dirList: IAliDirBatchResp[], scanType: string) {
+  if (!user_id || !drive_id || dirList.length == 0) return false
+  let postData = '{"requests":['
+  for (let i = 0, maxi = dirList.length; i < maxi; i++) {
+    if (i > 0) postData = postData + ','
     
-    let query = 'parent_file_id="' + dirlist[i].dir_id + '"'
-    if (ScanType == 'size10') query += ' and size > 10485760'
-    else if (ScanType == 'size100') query += ' and size > 104857600'
-    else if (ScanType == 'size1000') query += ' and size > 1048576000'
-    else if (['video', 'doc', 'image', 'audio', 'others', 'zip'].includes(ScanType)) query += ' and size > 1048576000 and category = "' + ScanType + '"'
+    let query = 'parent_file_id="' + dirList[i].dirID + '"'
+    if (scanType == 'size10') query += ' and size > 10485760'
+    else if (scanType == 'size100') query += ' and size > 104857600'
+    else if (scanType == 'size1000') query += ' and size > 1048576000'
+    else if (scanType == 'size5000') query += ' and size > 5242880000'
+    else if (['video', 'doc', 'image', 'audio', 'others', 'zip'].includes(scanType)) query += ' and size > 1048576000 and category = "' + scanType + '"'
     if (!query.includes('category')) query += ' and type = "file"'
     const data2 = {
       body: {
         drive_id: drive_id,
         query: query,
-        marker: dirlist[i].next_marker,
+        marker: dirList[i].next_marker,
         limit: 100,
         fields: 'thumbnail',
         order_by: 'size DESC'
       },
       headers: { 'Content-Type': 'application/json' },
-      id: dirlist[i].dir_id,
+      id: dirList[i].dirID,
       method: 'POST',
       url: '/file/search'
     }
-    postdata = postdata + JSON.stringify(data2)
+    postData = postData + JSON.stringify(data2)
   }
-  postdata += '],"resource":"file"}'
+  postData += '],"resource":"file"}'
 
   const url = 'v2/batch?jsonmask=responses(id%2Cstatus%2Cbody(next_marker%2Cpunished_file_count%2Ctotal_count%2Citems(name%2Cfile_id%2Cdrive_id%2Ctype%2Csize%2Cupdated_at%2Ccategory%2Cfile_extension%2Cparent_file_id%2Cmime_type%2Cmime_extension%2Cpunish_flag)))'
-  const resp = await AliHttp.Post(url, postdata, user_id, '')
+  const resp = await AliHttp.Post(url, postData, user_id, '')
 
   try {
     if (AliHttp.IsSuccess(resp.code)) {
@@ -128,9 +129,9 @@ async function ApiBatchDirFileList(user_id: string, drive_id: string, dirlist: I
         if (status >= 200 && status <= 205) {
           const respi = responses[j]
           const id = respi.id || ''
-          for (let i = 0, maxi = dirlist.length; i < maxi; i++) {
-            if (dirlist[i].dir_id == id) {
-              const dir = dirlist[i]
+          for (let i = 0, maxi = dirList.length; i < maxi; i++) {
+            if (dirList[i].dirID == id) {
+              const dir = dirList[i]
               const items = respi.body.items
               dir.next_marker = respi.body.next_marker
               for (let i = 0, maxi = items.length; i < maxi; i++) {
@@ -156,65 +157,67 @@ async function ApiBatchDirFileList(user_id: string, drive_id: string, dirlist: I
 }
 const fileiconfn = (icon: string) => h('i', { class: 'iconfont ' + icon })
 
-export function GetTreeNodes(PanData: IScanDriverModel, parentid: string, TreeDataMap: Map<string, TreeNodeData>) {
-  let data: TreeNodeData[] = []
+export function GetTreeNodes(PanData: IScanDriverModel, parent_file_id: string, treeDataMap: Map<string, TreeNodeData>) {
+  const data: TreeNodeData[] = []
   let item: IAliGetDirModel
 
-  let dirlist = PanData.DirChildrenMap.get(parentid) || []
-  for (let i = 0, maxi = dirlist.length; i < maxi; i++) {
-    item = dirlist[i]
+  const dirList = PanData.DirChildrenMap.get(parent_file_id) || []
+  for (let i = 0, maxi = dirList.length; i < maxi; i++) {
+    item = dirList[i]
     if (item.description != '' || PanData.CleanDirMap.has(item.file_id)) {
       
-      let isdir = item.description == 'iconfile-folder' || item.description == ''
+      const isDir = item.description == 'iconfile-folder' || !item.description
       data.push({
         key: item.file_id,
         title: item.name,
-        icon: isdir ? foldericonfn : () => fileiconfn(item.description),
-        children: GetTreeNodes(PanData, item.file_id, TreeDataMap),
-        size: isdir ? 0 : item.size,
-        sizestr: isdir ? '' : humanSize(item.size)
-      })
+        icon: isDir ? foldericonfn : () => fileiconfn(item.description),
+        children: GetTreeNodes(PanData, item.file_id, treeDataMap),
+        size: isDir ? 0 : item.size,
+        sizeStr: isDir ? '' : humanSize(item.size)
+      } as TreeNodeData)
     }
   }
   data.map((a) => {
-    TreeDataMap.set(a.key as string, a)
+    treeDataMap.set(a.key as string, a)
+    return true
   })
   return data
 }
 
 
-export function DeleteFromScanClean(PanData: IScanDriverModel, idlist: string[]) {
-  let entries = PanData.DirChildrenMap.entries()
-  for (let i = 0, maxi = PanData.DirChildrenMap.size; i < maxi && idlist.length > 0; i++) {
-    let value = entries.next().value
-    let children = value[1] as IAliGetDirModel[]
-    let savelist: IAliGetDirModel[] = []
+export function DeleteFromScanClean(PanData: IScanDriverModel, idList: string[]) {
+  const entries = PanData.DirChildrenMap.entries()
+  for (let i = 0, maxi = PanData.DirChildrenMap.size; i < maxi && idList.length > 0; i++) {
+    const value = entries.next().value
+    const children = value[1] as IAliGetDirModel[]
+    const saveList: IAliGetDirModel[] = []
     for (let j = 0, maxj = children.length; j < maxj; j++) {
-      let key = children[j].file_id
-      if (idlist.includes(key)) {
+      const key = children[j].file_id
+      if (idList.includes(key)) {
         
-        idlist = idlist.filter((t) => t != key)
+        idList = idList.filter((t) => t != key)
       } else {
-        savelist.push(children[j])
+        saveList.push(children[j])
       }
     }
-    if (children.length != savelist.length) PanData.DirChildrenMap.set(value[0], savelist)
+    if (children.length != saveList.length) PanData.DirChildrenMap.set(value[0], saveList)
   }
 }
 
 export function GetTreeCheckedSize(PanData: IScanDriverModel, checkedKeys: string[]) {
   if (checkedKeys.length == 0) return 0
-  let checkedmap = new Set(checkedKeys)
+  const checkedMap = new Set(checkedKeys)
   let checkedsize = 0
-  let TreeDataMap = new Map<string, TreeNodeData>()
-  GetTreeNodes(PanData, 'root', TreeDataMap)
-  let values = TreeDataMap.values()
+  const treeDataMap = new Map<string, TreeNodeData>()
+  GetTreeNodes(PanData, 'root', treeDataMap)
+  const values = treeDataMap.values()
   let clen = 0
-  for (let i = 0, maxi = TreeDataMap.size; i < maxi; i++) {
-    let node = values.next().value as TreeNodeData
-    if (checkedmap.has(node.key)) {
+  for (let i = 0, maxi = treeDataMap.size; i < maxi; i++) {
+    const node = values.next().value as TreeNodeData
+    if (checkedMap.has(node.key)) {
       clen = node.children!.length
       if (clen > 0) {
+        // donothing
       } else if (node.icon != foldericonfn) {
         checkedsize += node.size
       }

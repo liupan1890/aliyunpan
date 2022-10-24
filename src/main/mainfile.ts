@@ -5,14 +5,14 @@ const DEBUGGING = !app.isPackaged
 
 let NewCopyed = false
 let NewSaved = false
-export function getAsarPath(filename: string) {
+export function getAsarPath(fileName: string) {
   if (DEBUGGING) {
-    let basePath = path.resolve(app.getAppPath()) 
-    return path.join(basePath, filename)
+    const basePath = path.resolve(app.getAppPath()) 
+    return path.join(basePath, fileName)
   } else {
-    let basePath = path.resolve(app.getAppPath()) 
-    let baseNew = path.join(basePath, '..', 'app.new')
-    let baseSave = path.join(basePath, '..', 'default_app.asar')
+    const basePath = path.resolve(app.getAppPath()) 
+    const baseNew = path.join(basePath, '..', 'app.new')
+    const baseSave = path.join(basePath, '..', 'default_app.asar')
     if (NewCopyed == false) {
       if (existsSync(baseNew)) {
         try {
@@ -26,48 +26,48 @@ export function getAsarPath(filename: string) {
       }
     }
     if (NewSaved == false) NewSaved = existsSync(baseSave)
-    if (NewSaved) return path.join(baseSave, filename)
-    return path.join(basePath, filename)
+    if (NewSaved) return path.join(baseSave, fileName)
+    return path.join(basePath, fileName)
   }
 }
 
-export function getResourcesPath(filename: string) {
+export function getResourcesPath(fileName: string) {
   if (DEBUGGING) {
-    let basePath = path.resolve(app.getAppPath(), '..') 
-    return path.join(basePath, filename)
+    const basePath = path.resolve(app.getAppPath(), '..') 
+    return path.join(basePath, fileName)
   } else {
-    let basePath = path.resolve(app.getAppPath(), '..') 
+    const basePath = path.resolve(app.getAppPath(), '..') 
 
-    if (filename == 'app.ico' && process.platform !== 'win32') {
-      filename = 'app.png' 
+    if (fileName == 'app.ico' && process.platform !== 'win32') {
+      fileName = 'app.png' 
     }
 
-    if (filename == 'app.ico') {
+    if (fileName == 'app.ico') {
       try {
-        let png = path.join(basePath, filename)
+        const png = path.join(basePath, fileName)
         if (!existsSync(png)) {
-          let bufferData = Buffer.from(appicon, 'base64')
+          const bufferData = Buffer.from(appicon, 'base64')
           writeFileSync(png, bufferData)
         }
       } catch {}
     }
 
-    if (filename == 'app.png') {
+    if (fileName == 'app.png') {
       try {
-        let png = path.join(basePath, filename)
+        const png = path.join(basePath, fileName)
         if (!existsSync(png)) {
-          let bufferData = Buffer.from(apppng, 'base64')
+          const bufferData = Buffer.from(apppng, 'base64')
           writeFileSync(png, bufferData)
         }
       } catch {}
     }
 
-    return path.join(basePath, filename)
+    return path.join(basePath, fileName)
   }
 }
 export function getCrxPath() {
   if (DEBUGGING) {
-    let basePath = path.resolve(app.getAppPath(), '..') 
+    const basePath = path.resolve(app.getAppPath(), '..') 
     return path.join(basePath, 'crx')
   } else {
     let basePath = path.resolve(app.getAppPath(), '..') 
@@ -76,15 +76,15 @@ export function getCrxPath() {
       if (!existsSync(basePath)) mkdirSync(basePath)
     } catch {}
     try {
-      let manifest = path.join(basePath, 'manifest.json')
+      const manifest = path.join(basePath, 'manifest.json')
       if (!existsSync(manifest)) writeFileSync(manifest, crxmanifest, 'utf-8')
     } catch {}
     try {
-      let devtoolshtml = path.join(basePath, 'devtools.html')
+      const devtoolshtml = path.join(basePath, 'devtools.html')
       if (!existsSync(devtoolshtml)) writeFileSync(devtoolshtml, crxdevtoolshtml, 'utf-8')
     } catch {}
     try {
-      let devtoolsjs = path.join(basePath, 'devtools.js')
+      const devtoolsjs = path.join(basePath, 'devtools.js')
       if (!existsSync(devtoolsjs)) writeFileSync(devtoolsjs, crxdevtoolsjs, 'utf-8')
     } catch {}
 
@@ -92,8 +92,8 @@ export function getCrxPath() {
   }
 }
 
-export function getUserDataPath(filename: string) {
-  return path.join(app.getPath('userData'), filename)
+export function getUserDataPath(fileName: string) {
+  return path.join(app.getPath('userData'), fileName)
 }
 
 const appicon =

@@ -1,6 +1,6 @@
-export async function WorkerUploadFiles(ingoredList: string[], user_id: string, drive_id: string, parentid: string, files: string[]) {
+export async function WorkerUploadFiles(ingoredList: string[], user_id: string, drive_id: string, parent_file_id: string, files: string[]) {
   let worker: any
-  let result: any = null
+  let result: any
   await new Promise<void>((resolve) => {
     worker = new Worker('uploadfilesworker.js')
     worker.addEventListener('message', (event: any) => {
@@ -13,7 +13,7 @@ export async function WorkerUploadFiles(ingoredList: string[], user_id: string, 
     worker.addEventListener('error', function (event: any) {
       resolve()
     })
-    worker.postMessage({ ingoredList, user_id, drive_id, parentid, files })
+    worker.postMessage({ ingoredList, user_id, drive_id, parent_file_id, files })
   })
     .catch(() => {})
     .then(() => {

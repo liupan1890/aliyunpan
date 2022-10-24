@@ -50,19 +50,19 @@ export default defineComponent({
     },
     handleSaveEditLink() {
       let expiration = this.shareDate
-      let mindate = new Date()
+      const mindate = new Date()
       mindate.setMinutes(mindate.getMinutes() + 2)
       if (expiration) expiration = new Date(expiration) < mindate ? mindate.toISOString() : new Date(expiration).toISOString()
       else expiration = ''
 
-      let share_pwd = this.sharePwd.trim().replaceAll(' ', '')
+      const share_pwd = this.sharePwd.trim().replaceAll(' ', '')
       if (share_pwd.length != 4 && share_pwd.length != 0) {
         message.error('提取码必须为 空 或者 4位 数字字母汉字特殊字符的组合')
         return
       }
 
       let share_name = this.shareName.trim().replaceAll('"', '')
-      share_name = share_name.replace(/[<>\:"\\\|\?\*]+/g, '')
+      share_name = share_name.replace(/[<>:"\\|?*]+/g, '')
       share_name = share_name.replace(/[\f\n\r\t\v]/g, '')
       while (share_name.endsWith(' ') || share_name.endsWith('.')) share_name = share_name.substring(0, share_name.length - 1)
 
@@ -72,20 +72,20 @@ export default defineComponent({
       }
 
       const files = this.sharelist
-      const idlsit: string[] = []
-      const explsit: string[] = []
-      const pwdlsit: string[] = []
-      let namelsit: string[] | undefined = []
+      const idList: string[] = []
+      const expLsit: string[] = []
+      const pwdList: string[] = []
+      let nameList: string[] | undefined = []
       for (let i = 0, maxi = files.length; i < maxi; i++) {
-        idlsit.push(files[i].share_id)
-        explsit.push(expiration)
-        pwdlsit.push(share_pwd)
-        namelsit.push(share_name)
+        idList.push(files[i].share_id)
+        expLsit.push(expiration)
+        pwdList.push(share_pwd)
+        nameList.push(share_name)
       }
 
-      if (files.length > 1) namelsit = undefined 
-      const user_id = useUserStore().userID
-      AliShare.ApiUpdateShareBatch(user_id, idlsit, explsit, pwdlsit, namelsit).then((success: UpdateShareModel[]) => {
+      if (files.length > 1) nameList = undefined 
+      const user_id = useUserStore().user_id
+      AliShare.ApiUpdateShareBatch(user_id, idList, expLsit, pwdList, nameList).then((success: UpdateShareModel[]) => {
         useMyShareStore().mUpdateShare(success)
         modalCloseAll()
       })
@@ -108,14 +108,14 @@ export default defineComponent({
 </script>
 
 <template>
-  <a-modal :visible="visible" @cancel="handleHide" @before-open="handleOpen" @close="handleClose" :footer="false" :unmount-on-close="true" :mask-closable="false">
+  <a-modal :visible="visible" :footer="false" :unmount-on-close="true" :mask-closable="false" @cancel="handleHide" @before-open="handleOpen" @close="handleClose">
     <template #title>{{ sharelist.length == 1 ? '修改分享链接' : '批量修改分享链接' }}</template>
     <div style="width: 500px">
       <div v-if="sharelist.length == 1" class="sharelinkcopy">
-        <a title="点击打开" @click="handleOpenShare" class="sharelinkcopya"> {{ sharelist[0].share_url }}{{ sharelist[0].share_pwd ? ' 提取码：' + sharelist[0].share_pwd : '' }} </a>
+        <a title="点击打开" class="sharelinkcopya" @click="handleOpenShare"> {{ sharelist[0].share_url }}{{ sharelist[0].share_pwd ? ' 提取码：' + sharelist[0].share_pwd : '' }} </a>
         <a-button-group>
-          <a-button type="outline" size="mini" tabindex="-1" @click="handleCopyShare" title="复制链接">复制</a-button>
-          <a-button type="outline" size="mini" tabindex="-1" @click="handleOpenShare" title="打开链接">打开</a-button>
+          <a-button type="outline" size="mini" tabindex="-1" title="复制链接" @click="handleCopyShare">复制</a-button>
+          <a-button type="outline" size="mini" tabindex="-1" title="打开链接" @click="handleOpenShare">打开</a-button>
         </a-button-group>
       </div>
       <div v-else class="sharelinkcopy">
@@ -127,7 +127,7 @@ export default defineComponent({
         </a-row>
         <a-row>
           <a-col flex="auto">
-            <a-input tabindex="-1" v-model="shareName" />
+            <a-input v-model="shareName" tabindex="-1" />
           </a-col>
         </a-row>
       </div>
@@ -141,10 +141,10 @@ export default defineComponent({
         <a-row>
           <a-col flex="200px">
             <a-date-picker
+              v-model="shareDate"
               style="width: 200px; margin: 0"
               show-time
               :preview-shortcut="false"
-              v-model="shareDate"
               placeholder="永久有效"
               value-format="YYYY-MM-DD HH:mm:ss"
               :shortcuts="[
@@ -172,12 +172,11 @@ export default defineComponent({
                   label: '1月',
                   value: () => dayjs().add(1, 'month')
                 }
-              ]"
-            />
+              ]" />
           </a-col>
           <a-col flex="12px"></a-col>
           <a-col flex="100px">
-            <a-input tabindex="-1" v-model="sharePwd" placeholder="没有不填" />
+            <a-input v-model="sharePwd" tabindex="-1" placeholder="没有不填" />
           </a-col>
           <a-col flex="auto"></a-col>
           <a-col flex="60px">

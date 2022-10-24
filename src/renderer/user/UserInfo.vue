@@ -3,15 +3,14 @@ import { computed, defineComponent } from 'vue'
 import { useUserStore } from '../store'
 import UserDAL from '../user/userdal'
 import message from '../utils/message'
-import UserLogin from './UserLogin.vue'
 import { modalUserSpace } from '../utils/modal'
 export default defineComponent({
   setup() {
-    const handleUserChange = (val: boolean, userID: string) => {
-      if (val) UserDAL.UserChange(userID)
+    const handleUserChange = (val: boolean, user_id: string) => {
+      if (val) UserDAL.UserChange(user_id)
     }
     const handleRefreshUserInfo = () => {
-      UserDAL.UserRefreshByUserFace(useUserStore().userID, false).then((success) => {
+      UserDAL.UserRefreshByUserFace(useUserStore().user_id, false).then((success) => {
         if (success) message.info('刷新用户信息成功')
         else message.error('刷新用户信息失败')
       })
@@ -22,7 +21,7 @@ export default defineComponent({
     }
 
     const handleLogOff = () => {
-      UserDAL.UserLogOff(useUserStore().userID)
+      UserDAL.UserLogOff(useUserStore().user_id)
     }
 
     const handleLogin = () => {
@@ -33,14 +32,13 @@ export default defineComponent({
     }
 
     const userList = computed(() => {
-      if (userStore.userID) return UserDAL.GetUserList() 
+      if (userStore.user_id) return UserDAL.GetUserList() 
       else return []
     })
     const userStore = useUserStore()
 
     return { handleUserChange, handleRefreshUserInfo, handleLogOff, handleLogin, userList, userStore, handleUserSpace }
-  },
-  components: { UserLogin }
+  }
 })
 </script>
 
@@ -74,7 +72,7 @@ export default defineComponent({
           </a-col>
         </a-row>
 
-        <a-list style="margin: 12px 0 24px 0" :max-height="300" size="small" :data="userList" class="userlist" :data-refresh="userStore.userID">
+        <a-list style="margin: 12px 0 24px 0" :max-height="300" size="small" :data="userList" class="userlist" :data-refresh="userStore.user_id">
           <template #header>
             <div class="userspace">切换到其他账号</div>
           </template>
@@ -84,7 +82,7 @@ export default defineComponent({
                 <a-progress type="circle" size="mini" status="warning" :percent="item.used_size / item.total_size" />
               </div>
               <span :title="item.user_name" style="max-width:172px;display: :inline-block;">{{ item.nick_name ? item.nick_name : item.user_name }}</span>
-              <a-switch size="small" :model-value="userStore.userID == item.user_id" title="切换到这个账号" @change="(val:any) => handleUserChange(val as any,item.user_id)" tabindex="-1">
+              <a-switch size="small" :model-value="userStore.user_id == item.user_id" title="切换到这个账号" tabindex="-1" @change="(val:any) => handleUserChange(val as any,item.user_id)">
                 <template #checked> 当前 </template>
                 <template #unchecked> 选我 </template>
               </a-switch>
@@ -93,7 +91,7 @@ export default defineComponent({
         </a-list>
 
         <a-row justify="center">
-          <a-button type="outline" size="small" tabindex="-1" style="margin: 0 0 8px 0" @click="handleLogin" title="Alt+L"> 登录一个新账号 </a-button>
+          <a-button type="outline" size="small" tabindex="-1" style="margin: 0 0 8px 0" title="Alt+L" @click="handleLogin"> 登录一个新账号 </a-button>
         </a-row>
       </div>
       <div v-else style="width: 250px">
@@ -112,7 +110,7 @@ export default defineComponent({
         </a-row>
         <a-divider />
         <a-row justify="center">
-          <a-button type="outline" size="small" tabindex="-1" style="margin: 0 0 8px 0" @click="handleLogin" title="Alt+L"> 登录一个新账号 </a-button>
+          <a-button type="outline" size="small" tabindex="-1" style="margin: 0 0 8px 0" title="Alt+L" @click="handleLogin"> 登录一个新账号 </a-button>
         </a-row>
       </div>
     </template>

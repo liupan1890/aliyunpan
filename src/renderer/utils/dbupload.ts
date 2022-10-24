@@ -1,111 +1,110 @@
 import Dexie from 'dexie'
 
-export interface IUploadingUI {
-  UploadID: string
-  IsRunning: boolean
-  Task: IStateUploadTask
-  Info: IStateUploadInfo
+
+export interface IStateUploadTaskFile {
+  
+  TaskID: number
+  
+  UploadID: number
+  
+  partPath: string
+  
+  name: string
+  
+  size: number
+  sizeStr: string
+  
+  mtime: number
+  
+  isDir: boolean
+  IsRoot: boolean
+  
+  uploaded_is_rapid: boolean
+  
+  uploaded_file_id: string
 }
 
 export interface IStateUploadTask {
   
-  UploadID: string
+  TaskID: number
   
-  UploadTime: number
+  TaskName: string
   
-  UploadState: TaskState
-
+  TaskFileID: string
   
   user_id: string
-  parent_id: string
+  parent_file_id: string
   drive_id: string
   
   check_name_mode: string
 
+  isDir: boolean
   
-  LocalFilePath: string
-  
-  name: string
-  
-  size: number
-  sizestr: string
-  
-  mtime: number
+  localFilePath: string
 
   
-  IsDir: boolean
-
-  
-  uploaded_is_rapid: boolean
-  
-  uploaded_file_id: string
-
-  
-  Children: IStateUploadChildFile[]
+  Children: IStateUploadTaskFile[]
   
   ChildTotalCount: number
   
   ChildFinishCount: number
+  
+  ChildTotalSize: number
+  
+  ChildFinishSize: number
 }
 
-
-export interface IStateUploadChildFile {
-  
-  UploadState: TaskState
-  
-  index: number
-  
-  PartName: string
-  
-  name: string
-  
-  size: number
-  sizestr: string
-  
-  mtime: number
-
-  
-  uploaded_is_rapid: boolean
-  
-  uploaded_file_id: string
-}
+export declare type UploadState =
+  | '排队中' // 排队中， 等待上传
+  | '读取中' // 读取文件夹包含的文件列表
+  | 'hashing' // 计算hash，预秒传，秒传
+  | 'running' // 上传中
+  | '已暂停' // 已暂停
+  | 'success' // 上传成功
+  | 'error' // 上传失败
 
 export interface IStateUploadInfo {
   
-  UploadID: string
+  UploadID: number
   
-  UploadState: UploadState
+  uploadState: UploadState
   
   up_upload_id: string
   
   up_file_id: string
+
   
-  Loaded: number
+  uploadSize: number
   
-  UploadSize: number
+  fileSize: number
   
   Speed: number
   
-  SpeedStr: string
+  speedStr: string
   
   Progress: number
 
   
-  StartTime: number
-  EndTime: number
+  failedCode: number
   
-  SpeedAvg: number
+  failedMessage: string
   
-  UsedTime: number
+  autoTryTime: number
+  
+  autoTryCount: number
+}
+export interface IUploadingUI {
+  IsRunning: boolean
+  TaskID: number
+  UploadID: number
+  user_id: string
+  parent_file_id: string
+  drive_id: string
+  check_name_mode: string
+  localFilePath: string
 
-  
-  FailedCode: number
-  
-  FailedMessage: string
-  
-  AutoTryTime: number
-  
-  AutoTryCount: number
+  File: IStateUploadTaskFile
+  Info: IStateUploadInfo
 }
 
 class XBYDB3Upload extends Dexie {
@@ -115,13 +114,13 @@ class XBYDB3Upload extends Dexie {
   iobject: Dexie.Table<object, string>
 
   constructor() {
-    super('XBYDB3Upload')
+    super('XBYDB3Upload1024')
 
     this.version(1)
       .stores({
-        iuploadtask: '&UploadID,UploadTime',
+        iuploadtask: '&TaskID',
         iuploadinfo: '&UploadID',
-        iuploaded: '&UploadID,UploadTime',
+        iuploaded: '++,&TaskID',
         iobject: ''
       })
       .upgrade((tx: any) => {
@@ -137,38 +136,29 @@ class XBYDB3Upload extends Dexie {
   
 
   
-  async getUploadTask(key: string): Promise<IStateUploadTask | undefined> {
+  async getUploadTask(key: number): Promise<IStateUploadTask | undefined> {
     if (!this.isOpen()) await this.open().catch(() => {})
     return await this.transaction('r', this.iuploadtask, () => {
       return this.iuploadtask.get(key)
     })
   }
+
   
-  async getUploadTaskByTop(limit: number): Promise<IStateUploadTask[]> {
+  async getUploadTaskAll(): Promise<IStateUploadTask[]> {
     if (!this.isOpen()) await this.open().catch(() => {})
     return await this.transaction('r', this.iuploadtask, () => {
-      return this.iuploadtask.orderBy('UploadTime').reverse().limit(limit).toArray()
+      return this.iuploadtask.toArray()
     })
   }
+
   
-  async getUploadTaskAllKeys(): Promise<string[]> {
+  async getUploadTaskAllKeys(): Promise<number[]> {
     if (!this.isOpen()) await this.open().catch(() => {})
     return await this.transaction('r', this.iuploadtask, () => {
       return this.iuploadtask.toCollection().primaryKeys()
     })
   }
-  
-  async saveUploadTaskOrder(keys: string[], filetime: number, dirtime: number): Promise<number> {
-    if (!this.isOpen()) await this.open().catch(() => {})
 
-    return this.iuploadtask
-      .where('UploadID')
-      .anyOf(keys)
-      .modify((item) => {
-        if (item.IsDir) item.UploadTime = dirtime++
-        else item.UploadTime = filetime++
-      })
-  }
   
   async getUploadTaskCount(): Promise<number> {
     if (!this.isOpen()) await this.open().catch(() => {})
@@ -176,48 +166,72 @@ class XBYDB3Upload extends Dexie {
       return this.iuploadtask.count()
     })
   }
+
   
-  async deleteUploadTask(key: string) {
+  async deleteUploadTask(key: number): Promise<void> {
+    console.log('deleteUploadTask', key)
     if (!this.isOpen()) await this.open().catch(() => {})
-    return this.transaction('rw', [this.iuploadtask, this.iuploadinfo], async () => {
-      await this.iuploadtask.delete(key)
-      await this.iuploadinfo.delete(key)
-    })
+    return this.iuploadtask.delete(key)
   }
+
   
-  async deleteUploadTaskBatch(keys: string[]) {
+  async deleteUploadTaskBatch(keys: number[]): Promise<void> {
+    console.log('deleteUploadTaskBatch', keys)
+    if (keys.length == 0) return
     if (!this.isOpen()) await this.open().catch(() => {})
-    return this.transaction('rw', [this.iuploadtask, this.iuploadinfo], async () => {
-      await this.iuploadtask.bulkDelete(keys)
-      await this.iuploadinfo.bulkDelete(keys)
-    })
+    return this.iuploadtask.bulkDelete(keys)
+  }
+
+  
+  async deleteUploadInfo(key: number): Promise<void> {
+    console.log('deleteUploadInfo', key)
+    if (!this.isOpen()) await this.open().catch(() => {})
+    return this.iuploadinfo.delete(key)
+  }
+
+  
+  async deleteUploadInfoBatch(keys: number[]): Promise<void> {
+    console.log('deleteUploadInfoBatch', keys)
+    if (keys.length == 0) return
+    if (!this.isOpen()) await this.open().catch(() => {})
+    return this.iuploadinfo.bulkDelete(keys)
   }
 
   async saveUploadTask(value: IStateUploadTask) {
+    console.log('saveUploadTask', value.TaskID)
     if (!this.isOpen()) await this.open().catch(() => {})
     return this.iuploadtask.put(value).catch(() => {})
   }
+
   async saveUploadTaskBatch(values: IStateUploadTask[]) {
+    console.log('saveUploadTaskBatch', values.length)
+    if (values.length == 0) return
     if (!this.isOpen()) await this.open().catch(() => {})
     return this.iuploadtask.bulkPut(values).catch(() => {})
   }
+
   
-  async clearUploadTaskAll() {
+  async clearUploadTaskAll(): Promise<void> {
     if (!this.isOpen()) await this.open().catch(() => {})
-    this.iuploadinfo.clear()
-    return this.iuploadtask.clear()
+    await this.iuploadinfo.clear()
+    await this.iuploadtask.clear()
+    await this.iobject.delete('UploadingStop')
   }
 
   
-
   async saveUploadInfo(value: IStateUploadInfo) {
+    console.log('saveUploadInfo', value.UploadID)
     if (!this.isOpen()) await this.open().catch(() => {})
     return this.iuploadinfo.put(value).catch(() => {})
   }
+
   async saveUploadInfoBatch(values: IStateUploadInfo[]) {
+    console.log('saveUploadInfoBatch', values.length)
+    if (values.length == 0) return
     if (!this.isOpen()) await this.open().catch(() => {})
     return this.iuploadinfo.bulkPut(values).catch(() => {})
   }
+
   async getUploadInfoAll(): Promise<IStateUploadInfo[]> {
     if (!this.isOpen()) await this.open().catch(() => {})
     return await this.transaction('r', this.iuploadinfo, () => {
@@ -227,66 +241,67 @@ class XBYDB3Upload extends Dexie {
 
   
 
-  async getUploaded(key: string): Promise<IStateUploadTask | undefined> {
+  async getUploaded(key: number): Promise<IStateUploadTask | undefined> {
     if (!this.isOpen()) await this.open().catch(() => {})
     return await this.transaction('r', this.iuploaded, () => {
-      return this.iuploaded.get(key)
+      return this.iuploaded.where('TaskID').equals(key).first()
     })
   }
+
   async getUploadedByTop(limit: number): Promise<IStateUploadTask[]> {
     if (!this.isOpen()) await this.open().catch(() => {})
     return await this.transaction('r', this.iuploaded, () => {
-      return this.iuploaded.orderBy('UploadTime').reverse().limit(limit).toArray()
+      return this.iuploaded.reverse().limit(limit).toArray()
     })
   }
+
   async getUploadedCount(): Promise<number> {
     if (!this.isOpen()) await this.open().catch(() => {})
     return await this.transaction('r', this.iuploaded, () => {
       return this.iuploaded.count()
     })
   }
-  async deleteUploaded(key: string) {
+
+  async deleteUploaded(key: number): Promise<number> {
     if (!this.isOpen()) await this.open().catch(() => {})
-    return this.iuploaded.delete(key)
+    return this.iuploaded.where('TaskID').equals(key).delete()
   }
-  async deleteUploadedBatch(keys: string[]) {
+
+  async deleteUploadedBatch(keys: number[]): Promise<number> {
+    if (keys.length == 0) return 0
     if (!this.isOpen()) await this.open().catch(() => {})
-    return this.iuploaded.bulkDelete(keys)
+    return this.iuploaded.where('TaskID').anyOf(keys).delete()
   }
+
   async saveUploaded(value: IStateUploadTask) {
+    console.log('saveUploaded', value.TaskID)
     if (!this.isOpen()) await this.open().catch(() => {})
     return this.iuploaded.put(value).catch(() => {})
   }
+
   async saveUploadedBatch(values: IStateUploadTask[]) {
+    console.log('saveUploadedBatch', values.length)
+    if (values.length == 0) return
     if (!this.isOpen()) await this.open().catch(() => {})
-    let keys: string[] = []
-    values.map((t) => keys.push(t.UploadID))
-    return this.transaction('rw', [this.iuploadtask, this.iuploadinfo, this.iuploaded], async () => {
-      await this.iuploaded.bulkPut(values).catch(() => {})
-      await this.iuploadtask.bulkDelete(keys).catch(() => {})
-      await this.iuploadinfo.bulkDelete(keys).catch(() => {})
-    })
+    return this.iuploaded.bulkPut(values).catch(() => {})
   }
 
   
-  async deleteUploadedOutCount(max: number) {
+  async deleteUploadedOutCount(max: number): Promise<number> {
     if (!this.isOpen()) await this.open().catch(() => {})
-    let count = await this.iuploaded.count()
+    const count = await this.iuploaded.count()
     if (count > max) {
-      return this.iuploaded
-        .orderBy('UploadTime')
-        .limit(max - count)
-        .delete()
+      return this.iuploaded.limit(max - count).delete()
     }
     return 0
   }
-  async clearUploadedAll() {
+
+  async clearUploadedAll(): Promise<void> {
     if (!this.isOpen()) await this.open().catch(() => {})
     return this.iuploaded.clear()
   }
 
   
-
   async getUploadObj(key: string): Promise<object | undefined> {
     if (!this.isOpen()) await this.open().catch(() => {})
     return await this.transaction('r', this.iobject, () => {
@@ -294,7 +309,7 @@ class XBYDB3Upload extends Dexie {
     })
   }
 
-  async saveUploadObj(key: string, value: object) {
+  async saveUploadObj(key: string, value: object): Promise<string | void> {
     if (!this.isOpen()) await this.open().catch(() => {})
     return this.iobject.put(value, key).catch(() => {})
   }

@@ -12,11 +12,11 @@ const dirPath = ref('')
 const breakSmall = ref(true)
 const matchExtList = ref<string[]>([])
 
-const handleAddExtList = (addlist: string[]) => {
-  let list: string[] = []
+const handleAddExtList = (addList: string[]) => {
+  const list: string[] = []
   let ext = ''
-  for (let i = 0, maxi = addlist.length; i < maxi; i++) {
-    ext = addlist[i].toLowerCase().trim()
+  for (let i = 0, maxi = addList.length; i < maxi; i++) {
+    ext = addList[i].toLowerCase().trim()
     while (ext.endsWith(' ') || ext.endsWith('.')) ext = ext.substring(0, ext.length - 1)
     while (ext.startsWith(' ') || ext.startsWith('.')) ext = ext.substr(1)
     if (!ext) continue
@@ -52,9 +52,9 @@ const handleClickXiMa = async () => {
   }
   ximaLoading.value = true
 
-  const RunCount = await DoXiMa(dirPath.value, breakSmall.value, matchExtList.value)
+  const runCount = await DoXiMa(dirPath.value, breakSmall.value, matchExtList.value)
   await Sleep(2000)
-  if (RunCount > 0) message.success('成功洗码 ' + RunCount + ' 个文件')
+  if (runCount > 0) message.success('成功洗码 ' + runCount + ' 个文件')
   ximaLoading.value = false
 }
 </script>

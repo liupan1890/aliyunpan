@@ -1,23 +1,48 @@
 import AliUploadDisk from '../aliapi/uploaddisk'
-import AliUploadHash from '../aliapi/uploadhash'
-import DBUpload, { IStateUploadTask, IStateUploadInfo, IUploadingUI } from '../utils/dbupload'
-import { humanSizeSpeed, Sleep } from '../utils/format'
+import DBUpload, { IStateUploadInfo, IUploadingUI, IStateUploadTaskFile } from '../utils/dbupload'
+import { humanSizeSpeed } from '../utils/format'
 import { ArrayKeyList } from '../utils/utils'
-import { randomInt } from 'crypto'
 import { StartUpload } from './uploader'
+import { useSettingStore } from '../store'
+import AliUploadHashPool from '../aliapi/uploadhashpool'
 
 
-export const RuningList: Map<string, IUploadingUI> = new Map()
+export const RuningList: Map<number, IUploadingUI> = new Map()
 
 
-export async function UploadCmd(Command: string, IsAll: boolean, IDList: string[]) {
-  let map = new Set(IDList)
-  if (Command == 'stop' || Command == 'delete') {
-    let keys = RuningList.values()
-    for (let i = 0, maxi = RuningList.size; i < maxi; i++) {
-      let item = keys.next().value as IUploadingUI
-      
-      if (IsAll || map.has(item.UploadID)) item.IsRunning = false
+export async function UploadCmd(Command: string, IsAll: boolean, UploadIDList: number[], TaskIDList: number[]): Promise<void> {
+  if (UploadIDList.length > 0) {
+    const map = new Set(UploadIDList)
+    if (Command == 'stop' || Command == 'delete') {
+      const keys = RuningList.values()
+      for (let i = 0, maxi = RuningList.size; i < maxi; i++) {
+        const item = keys.next().value as IUploadingUI
+        
+        if (map.has(item.UploadID)) item.IsRunning = false
+      }
+    }
+  }
+
+  if (TaskIDList.length > 0) {
+    const map = new Set(TaskIDList)
+    if (Command == 'stop' || Command == 'delete') {
+      const keys = RuningList.values()
+      for (let i = 0, maxi = RuningList.size; i < maxi; i++) {
+        const item = keys.next().value as IUploadingUI
+        
+        if (map.has(item.TaskID)) item.IsRunning = false
+      }
+    }
+  }
+
+  if (IsAll) {
+    if (Command == 'stop' || Command == 'delete') {
+      const keys = RuningList.values()
+      for (let i = 0, maxi = RuningList.size; i < maxi; i++) {
+        const item = keys.next().value as IUploadingUI
+        
+        item.IsRunning = false
+      }
     }
   }
 }
@@ -25,18 +50,18 @@ export async function UploadCmd(Command: string, IsAll: boolean, IDList: string[
 
 export function UploadAdd(UploadList: IUploadingUI[]) {
   for (let i = 0, maxi = UploadList.length; i < maxi; i++) {
-    let item = UploadList[i]
+    const item = UploadList[i]
     
     item.IsRunning = true
-    item.Info.UploadState = 'running'
-    item.Info.AutoTryCount = 0
-    item.Info.AutoTryTime = 0
-    item.Info.FailedCode = 0
-    item.Info.FailedMessage = ''
+    item.Info.uploadState = 'running'
+    item.Info.autoTryCount = 0
+    item.Info.autoTryTime = 0
+    item.Info.failedCode = 0
+    item.Info.failedMessage = ''
     item.Info.Speed = 0
-    item.Info.SpeedStr = ''
-    //item.Info.Loaded = 0
-    //item.Info.UploadSize = 0
+    item.Info.speedStr = ''
+    // item.Info.Loaded = 0
+    // item.Info.uploadSize = 0
     if (RuningList.has(item.UploadID)) {
       
     } else {
@@ -50,121 +75,95 @@ export function UploadAdd(UploadList: IUploadingUI[]) {
 let saveTime = 0
 
 
-export async function UploadReport() {
-  
-  let reportlist: IStateUploadInfo[] = []
-  let successlist: IStateUploadTask[] = []
-  let errorlist: IStateUploadInfo[] = []
-  let runinglist: IStateUploadInfo[] = []
-  let stoplist: IStateUploadInfo[] = []
+export async function UploadReport(): Promise<void> {
+  const settingStore = useSettingStore()
+  if (settingStore.uploadGlobalSpeed) {
+    let speedLimte = 0
+    if (settingStore.uploadGlobalSpeedM == 'MB') speedLimte = settingStore.uploadGlobalSpeed * 1024 * 1024
+    else speedLimte = settingStore.uploadGlobalSpeed * 1024
+    window.speedLimte = speedLimte
+  } else window.speedLimte = Number.MAX_VALUE
 
-  let keys = RuningList.values()
+  
+  const saveList: IStateUploadInfo[] = []
+  const reportList: IStateUploadInfo[] = []
+  const successList: IStateUploadTaskFile[] = []
+  const errorList: IStateUploadInfo[] = []
+  const runingList: IStateUploadInfo[] = []
+  const stopList: IStateUploadInfo[] = []
+  const loadingList: IStateUploadInfo[] = []
+
+  const keys = RuningList.values()
   for (let i = 0, maxi = RuningList.size; i < maxi; i++) {
-    let item = keys.next().value as IUploadingUI
-    let UploadState = item.Info.UploadState
+    const item = keys.next().value as IUploadingUI
+    const uploadState = item.Info.uploadState
     // "hashing" | "running" | "已暂停" | "success" | "error" (排队中 状态不可能出现)
-    if (UploadState == 'hashing') {
+    if (item.IsRunning == false || uploadState == '已暂停') {
       
-      const posnow = AliUploadHash.GetFileHashProofSpeed(item.UploadID)
-      let speed = posnow - item.Info.UploadSize
-      item.Info.UploadSize = posnow
-      item.Info.Progress = Math.floor((posnow * 100) / (item.Task.size + 1)) % 100
-      if (speed < 0) speed = 0
-      item.Info.Speed = speed
-      item.Info.SpeedStr = humanSizeSpeed(speed)
-      reportlist.push(item.Info)
-      runinglist.push(item.Info)
-    } else if (UploadState == 'running') {
-      
-      const posnow = AliUploadDisk.GetFileUploadSpeed(item.UploadID)
-      let speed = posnow - item.Info.UploadSize
-      item.Info.UploadSize = posnow
-      item.Info.Progress = Math.floor((posnow * 100) / (item.Task.size + 1)) % 100
-      if (speed < 0) speed = 0
-      item.Info.Speed = speed
-      item.Info.SpeedStr = humanSizeSpeed(speed)
-      reportlist.push(item.Info)
-      runinglist.push(item.Info)
-    } else if (UploadState == '已暂停') {
-      
-      stoplist.push(item.Info)
+      stopList.push(item.Info)
       AliUploadDisk.DelFileUploadSpeed(item.UploadID)
-    } else if (UploadState == 'success') {
+    } else if (uploadState == 'success') {
       
-      item.Task.UploadTime = Date.now()
-      successlist.push(item.Task)
-    } else if (UploadState == 'error') {
+      successList.push(item.File)
+    } else if (uploadState == 'error') {
       
-      errorlist.push(item.Info)
+      errorList.push(item.Info)
+    } else if (uploadState == 'hashing') {
+      
+      const posNow = AliUploadHashPool.GetFileHashProofSpeed(item.UploadID)
+      let speed = posNow - item.Info.uploadSize
+      item.Info.uploadSize = posNow
+      item.Info.Progress = Math.floor((posNow * 100) / (item.File.size + 1)) % 100
+      if (speed < 0) speed = 0
+      item.Info.Speed = speed
+      item.Info.speedStr = humanSizeSpeed(speed)
+      reportList.push(item.Info)
+      runingList.push(item.Info)
+    } else if (uploadState == 'running') {
+      
+      const posNow = AliUploadDisk.GetFileUploadSpeed(item.UploadID)
+      let speed = posNow - item.Info.uploadSize
+      item.Info.uploadSize = posNow
+      item.Info.Progress = Math.floor((posNow * 100) / (item.File.size + 1)) % 100
+      if (speed < 0) speed = 0
+      item.Info.Speed = speed
+      item.Info.speedStr = humanSizeSpeed(speed)
+      reportList.push(item.Info)
+      runingList.push(item.Info)
+      if (item.File.isDir == false && item.File.size > 3 * 1024 * 1024) saveList.push(item.Info)
+    } else if (uploadState == '读取中') {
+      item.Info.uploadSize = 0
+      item.Info.Progress = 0
+      item.Info.Speed = 0
+      item.Info.speedStr = humanSizeSpeed(0)
+      reportList.push(item.Info)
+      runingList.push(item.Info)
+      loadingList.push(item.Info)
     }
   }
 
-  let statelist: IStateUploadInfo[] = []
-  if (stoplist.length > 0) {
-    statelist = statelist.concat(stoplist)
-    stoplist.map((t) => RuningList.delete(t.UploadID))
-  }
-  if (successlist.length > 0) {
-    await DBUpload.saveUploadedBatch(successlist)
-    successlist.map((t) => RuningList.delete(t.UploadID))
-  }
-  if (errorlist.length > 0) {
-    statelist = statelist.concat(errorlist)
-    errorlist.map((t) => RuningList.delete(t.UploadID))
-  }
   
+  if (stopList.length > 0) stopList.map((t) => RuningList.delete(t.UploadID))
+  if (successList.length > 0) successList.map((t) => RuningList.delete(t.UploadID))
+  if (errorList.length > 0) errorList.map((t) => RuningList.delete(t.UploadID))
+
   saveTime++
   if (saveTime > 10) {
     
     saveTime = 0
-    statelist = statelist.concat(runinglist)
+    if (saveList.length > 0) await DBUpload.saveUploadInfoBatch(saveList)
   }
-  if (statelist.length > 0) await DBUpload.saveUploadInfoBatch(statelist)
-  let UploadSpeedTotal = AliUploadDisk.GetFileUploadSpeedTotal() + runinglist.length + successlist.length
+
+  const uploadSpeedTotal = AliUploadDisk.GetFileUploadSpeedTotal()
   
   window.WinMsgToMain({
     cmd: 'MainUploadEvent',
-    ReportList: reportlist,
-    ErrorList: errorlist,
-    SuccessList: successlist,
-    RunningKeys: ArrayKeyList('UploadID', runinglist),
-    SpeedTotal: UploadSpeedTotal > 0 ? humanSizeSpeed(UploadSpeedTotal) : ''
+    ReportList: reportList,
+    ErrorList: errorList,
+    SuccessList: successList,
+    RunningKeys: ArrayKeyList<number>('UploadID', runingList),
+    StopKeys: ArrayKeyList<number>('UploadID', stopList),
+    LoadingKeys: ArrayKeyList<number>('UploadID', loadingList),
+    SpeedTotal: runingList.length > 0 ? humanSizeSpeed(uploadSpeedTotal) : ''
   })
-}
-
-async function TestUpload(item: IUploadingUI) {
-  let max = 5
-
-  for (let i = 0; i < max; i++) {
-    //await Sleep(1000)
-  }
-
-  max = 1000
-  for (let i = 0; i < max; i++) {
-    if (item.IsRunning == false) {
-      item.Info.UploadState = '已暂停'
-      break 
-    }
-    let downsize = randomInt(1, Math.floor(item.Task.size / max))
-    item.Info.Loaded += downsize
-    item.Info.UploadSize += downsize
-    item.Info.Speed = downsize
-    item.Info.SpeedStr = humanSizeSpeed(downsize)
-    item.Info.Progress = Math.min(100, Math.floor((item.Info.UploadSize * 100) / (item.Task.size + 1)))
-    item.Info.UsedTime++
-
-    await Sleep(500)
-
-    if (item.Task.LocalFilePath.endsWith('10.txt') && item.Info.UploadSize > item.Task.size) {
-      item.Info.UploadState = 'error'
-      item.Info.FailedCode = 403
-      item.Info.FailedMessage = '禁止访问'
-      break
-    } else if (item.Info.UploadSize > item.Task.size) {
-      item.Info.UploadState = 'success'
-      break
-    }
-  }
-
-  if (item.Info.UploadState == 'running') item.Info.UploadState = 'success'
 }

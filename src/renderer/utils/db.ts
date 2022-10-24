@@ -47,49 +47,59 @@ class XBYDB3 extends Dexie {
     if (val) return val
     else return ''
   }
-  async saveValueString(key: string, value: string) {
+
+  async saveValueString(key: string, value: string): Promise<string> {
     if (!this.isOpen()) await this.open().catch(() => {})
     return this.istring.put(value || '', key)
   }
-  async saveValueStringBatch(keys: string[], values: string[]) {
+
+  async saveValueStringBatch(keys: string[], values: string[]): Promise<string> {
     if (!this.isOpen()) await this.open().catch(() => {})
     return this.istring.bulkPut(values, keys)
   }
+
   async getValueNumber(key: string): Promise<number> {
     if (!this.isOpen()) await this.open().catch(() => {})
     const val = await this.inumber.get(key)
     if (val) return val
     return 0
   }
-  async saveValueNumber(key: string, value: number) {
+
+  async saveValueNumber(key: string, value: number): Promise<string> {
     if (!this.isOpen()) await this.open().catch(() => {})
     return this.inumber.put(value, key)
   }
+
   async getValueBool(key: string): Promise<boolean> {
     if (!this.isOpen()) await this.open().catch(() => {})
     const val = await this.ibool.get(key)
     if (val) return true
     return false
   }
-  async saveValueBool(key: string, value: boolean) {
+
+  async saveValueBool(key: string, value: boolean): Promise<string> {
     if (!this.isOpen()) await this.open().catch(() => {})
     return this.ibool.put(value || false, key)
   }
+
   async getValueObject(key: string): Promise<object | undefined> {
     if (!this.isOpen()) await this.open().catch(() => {})
     const val = await this.iobject.get(key)
     if (val) return val
     else return undefined
   }
-  async saveValueObject(key: string, value: object) {
+
+  async saveValueObject(key: string, value: object): Promise<string | void> {
     if (!this.isOpen()) await this.open().catch(() => {})
     return this.iobject.put(value, key).catch(() => {})
   }
-  async saveValueObjectBatch(keys: string[], values: object[]) {
+
+  async saveValueObjectBatch(keys: string[], values: object[]): Promise<string> {
     if (!this.isOpen()) await this.open().catch(() => {})
     return this.iobject.bulkPut(values, keys)
   }
-  async deleteValueObject(key: string) {
+
+  async deleteValueObject(key: string): Promise<void> {
     if (!this.isOpen()) await this.open().catch(() => {})
     return this.iobject.delete(key)
   }
@@ -100,6 +110,7 @@ class XBYDB3 extends Dexie {
       return this.itoken.get(user_id)
     })
   }
+
   async getUserAll(): Promise<ITokenInfo[]> {
     if (!this.isOpen()) await this.open().catch(() => {})
     const list = await this.transaction('r', this.itoken, () => {
@@ -107,11 +118,13 @@ class XBYDB3 extends Dexie {
     })
     return list.sort((a: ITokenInfo, b: ITokenInfo) => b.used_size - a.used_size)
   }
-  async deleteUser(user_id: string) {
+
+  async deleteUser(user_id: string): Promise<void> {
     if (!this.isOpen()) await this.open().catch(() => {})
     return this.itoken.delete(user_id)
   }
-  async saveUser(token: ITokenInfo) {
+
+  async saveUser(token: ITokenInfo): Promise<string | void> {
     if (!this.isOpen()) await this.open().catch(() => {})
     return this.itoken.put(token, token.user_id).catch(() => {})
   }
@@ -120,16 +133,19 @@ class XBYDB3 extends Dexie {
     if (!this.isOpen()) await this.open().catch(() => {})
     return await this.iothershare.get(share_id)
   }
+
   async getOtherShareAll(): Promise<IOtherShareLinkModel[]> {
     if (!this.isOpen()) await this.open().catch(() => {})
     const list = await this.iothershare.toArray()
     return list.sort((a: IOtherShareLinkModel, b: IOtherShareLinkModel) => b.saved_time - a.saved_time)
   }
-  async deleteOtherShareBatch(share_id_list: string[]) {
+
+  async deleteOtherShareBatch(share_id_list: string[]): Promise<void> {
     if (!this.isOpen()) await this.open().catch(() => {})
     return this.iothershare.bulkDelete(share_id_list)
   }
-  async saveOtherShare(share: IOtherShareLinkModel) {
+
+  async saveOtherShare(share: IOtherShareLinkModel): Promise<string | void> {
     if (!this.isOpen()) await this.open().catch(() => {})
     return this.iothershare.put(share, share.share_id).catch(() => {})
   }

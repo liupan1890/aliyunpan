@@ -39,7 +39,7 @@ const cb = (val: any) => {
     <div class="settingspace"></div>
     <div class="settinghead">:每个文件夹独立排序</div>
     <div class="settingrow">
-      <a-select tabindex="-1" :style="{ width: '252px' }" :model-value="settingStore.uiFileOrderDuli" @update:model-value="cb({ uiFileOrderDuli: $event })" :popup-container="'#SettingDiv'">
+      <a-select tabindex="-1" :style="{ width: '252px' }" :model-value="settingStore.uiFileOrderDuli" :popup-container="'#SettingDiv'" @update:model-value="cb({ uiFileOrderDuli: $event })">
         <a-option value="null">
           不开启文件夹的独立排序
           <template #suffix>推荐</template>
@@ -168,7 +168,7 @@ const cb = (val: any) => {
     </div>
     <div class="settingrow">
       <a-row class="grid-demo">
-        <a-col flex="210px" v-for="item in settingStore.uiFileColorArray">
+        <a-col v-for="item in settingStore.uiFileColorArray" :key="item.key" flex="210px">
           <span style="width: 82px; display: inline-block"><i class="iconfont iconcheckbox-full" :style="{ color: item.key }" />{{ item.key }}</span>
           <a-input :style="{ width: '120px' }" allow-clear :model-value="item.title" @update:model-value="(val:string)=>settingStore.updateFileColor(item.key,val)"> </a-input>
         </a-col>

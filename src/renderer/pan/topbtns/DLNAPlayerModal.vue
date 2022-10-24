@@ -15,13 +15,13 @@ export default defineComponent({
   setup(props) {
     const okLoading = ref(false)
 
-    const playerlist = ref<any[]>([])
-    let dlnacasts: any = undefined
+    const playerList = ref<any[]>([])
+    let dlnacasts: any
     const handleOpen = () => {
       okLoading.value = true
       dlnacasts = window.require('dlnacasts2')()
       dlnacasts.on('update', function (player: any) {
-        playerlist.value.push(player) 
+        playerList.value.push(player) 
       })
 
       setTimeout(() => {
@@ -30,14 +30,14 @@ export default defineComponent({
     }
 
     const handlePlay = async (index: number, mode: string) => {
-      if (playerlist.value.length <= index) {
+      if (playerList.value.length <= index) {
         message.error('找不到指定的投屏设备')
         return
       }
-      let playercurr = playerlist.value[index]
-      let first = usePanFileStore().GetSelectedFirst()!
-      let user_id = usePanTreeStore().user_id
-      let info = await AliFile.ApiFileInfo(user_id, first.drive_id, first.file_id)
+      const playercurr = playerList.value[index]
+      const first = usePanFileStore().GetSelectedFirst()!
+      const user_id = usePanTreeStore().user_id
+      const info = await AliFile.ApiFileInfo(user_id, first.drive_id, first.file_id)
       if (!info) {
         message.error('读取文件链接失败，请重试')
         return
@@ -47,7 +47,7 @@ export default defineComponent({
         if (info?.play_cursor) {
           play_cursor = info?.play_cursor
         } else if (info?.user_meta) {
-          let meta = JSON.parse(info?.user_meta)
+          const meta = JSON.parse(info?.user_meta)
           if (meta.play_cursor) {
             play_cursor = parseFloat(meta.play_cursor)
           }
@@ -55,8 +55,8 @@ export default defineComponent({
       } catch {}
 
       if (mode != 'm3u8') {
-        //playercurr.stop()
-        //await Sleep(2000)
+        // playercurr.stop()
+        // await Sleep(2000)
         playercurr.play(
           info?.download_url,
           {
@@ -70,16 +70,16 @@ export default defineComponent({
         )
       } else {
         
-        let preview = await AliFile.ApiVideoPreviewUrl(user_id, first.drive_id, first.file_id)
+        const preview = await AliFile.ApiVideoPreviewUrl(user_id, first.drive_id, first.file_id)
         if (preview) {
-          let subtitles: string[] = []
+          const subtitles: string[] = []
           if (preview.subtitles.length > 0) {
             for (let i = 0; i < preview.subtitles.length; i++) {
               subtitles.push(preview.subtitles[i].url)
             }
           }
-          //playercurr.stop()
-          //await Sleep(2000)
+          // playercurr.stop()
+          // await Sleep(2000)
           playercurr.play(
             preview.url,
             {
@@ -99,11 +99,11 @@ export default defineComponent({
 
     const handleClose = () => {
       
-      playerlist.value = []
+      playerList.value = []
       if (dlnacasts) dlnacasts.destroy()
       if (okLoading.value) okLoading.value = false
     }
-    return { okLoading, handleOpen, handleClose, playerlist, handlePlay }
+    return { okLoading, handleOpen, handleClose, playerList, handlePlay }
   },
   methods: {
     handleHide() {
@@ -115,7 +115,7 @@ export default defineComponent({
 </script>
 
 <template>
-  <a-modal :visible="visible" modal-class="modalclass" @cancel="handleHide" @before-open="handleOpen" @close="handleClose" :footer="false" :unmount-on-close="true" :mask-closable="false">
+  <a-modal :visible="visible" modal-class="modalclass" :footer="false" :unmount-on-close="true" :mask-closable="false" @cancel="handleHide" @before-open="handleOpen" @close="handleClose">
     <template #title>
       <span class="modaltitle">DLNA投屏</span>
     </template>
@@ -125,7 +125,7 @@ export default defineComponent({
       </div>
 
       <div class="arco-upload-list arco-upload-list-type-text">
-        <div v-for="(item, index) in playerlist" class="arco-upload-list-item arco-upload-list-item-done">
+        <div v-for="(item, index) in playerList" :key="'P' + index" class="arco-upload-list-item arco-upload-list-item-done">
           <div class="arco-upload-list-item-content">
             <div class="arco-upload-list-item-name">
               <span class="arco-upload-list-item-file-icon">

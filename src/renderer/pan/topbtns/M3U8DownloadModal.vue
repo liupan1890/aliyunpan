@@ -23,9 +23,9 @@ export default defineComponent({
     const file_id = ref('')
     const file_name = ref('')
 
-    const m3u8list = ref<string[]>([])
-    const m3u8info = ref('')
-    const videopreview = ref<IVideoPreviewUrl>()
+    const m3u8List = ref<string[]>([])
+    const m3u8Info = ref('')
+    const videoPreview = ref<IVideoPreviewUrl>()
     const handleOpen = async () => {
       okLoading.value = true
       const first = usePanFileStore().GetSelectedFirst()!
@@ -33,34 +33,34 @@ export default defineComponent({
       drive_id.value = first.drive_id
       file_id.value = first.file_id
       file_name.value = first.name
-      let info = await AliFile.ApiFileInfo(user_id.value, first.drive_id, first.file_id)
+      const info = await AliFile.ApiFileInfo(user_id.value, first.drive_id, first.file_id)
       if (!info) {
         message.error('读取文件链接失败，请重试')
         return
       }
 
-      let preview = await AliFile.ApiVideoPreviewUrl(user_id.value, first.drive_id, first.file_id)
+      const preview = await AliFile.ApiVideoPreviewUrl(user_id.value, first.drive_id, first.file_id)
       if (preview) {
-        videopreview.value = preview
+        videoPreview.value = preview
         let info = ''
-        if (preview.url_FHD) {
-          m3u8list.value.push('1080P')
+        if (preview.urlFHD) {
+          m3u8List.value.push('1080P')
           if (!info) info = '1080P'
         }
-        if (preview.url_HD) {
-          m3u8list.value.push('720P')
+        if (preview.urlHD) {
+          m3u8List.value.push('720P')
           if (!info) info = '720P'
         }
-        if (preview.url_SD) {
-          m3u8list.value.push('540P')
+        if (preview.urlSD) {
+          m3u8List.value.push('540P')
           if (!info) info = '540P'
         }
-        if (preview.url_LD) {
-          m3u8list.value.push('480P')
+        if (preview.urlLD) {
+          m3u8List.value.push('480P')
           if (!info) info = '480P'
         }
 
-        m3u8info.value = '时长：' + humanTime(preview.duration) + '  分辨率：' + preview.width + ' x ' + preview.height + '  清晰度：' + info
+        m3u8Info.value = '时长：' + humanTime(preview.duration) + '  分辨率：' + preview.width + ' x ' + preview.height + '  清晰度：' + info
       }
     }
 
@@ -71,10 +71,10 @@ export default defineComponent({
 
     const handleCopyUrl = (item: string) => {
       let url = ''
-      if (item == '1080P') url = videopreview.value?.url_FHD || ''
-      if (item == '720P') url = videopreview.value?.url_HD || ''
-      if (item == '540P') url = videopreview.value?.url_SD || ''
-      if (item == '480P') url = videopreview.value?.url_LD || ''
+      if (item == '1080P') url = videoPreview.value?.urlFHD || ''
+      if (item == '720P') url = videoPreview.value?.urlHD || ''
+      if (item == '540P') url = videoPreview.value?.urlSD || ''
+      if (item == '480P') url = videoPreview.value?.urlLD || ''
 
       if (url) {
         copyToClipboard(url)
@@ -84,14 +84,14 @@ export default defineComponent({
 
     const handleClose = () => {
       
-      m3u8list.value = []
+      m3u8List.value = []
       user_id.value = ''
       drive_id.value = ''
       file_id.value = ''
       file_name.value = ''
       if (okLoading.value) okLoading.value = false
     }
-    return { okLoading, handleOpen, handleClose, file_name, m3u8info, m3u8list, handleDownload, handleCopyUrl }
+    return { okLoading, handleOpen, handleClose, file_name, m3u8Info, m3u8List, handleDownload, handleCopyUrl }
   },
   methods: {
     handleHide() {
@@ -103,17 +103,17 @@ export default defineComponent({
 </script>
 
 <template>
-  <a-modal :visible="visible" modal-class="modalclass" @cancel="handleHide" @before-open="handleOpen" @close="handleClose" :footer="false" :unmount-on-close="true" :mask-closable="false">
+  <a-modal :visible="visible" modal-class="modalclass" :footer="false" :unmount-on-close="true" :mask-closable="false" @cancel="handleHide" @before-open="handleOpen" @close="handleClose">
     <template #title>
       <span class="modaltitle">下载转码后的视频</span>
     </template>
     <div class="modalbody" style="width: 540px">
       <div style="width: 100%">
-        <a-input :model-value="m3u8info" readonly />
+        <a-input :model-value="m3u8Info" readonly />
       </div>
 
       <div class="arco-upload-list arco-upload-list-type-text">
-        <div v-for="item in m3u8list" class="arco-upload-list-item arco-upload-list-item-done">
+        <div v-for="item in m3u8List" :key="item" class="arco-upload-list-item arco-upload-list-item-done">
           <div class="arco-upload-list-item-content">
             <div class="arco-upload-list-item-name">
               <span class="arco-upload-list-item-file-icon">

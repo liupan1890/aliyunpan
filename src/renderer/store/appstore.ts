@@ -1,7 +1,6 @@
 import DebugLog from '../utils/debuglog'
 import { onHideRightMenu } from '../utils/keyboardhelper'
 import { defineStore } from 'pinia'
-import useFootStore from './footstore'
 
 export interface IPageOffice {
   user_id: string
@@ -51,7 +50,6 @@ export interface AppState {
   appPage: string
   
   appTab: string
-  appTabMenu: string[]
   
   appTabMenuMap: Map<string, string>
   appDark: boolean
@@ -70,7 +68,6 @@ const useAppStore = defineStore('app', {
     appTheme: 'light',
     appPage: 'PageLoading',
     appTab: 'pan',
-    appTabMenu: ['pan', 'wangpan'],
     appTabMenuMap: new Map<string, string>([
       ['pan', 'wangpan'],
       ['pic', 'allpic'],
@@ -121,7 +118,6 @@ const useAppStore = defineStore('app', {
     resetTab() {
       this.$patch({
         appTab: 'pan',
-        appTabMenu: ['pan', 'wangpan'],
         appTabMenuMap: new Map<string, string>([
           ['pan', 'wangpan'],
           ['pic', 'allpic'],
@@ -131,14 +127,12 @@ const useAppStore = defineStore('app', {
           ['setting', '']
         ])
       })
-      useFootStore().appTab = 'pan'
     },
     
     toggleTab(tab: string) {
       if (this.appTab != tab) {
         this.appTab = tab
         if (tab == 'setting') DebugLog.aLoadFromDB() 
-        useFootStore().appTab = tab
         onHideRightMenu()
       }
     },
@@ -147,10 +141,8 @@ const useAppStore = defineStore('app', {
       if (this.appTab != tab) {
         this.appTab = tab
         if (tab == 'setting') DebugLog.aLoadFromDB() 
-        useFootStore().appTab = tab
       }
       this.appTabMenuMap.set(tab, menu)
-      this.$patch({ appTabMenu: [tab, menu] })
       if (tab == 'setting') document.getElementById(menu)?.scrollIntoView()
       onHideRightMenu()
     },
@@ -159,7 +151,6 @@ const useAppStore = defineStore('app', {
       if (tab == this.appTab && this.appTabMenuMap.get(tab) == menu) return
       if (this.appTab != tab) {
         this.appTab = tab
-        useFootStore().appTab = tab
       }
       if (menu) {
         this.appTabMenuMap.set(tab, menu)
@@ -194,18 +185,17 @@ const useAppStore = defineStore('app', {
           break
         }
       }
-      useFootStore().appTab = this.appTab
       onHideRightMenu()
     },
     
     toggleTabNextMenu() {
-      const next = function (map: Map<string, string>, tab: string, menulist: string[]) {
-        let menu = map.get(tab)!
-        for (let i = 0, maxi = menulist.length; i < maxi; i++) {
-          if (menulist[i] == menu) {
+      const next = function (map: Map<string, string>, tab: string, menuList: string[]) {
+        const menu = map.get(tab)!
+        for (let i = 0, maxi = menuList.length; i < maxi; i++) {
+          if (menuList[i] == menu) {
             
-            if (i + 1 >= menulist.length) map.set(tab, menulist[0])
-            else map.set(tab, menulist[i + 1])
+            if (i + 1 >= menuList.length) map.set(tab, menuList[0])
+            else map.set(tab, menuList[i + 1])
           }
         }
       }
@@ -233,7 +223,7 @@ const useAppStore = defineStore('app', {
         }
         case 'setting': {
           next(this.appTabMenuMap, this.appTab, ['SettingUI', 'SettingDown', 'SettingPan', 'SettingDebug', 'SettingAria', 'SettingLog'])
-          let menu = this.appTabMenuMap.get('setting')!
+          const menu = this.appTabMenuMap.get('setting')!
           document.getElementById(menu)?.scrollIntoView()
           break
         }

@@ -1,3 +1,19 @@
+export interface IAliFileVideoMeta {
+  bitrate?: string
+  clarity?: string
+  code_name?: string
+  duration?: string
+  fps?: string
+}
+export interface IAliFileAudioMeta {
+  bit_rate?: string
+  channel_layout?: string
+  channels?: number
+  code_name?: string
+  duration?: string
+  sample_rate?: string
+}
+
 
 export interface IAliFileItem {
   drive_id: string
@@ -65,22 +81,6 @@ export interface IAliFileItem {
   user_meta?: string
 }
 
-export interface IAliFileVideoMeta {
-  bitrate?: string
-  clarity?: string
-  code_name?: string
-  duration?: string
-  fps?: string
-}
-export interface IAliFileAudioMeta {
-  bit_rate?: string
-  channel_layout?: string
-  channels?: number
-  code_name?: string
-  duration?: string
-  sample_rate?: string
-}
-
 
 export interface IAliOtherFollowingModel {
   avatar: string 
@@ -90,19 +90,6 @@ export interface IAliOtherFollowingModel {
   phone: string 
   user_id: string 
   follower_count: number
-}
-
-
-export interface IAliMyFollowingModel {
-  avatar: string 
-  description: string 
-  has_unread_message: boolean 
-  is_following: boolean 
-  latest_messages: IAliMyFollowingMessageModel[]
-  nick_name: string 
-  phone: string 
-  user_id: string 
-  SearchName: string
 }
 
 interface IAliMyFollowingMessageModel {
@@ -117,6 +104,19 @@ interface IAliMyFollowingMessageModel {
   creator_id: string 
   display_action: string 
   sequence_id: number 
+}
+
+
+export interface IAliMyFollowingModel {
+  avatar: string 
+  description: string 
+  has_unread_message: boolean 
+  is_following: boolean 
+  latest_messages: IAliMyFollowingMessageModel[]
+  nick_name: string 
+  phone: string 
+  user_id: string 
+  SearchName: string
 }
 
 
@@ -148,7 +148,7 @@ export interface IAliShareItem {
 
 export interface IAliShareAnonymous {
   shareinfo: {
-    shareid: string
+    share_id: string
     creator_id: string
     creator_name: string
     creator_phone: string
@@ -169,31 +169,31 @@ export interface IAliShareAnonymous {
 
 export interface IAliShareFileItem {
   drive_id: string
-  //domain_id: string
+  // domain_id: string
   file_id: string
   name: string
   type: string
-  //created_at: string
-  //updated_at: string
-  //hidden: boolean
-  //starred: boolean
-  //status: string
+  // created_at: string
+  // updated_at: string
+  // hidden: boolean
+  // starred: boolean
+  // status: string
   parent_file_id: string
-  //encrypt_mode: string
-  //revision_id: string
+  // encrypt_mode: string
+  // revision_id: string
   
   file_extension?: string
   mime_extension: string
   mime_type: string
   size: number
-  //content_hash: string
-  //content_hash_name: string
+  // content_hash: string
+  // content_hash_name: string
   category: string
   punish_flag: number
 
   
-  isdir: boolean
-  sizestr: string
+  isDir: boolean
+  sizeStr: string
   icon: string
 }
 
@@ -231,11 +231,11 @@ export interface IAliGetFileModel {
   category: string
   icon: string
   size: number
-  sizestr: string
+  sizeStr: string
   time: number
-  timestr: string
+  timeStr: string
   starred: boolean
-  isdir: boolean
+  isDir: boolean
   thumbnail: string
   description: string
   compilation_id?: string

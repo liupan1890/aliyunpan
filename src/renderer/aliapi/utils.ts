@@ -7,9 +7,11 @@ import AliHttp from './alihttp'
 import AliFile from './file'
 import { IAliBatchResult } from './models'
 
+export declare type Drive = 'pan' | 'pic' | 'safe'
 
-export function GetDriveID(user_id: string, drive: Drive) {
-  let token = UserDAL.GetUserToken(user_id) 
+
+export function GetDriveID(user_id: string, drive: Drive): string {
+  const token = UserDAL.GetUserToken(user_id) 
   if (token) {
     switch (drive) {
       case 'pan':
@@ -24,9 +26,9 @@ export function GetDriveID(user_id: string, drive: Drive) {
 }
 
 
-export function GetDriveID2(token: ITokenInfo, drive: string) {
+export function GetDriveID2(token: ITokenInfo, driveName: string): string {
   if (token) {
-    switch (drive) {
+    switch (driveName) {
       case 'pan':
         return token.default_drive_id
       case 'pic':
@@ -35,13 +37,13 @@ export function GetDriveID2(token: ITokenInfo, drive: string) {
         return token.default_sbox_drive_id
     }
   }
-  return drive
+  return driveName
 }
 
-async function _ApiBatch(postdata: string, user_id: string, share_token: string, result: IAliBatchResult) {
+async function _ApiBatch(postData: string, user_id: string, share_token: string, result: IAliBatchResult): Promise<void> {
   if (!user_id && !share_token) return
   const url = 'v2/batch'
-  const resp = await AliHttp.Post(url, postdata, user_id, share_token)
+  const resp = await AliHttp.Post(url, postData, user_id, share_token)
   if (AliHttp.IsSuccess(resp.code)) {
     const responses = resp.body.responses
     for (let i = 0, maxi = responses.length; i < maxi; i++) {
@@ -63,7 +65,7 @@ async function _ApiBatch(postdata: string, user_id: string, share_token: string,
         }
       } else {
         const respi = responses[i]
-        let logmsg = (respi.body.code || '') + ' ' + (respi.body.message || '')
+        const logmsg = (respi.body.code || '') + ' ' + (respi.body.message || '')
         if (logmsg.includes('File under sync control') == false) DebugLog.mSaveDanger(logmsg)
         if (respi.body && respi.body.code) result.error.push({ id: respi.body.id || respi.id, code: respi.body.code, message: respi.body.message })
       }
@@ -72,42 +74,45 @@ async function _ApiBatch(postdata: string, user_id: string, share_token: string,
     DebugLog.mSaveWarning('_ApiBatch err=' + (resp.code || ''))
   }
 }
-export async function ApiBatch(title: string, batchlist: string[], user_id: string, share_token: string) {
+
+export declare type AsyncType = '解压' | '复制' | '导入分享' | '回收站还原' | '异步' | '放回收站' | '彻底删除'
+
+export async function ApiBatch(title: string, batchList: string[], user_id: string, share_token: string): Promise<IAliBatchResult> {
   const result: IAliBatchResult = { count: 0, async_task: [], reslut: [], error: [] }
   if (!user_id && !share_token) return result
 
-  let loadingkey = 'filebatch' + Date.now().toString()
-  if (title != '') message.loading(title + ' 执行中...', 60, loadingkey)
+  const loadingKey = 'filebatch' + Date.now().toString()
+  if (title != '') message.loading(title + ' 执行中...', 60, loadingKey)
 
   let add = 0
-  let postdata = '{"requests":['
-  let alltask: Promise<void>[] = []
-  for (let i = 0, maxi = batchlist.length; i < maxi; i++) {
-    if (add > 0) postdata = postdata + ','
+  let postData = '{"requests":['
+  let allTask: Promise<void>[] = []
+  for (let i = 0, maxi = batchList.length; i < maxi; i++) {
+    if (add > 0) postData = postData + ','
     add++
-    postdata = postdata + batchlist[i]
+    postData = postData + batchList[i]
     if (add > 99) {
-      postdata += '],"resource":"file"}'
-      alltask.push(_ApiBatch(postdata, user_id, share_token, result))
-      postdata = '{"requests":['
+      postData += '],"resource":"file"}'
+      allTask.push(_ApiBatch(postData, user_id, share_token, result))
+      postData = '{"requests":['
       add = 0
     }
 
-    if (alltask.length >= 3) {
+    if (allTask.length >= 3) {
       
-      await Promise.all(alltask).catch(() => {})
-      alltask = []
-      if (title != '') message.loading(title + ' 执行中...(' + result.count.toString() + ')', 60, loadingkey)
+      await Promise.all(allTask).catch(() => {})
+      allTask = []
+      if (title != '') message.loading(title + ' 执行中...(' + result.count.toString() + ')', 60, loadingKey)
     }
   }
   if (add > 0) {
-    postdata += '],"resource":"file"}'
-    alltask.push(_ApiBatch(postdata, user_id, share_token, result))
+    postData += '],"resource":"file"}'
+    allTask.push(_ApiBatch(postData, user_id, share_token, result))
   }
-  if (alltask.length > 0) await Promise.all(alltask).catch(() => {})
+  if (allTask.length > 0) await Promise.all(allTask).catch(() => {})
   
   if (result.async_task.length > 0) {
-    if (title != '' || share_token != '') message.warning(title + ' 异步执行中(' + result.async_task.length + ')', 2, loadingkey)
+    if (title != '' || share_token != '') message.warning(title + ' 异步执行中(' + result.async_task.length + ')', 2, loadingKey)
 
     let type: AsyncType = '异步'
     if (title == '放入回收站') type = '放回收站'
@@ -116,11 +121,11 @@ export async function ApiBatch(title: string, batchlist: string[], user_id: stri
     if (title == '彻底删除') type = '彻底删除'
     if (title == '批量复制') type = '复制'
     if (title == '复制') type = '复制'
-    if (title == '' && share_token) type = '导入分享'
+    if (!title && share_token) type = '导入分享'
 
     const footStore = useFootStore()
     for (let i = 0, maxi = result.async_task.length; i < maxi; i++) {
-      let task = result.async_task[i]
+      const task = result.async_task[i]
 
       if (type == '放回收站' || type == '彻底删除') {
         
@@ -128,7 +133,7 @@ export async function ApiBatch(title: string, batchlist: string[], user_id: stri
       }
 
       if (task.newdrive_id && task.newfile_id) {
-        let fileinfo = await AliFile.ApiGetFile(user_id, task.newdrive_id, task.newfile_id)
+        const fileinfo = await AliFile.ApiGetFile(user_id, task.newdrive_id, task.newfile_id)
         if (fileinfo) {
           footStore.mAddTask(user_id, task.task_id, type, fileinfo.name, task.newdrive_id, task.newfile_id)
           continue
@@ -142,70 +147,70 @@ export async function ApiBatch(title: string, batchlist: string[], user_id: stri
   if (title != '' || share_token != '') {
     if (result.error.length == 0) {
       if (result.async_task.length > 0) {
-        message.warning(title + ' 异步执行中(' + result.async_task.length + ')', 2, loadingkey)
+        message.warning(title + ' 异步执行中(' + result.async_task.length + ')', 2, loadingKey)
       } else {
-        message.success(title + ' 成功', 0, loadingkey)
+        message.success(title + ' 成功', 0, loadingKey)
         message.success(title + ' 成功', 3)
       }
     } else {
-      message.error(title + ' 成功(' + result.count.toString() + ')个 失败 (' + result.error.length.toString() + ')个', 3, loadingkey)
+      message.error(title + ' 成功(' + result.count.toString() + ')个 失败 (' + result.error.length.toString() + ')个', 3, loadingKey)
 
-      let issyncerror = false
+      let isSyncError = false
       result.error.map((t) => {
-        if (t.message.includes('File under sync control')) issyncerror = true
+        if (t.message.includes('File under sync control')) isSyncError = true
+        return true
       })
-      if (issyncerror) message.error('自动备份文件夹不支持移动/新建/删除/重命名等操作', 3)
+      if (isSyncError) message.error('自动备份文件夹不支持移动/新建/删除/重命名等操作', 3)
     }
   }
   return result
 }
 
 
-export function ApiBatchMaker(url: string, idlist: string[], bodymake: (file_id: string) => any) {
-  if (!idlist || idlist.length == 0) return []
-  const batchlist: string[] = []
-  const batchset = new Set()
-  for (let i = 0, maxi = idlist.length; i < maxi; i++) {
-    let id = idlist[i]
-    if (batchset.has(id)) continue
-    batchset.add(id)
-    batchlist.push(JSON.stringify({ body: bodymake(id), headers: { 'Content-Type': 'application/json' }, id: id, method: 'POST', url }))
+export function ApiBatchMaker(url: string, idList: string[], bodymake: (file_id: string) => any): string[] {
+  if (!idList || idList.length == 0) return []
+  const batchList: string[] = []
+  const batchSet = new Set()
+  for (let i = 0, maxi = idList.length; i < maxi; i++) {
+    const id = idList[i]
+    if (batchSet.has(id)) continue
+    batchSet.add(id)
+    batchList.push(JSON.stringify({ body: bodymake(id), headers: { 'Content-Type': 'application/json' }, id: id, method: 'POST', url }))
   }
-  batchset.clear()
-  return batchlist
+  batchSet.clear()
+  return batchList
 }
 
-export function ApiBatchMaker2(url: string, idlist: string[], namelist: string[], bodymake: (file_id: string, name: string) => any) {
-  if (!idlist || idlist.length == 0) return []
-  const batchlist: string[] = []
-  const batchset = new Set()
-  for (let i = 0, maxi = idlist.length; i < maxi; i++) {
-    let id = idlist[i]
-    if (batchset.has(id)) continue
-    batchset.add(id)
-    batchlist.push(JSON.stringify({ body: bodymake(id, namelist[i]), headers: { 'Content-Type': 'application/json' }, id: id, method: 'POST', url }))
+export function ApiBatchMaker2(url: string, idList: string[], namelist: string[], bodymake: (file_id: string, name: string) => any): string[] {
+  if (!idList || idList.length == 0) return []
+  const batchList: string[] = []
+  const batchSet = new Set()
+  for (let i = 0, maxi = idList.length; i < maxi; i++) {
+    const id = idList[i]
+    if (batchSet.has(id)) continue
+    batchSet.add(id)
+    batchList.push(JSON.stringify({ body: bodymake(id, namelist[i]), headers: { 'Content-Type': 'application/json' }, id: id, method: 'POST', url }))
   }
-  batchset.clear()
-  return batchlist
+  batchSet.clear()
+  return batchList
 }
 
-export async function ApiBatchSuccess(title: string, batchlist: string[], user_id: string, share_token: string) {
-  if (batchlist.length == 0) return Promise.resolve(batchlist)
-  let successlist: string[] = []
-  const result = await ApiBatch(title, batchlist, user_id, share_token)
-  result.reslut.map((t) => successlist.push(t.id))
-
-  return successlist
+export async function ApiBatchSuccess(title: string, batchList: string[], user_id: string, share_token: string): Promise<string[]> {
+  if (batchList.length == 0) return Promise.resolve(batchList)
+  const successList: string[] = []
+  const result = await ApiBatch(title, batchList, user_id, share_token)
+  result.reslut.map((t) => successList.push(t.id))
+  return successList
 }
 
-export async function ApiWaitAsyncTask(title: string, user_id: string, tasklist: IAliBatchResult['async_task']) {
-  for (let i = 0, maxi = tasklist.length; i < maxi; i++) {
-    let async_task_id = tasklist[i].task_id
+export async function ApiWaitAsyncTask(title: string, user_id: string, taskList: IAliBatchResult['async_task']): Promise<void> {
+  for (let i = 0, maxi = taskList.length; i < maxi; i++) {
+    const async_task_id = taskList[i].task_id
     if (!user_id || !async_task_id) continue
     for (let j = 0; j < 100; j++) {
       const url = 'v2/async_task/get'
-      const postdata = { async_task_id }
-      const resp = await AliHttp.Post(url, postdata, user_id, '')
+      const postData = { async_task_id }
+      const resp = await AliHttp.Post(url, postData, user_id, '')
       if (AliHttp.IsSuccess(resp.code)) {
         if (resp.body.state == 'Succeed' || resp.body.state == 'succeed') break
         if (resp.body.state == 'done' || resp.body.state == 'done') break
@@ -217,11 +222,11 @@ export async function ApiWaitAsyncTask(title: string, user_id: string, tasklist:
   }
 }
 
-export async function ApiGetAsyncTask(user_id: string, async_task_id: string) {
+export async function ApiGetAsyncTask(user_id: string, async_task_id: string): Promise<'running' | 'error' | 'success'> {
   if (!user_id || !async_task_id) return 'error'
   const url = 'v2/async_task/get'
-  const postdata = { async_task_id }
-  const resp = await AliHttp.Post(url, postdata, user_id, '')
+  const postData = { async_task_id }
+  const resp = await AliHttp.Post(url, postData, user_id, '')
   if (AliHttp.IsSuccess(resp.code)) {
     if (resp.body.state == 'Succeed' || resp.body.state == 'succeed') return 'success'
     if (resp.body.state == 'done' || resp.body.state == 'done') return 'success'
@@ -238,11 +243,11 @@ export async function ApiGetAsyncTask(user_id: string, async_task_id: string) {
 }
 
 
-export async function ApiGetAsyncTaskUnzip(user_id: string, drive_id: string, file_id: string, domain_id: string, task_id: string) {
+export async function ApiGetAsyncTaskUnzip(user_id: string, drive_id: string, file_id: string, domain_id: string, task_id: string): Promise<string> {
   if (!user_id || !task_id) return 'error'
   const url = 'v2/archive/status'
-  const postdata = { drive_id, file_id, domain_id, task_id }
-  const resp = await AliHttp.Post(url, postdata, user_id, '')
+  const postData = { drive_id, file_id, domain_id, task_id }
+  const resp = await AliHttp.Post(url, postData, user_id, '')
   if (AliHttp.IsSuccess(resp.code)) {
     if (resp.body.state == 'Succeed' || resp.body.state == 'succeed') return 'success'
     if (resp.body.state == 'Failed' || resp.body.state == 'failed') return 'error'

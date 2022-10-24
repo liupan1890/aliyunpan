@@ -1,8 +1,8 @@
 <script setup lang="ts">
-import { KeyboardState, useAppStore, useKeyboardStore, useWinStore } from '../store'
+import { KeyboardState, useAppStore, useKeyboardStore, usePanFileStore, useWinStore } from '../store'
 import { onHideRightMenuScroll, onShowRightMenu, TestCtrl, TestKey, TestKeyboardScroll, TestKeyboardSelect } from '../utils/keyboardhelper'
 import { ref } from 'vue'
-import UploadDAL from './uploaddal'
+import UploadDAL from '../transfer/uploaddal'
 
 import { Tooltip as AntdTooltip } from 'ant-design-vue'
 import 'ant-design-vue/es/tooltip/style/css'
@@ -11,6 +11,7 @@ import { IStateUploadTask } from '../utils/dbupload'
 import message from '../utils/message'
 import AliFile from '../aliapi/file'
 import PanDAL from '../pan/pandal'
+import { humanSize } from '../utils/format'
 
 const fs = window.require('fs')
 const viewlist = ref()
@@ -27,23 +28,23 @@ keyboardStore.$subscribe((_m: any, state: KeyboardState) => {
 
   if (TestKey('f5', state.KeyDownEvent, handleRefresh)) return
 
-  if (TestKeyboardScroll(state.KeyDownEvent, viewlist.value, uploadedStore)) return 
   if (TestKeyboardSelect(state.KeyDownEvent, viewlist.value, uploadedStore, handleDbClick)) return 
+  if (TestKeyboardScroll(state.KeyDownEvent, viewlist.value, uploadedStore)) return 
 })
 
 const handleRefresh = () => UploadDAL.aReloadUploaded()
 const handleSelectAll = () => uploadedStore.mSelectAll()
 
-const handleSelect = (UploadID: string, event: any) => {
+const handleSelect = (TaskID: number, event: any, isCtrl: boolean = false) => {
   onHideRightMenuScroll()
-  uploadedStore.mMouseSelect(UploadID, event.ctrlKey, event.shiftKey)
+  uploadedStore.mMouseSelect(TaskID, event.ctrlKey || isCtrl, event.shiftKey)
 }
-const handleDbClick = (UploadID: string) => {
+const handleDbClick = (TaskID: number) => {
   onSelectFile(undefined, 'pan')
 }
 
 const handleRightClick = (e: { event: MouseEvent; node: any }) => {
-  let key = e.node.key
+  const key = e.node.key
   
   uploadedStore.mKeyboardSelect(key, false, false)
   onShowRightMenu('rightuploadedmenu', e.event.clientX, e.event.clientY)
@@ -55,7 +56,7 @@ const onSelectFile = (item: IStateUploadTask | undefined, cmd: string) => {
   }
   if (!item) return
   if (cmd == 'file') {
-    const full = item.LocalFilePath
+    const full = item.localFilePath
     try {
       if (fs.existsSync(full)) {
         message.loading('Loading...', 2)
@@ -66,7 +67,7 @@ const onSelectFile = (item: IStateUploadTask | undefined, cmd: string) => {
     } catch {}
   }
   if (cmd == 'dir') {
-    const full = item.LocalFilePath
+    const full = item.localFilePath
     try {
       if (fs.existsSync(full)) {
         message.loading('Loading...', 2)
@@ -81,10 +82,11 @@ const onSelectFile = (item: IStateUploadTask | undefined, cmd: string) => {
   }
   if (cmd == 'pan') {
     
-    if (item.uploaded_file_id) {
-      AliFile.ApiGetFile(item.user_id, item.drive_id, item.uploaded_file_id).then((file) => {
+    if (item.TaskFileID) {
+      AliFile.ApiGetFile(item.user_id, item.drive_id, item.TaskFileID).then(async (file) => {
         if (file) {
-          PanDAL.aReLoadOneDirToShow('', file.parent_file_id, true)
+          await PanDAL.aReLoadOneDirToShow('', file.parent_file_id, true)
+          usePanFileStore().mMouseSelect(file.file_id, false, false)
           useAppStore().toggleTab('pan')
         } else {
           message.error('找不到文件，可能已被删除')
@@ -105,7 +107,7 @@ const onSelectFile = (item: IStateUploadTask | undefined, cmd: string) => {
   <div style="height: 14px"></div>
   <div class="toppanbtns" style="height: 26px">
     <div class="toppanbtn">
-      <a-button type="text" class="iconbtn" size="small" tabindex="-1" :loading="uploadedStore.ListLoading" @click="handleRefresh" title="F5">
+      <a-button type="text" size="small" tabindex="-1" :loading="uploadedStore.ListLoading" title="F5" @click="handleRefresh">
         <template #icon>
           <i class="iconfont iconreload-1-icon" />
         </template>
@@ -124,7 +126,7 @@ const onSelectFile = (item: IStateUploadTask | undefined, cmd: string) => {
   <div class="toppanarea">
     <div style="margin: 0 3px">
       <AntdTooltip title="点击全选" placement="left">
-        <a-button shape="circle" type="text" tabindex="-1" class="select all" @click="handleSelectAll" title="Ctrl+A">
+        <a-button shape="circle" type="text" tabindex="-1" class="select all" title="Ctrl+A" @click="handleSelectAll">
           <i :class="uploadedStore.IsListSelectedAll ? 'iconfont iconrsuccess' : 'iconfont iconpic2'" />
         </a-button>
       </AntdTooltip>
@@ -135,48 +137,45 @@ const onSelectFile = (item: IStateUploadTask | undefined, cmd: string) => {
 
     <div class="cell pr"></div>
   </div>
-  <div class="toppanlist" @keydown.space.prevent="() => true">
+  <div class="toppanlist" :style="{ height: winStore.GetListHeight }" @keydown.space.prevent="() => true">
     <a-list
       ref="viewlist"
       :bordered="false"
       :split="false"
       :max-height="winStore.GetListHeightNumber"
-      :virtualListProps="{
+      :virtual-list-props="{
         height: winStore.GetListHeightNumber,
         fixedSize: true,
         estimatedSize: 50,
         threshold: 1,
-        itemKey: 'UploadID'
+        itemKey: 'TaskID'
       }"
       style="width: 100%"
       :data="uploadedStore.ListDataShow"
       tabindex="-1"
-      @scroll="onHideRightMenuScroll"
-    >
+      @scroll="onHideRightMenuScroll">
       <template #empty><a-empty description="没有 已上传 的任务" /></template>
       <template #item="{ item, index }">
-        <div :key="item.UploadID" class="listitemdiv" :data-id="item.UploadID">
+        <div :key="item.TaskID" class="listitemdiv">
           <div
-            :class="'fileitem ' + (uploadedStore.ListSelected.has(item.UploadID) ? ' selected' : '') + (uploadedStore.ListFocusKey == item.UploadID ? ' focus' : '')"
-            @click="handleSelect(item.UploadID, $event)"
-            @dblclick="() => handleDbClick(item.UploadID)"
-            @contextmenu="(event:MouseEvent)=>handleRightClick({event,node:{key:item.UploadID}} )"
-          >
+            :class="'fileitem ' + (uploadedStore.ListSelected.has(item.TaskID) ? ' selected' : '') + (uploadedStore.ListFocusKey == item.TaskID ? ' focus' : '')"
+            @click="handleSelect(item.TaskID, $event)"
+            @dblclick="() => handleDbClick(item.TaskID)"
+            @contextmenu="(event:MouseEvent)=>handleRightClick({event,node:{key:item.TaskID}} )">
             <div style="margin: 2px">
-              <a-button shape="circle" type="text" tabindex="-1" class="select" :title="index" @click.prevent.stop="handleSelect(item.UploadID, { ctrlKey: true, shiftKey: false })">
-                <i :class="uploadedStore.ListSelected.has(item.UploadID) ? 'iconfont iconrsuccess' : 'iconfont iconpic2'" />
+              <a-button shape="circle" type="text" tabindex="-1" class="select" :title="index" @click.prevent.stop="handleSelect(item.TaskID, $event, true)">
+                <i :class="uploadedStore.ListSelected.has(item.TaskID) ? 'iconfont iconrsuccess' : 'iconfont iconpic2'" />
               </a-button>
             </div>
             <div class="fileicon">
-              <i v-if="item.uploaded_is_rapid" class="iconfont iconchuanbo" aria-hidden="true" title="秒传"></i>
-              <i v-else :class="'iconfont ' + item.icon" aria-hidden="true"></i>
+              <i :class="'iconfont ' + (item.isDir ? 'iconfile-folder' : 'iconwenjian')" aria-hidden="true"></i>
             </div>
             <div class="filename">
-              <div class="nopoint" :title="item.LocalFilePath">
-                {{ item.name }}
+              <div class="nopoint" :title="item.localFilePath">
+                {{ item.TaskName }}
               </div>
             </div>
-            <div class="downsize">{{ item.sizestr }}</div>
+            <div class="downsize">{{ humanSize(item.ChildTotalSize) }}</div>
             <div className="downedbtn">
               <a-button type="text" tabindex="-1" title="定位到网盘" @click.prevent.stop="onSelectFile(item, 'pan')">
                 <i class="iconfont iconcloud" />

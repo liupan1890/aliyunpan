@@ -8,11 +8,11 @@ export function FootLoading(msg: string, key: string) {
 
   let info = ''
   FootMap.forEach(function (value, key) {
-    let item = '<span style="margin-right:8px">' + value + '</span>'
+    const item = '<span style="margin-right:8px">' + value + '</span>'
     if (info.includes(item) == false) info += item
   })
 
-  let doc = document.getElementById('footLoading')
+  const doc = document.getElementById('footLoading')
   if (doc) {
     if (!info) {
       doc.innerHTML = ''

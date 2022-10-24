@@ -7,8 +7,6 @@ import { UpdateShareModel } from '../../aliapi/share'
 import { humanExpiration } from '../../utils/format'
 
 type Item = IAliShareItem
-type State = MyShareState
-const KEY = 'share_id'
 
 export interface MyShareState {
   
@@ -29,6 +27,8 @@ export interface MyShareState {
   
   ListSearchKey: string
 }
+type State = MyShareState
+const KEY = 'share_id'
 
 const useMyShareStore = defineStore('myshare', {
   state: (): State => ({
@@ -61,11 +61,10 @@ const useMyShareStore = defineStore('myshare', {
     },
 
     ListStats(state: State) {
-      let stats = { preview: 0, download: 0, save: 0, previewMax: 0, forbidden: 0, expired: 0, expir2day: 0 }
-      let list = state.ListDataShow
+      const stats = { preview: 0, download: 0, save: 0, previewMax: 0, forbidden: 0, expired: 0, expir2day: 0 }
+      const list = state.ListDataShow
       let item: Item
-      let exp = 0
-      let day = new Date().getTime()
+      const day = new Date().getTime()
       for (let i = 0, maxi = list.length; i < maxi; i++) {
         item = list[i]
         stats.preview += item.preview_count
@@ -91,18 +90,23 @@ const useMyShareStore = defineStore('myshare', {
       }
       this.ListDataRaw = this.mGetOrder(this.ListOrderKey, list)
       
-      let oldSelected = this.ListSelected
-      let newSelected = new Set<string>()
+      const oldSelected = this.ListSelected
+      const newSelected = new Set<string>()
       let key = ''
       let findFocusKey = false
+      let findSelectKey = false
       let ListFocusKey = this.ListFocusKey
+      let ListSelectKey = this.ListSelectKey
       for (let i = 0, maxi = list.length; i < maxi; i++) {
         key = list[i][KEY]
         if (oldSelected.has(key)) newSelected.add(key) 
         if (key == ListFocusKey) findFocusKey = true
+        if (key == ListSelectKey) findSelectKey = true
       }
+      if (!findFocusKey) ListFocusKey = ''
+      if (!findSelectKey) ListSelectKey = ''
       
-      this.$patch({ ListSelected: newSelected, ListFocusKey: findFocusKey ? ListFocusKey : '', ListSelectKey: '', ListSearchKey: '' })
+      this.$patch({ ListSelected: newSelected, ListFocusKey: ListFocusKey, ListSelectKey: ListSelectKey, ListSearchKey: '' })
       this.mRefreshListDataShow(true) 
     },
     
@@ -125,7 +129,7 @@ const useMyShareStore = defineStore('myshare', {
       if (order == 'save') list.sort((a, b) => b.save_count - a.save_count)
       if (order == 'state')
         list.sort((a, b) => {
-          let s = a.share_msg.localeCompare(b.share_msg)
+          const s = a.share_msg.localeCompare(b.share_msg)
           if (s == 0) {
             if (a.first_file && b.first_file) return 0
             if (a.first_file) return 1
@@ -139,37 +143,37 @@ const useMyShareStore = defineStore('myshare', {
     
     mRefreshListDataShow(refreshRaw: boolean) {
       if (!refreshRaw) {
-        let ListDataShow = this.ListDataShow.concat() 
+        const ListDataShow = this.ListDataShow.concat() 
         Object.freeze(ListDataShow)
         this.ListDataShow = ListDataShow
         return
       }
       if (this.ListSearchKey) {
         
-        let searchlist: Item[] = []
-        let results = fuzzysort.go(this.ListSearchKey, this.ListDataRaw, {
+        const searchList: Item[] = []
+        const results = fuzzysort.go(this.ListSearchKey, this.ListDataRaw, {
           threshold: -200000,
           keys: ['share_name', 'description'],
           scoreFn: (a) => Math.max(a[0] ? a[0].score : -200000, a[1] ? a[1].score : -200000)
         })
         for (let i = 0, maxi = results.length; i < maxi; i++) {
-          if (results[i].score > -200000) searchlist.push(results[i].obj as IAliShareItem)
+          if (results[i].score > -200000) searchList.push(results[i].obj as IAliShareItem)
         }
-        Object.freeze(searchlist)
-        this.ListDataShow = searchlist
+        Object.freeze(searchList)
+        this.ListDataShow = searchList
       } else {
         
-        let ListDataShow = this.ListDataRaw.concat() 
-        Object.freeze(ListDataShow)
-        this.ListDataShow = ListDataShow
+        const listDataShow = this.ListDataRaw.concat() 
+        Object.freeze(listDataShow)
+        this.ListDataShow = listDataShow
       }
       
-      let freezelist = this.ListDataShow
-      let oldSelected = this.ListSelected
-      let newSelected = new Set<string>()
+      const freezeList = this.ListDataShow
+      const oldSelected = this.ListSelected
+      const newSelected = new Set<string>()
       let key = ''
-      for (let i = 0, maxi = freezelist.length; i < maxi; i++) {
-        key = freezelist[i][KEY]
+      for (let i = 0, maxi = freezeList.length; i < maxi; i++) {
+        key = freezeList[i][KEY]
         if (oldSelected.has(key)) newSelected.add(key) 
       }
       this.ListSelected = newSelected
@@ -182,13 +186,13 @@ const useMyShareStore = defineStore('myshare', {
     },
     mMouseSelect(key: string, Ctrl: boolean, Shift: boolean) {
       if (this.ListDataShow.length == 0) return
-      const data = MouseSelectOne(this.ListDataShow, KEY, this.ListSelected, this.ListFocusKey, this.ListSelectKey, key, Ctrl, Shift)
+      const data = MouseSelectOne(this.ListDataShow, KEY, this.ListSelected, this.ListFocusKey, this.ListSelectKey, key, Ctrl, Shift, '')
       this.$patch({ ListSelected: data.selectedNew, ListFocusKey: data.focusLast, ListSelectKey: data.selectedLast })
       this.mRefreshListDataShow(false) 
     },
     mKeyboardSelect(key: string, Ctrl: boolean, Shift: boolean) {
       if (this.ListDataShow.length == 0) return
-      const data = KeyboardSelectOne(this.ListDataShow, KEY, this.ListSelected, this.ListFocusKey, this.ListSelectKey, key, Ctrl, Shift)
+      const data = KeyboardSelectOne(this.ListDataShow, KEY, this.ListSelected, this.ListFocusKey, this.ListSelectKey, key, Ctrl, Shift, '')
       this.$patch({ ListSelected: data.selectedNew, ListFocusKey: data.focusLast, ListSelectKey: data.selectedLast })
       this.mRefreshListDataShow(false) 
     },
@@ -199,7 +203,7 @@ const useMyShareStore = defineStore('myshare', {
     },
     
     GetSelectedFirst() {
-      let list = GetSelectedList(this.ListDataShow, KEY, this.ListSelected)
+      const list = GetSelectedList(this.ListDataShow, KEY, this.ListSelected)
       if (list.length > 0) return list[0]
       return undefined
     },
@@ -209,41 +213,41 @@ const useMyShareStore = defineStore('myshare', {
     },
     
     mGetFocus() {
-      if (this.ListFocusKey == '' && this.ListDataShow.length > 0) return this.ListDataShow[0][KEY]
+      if (!this.ListFocusKey && this.ListDataShow.length > 0) return this.ListDataShow[0][KEY]
       return this.ListFocusKey
     },
     
     mGetFocusNext(position: string) {
-      return GetFocusNext(this.ListDataShow, KEY, this.ListFocusKey, position)
+      return GetFocusNext(this.ListDataShow, KEY, this.ListFocusKey, position, '')
     },
-    mDeleteFiles(shareidlist: string[]) {
-      let filemap = new Set(shareidlist)
-      let ListDataRaw = this.ListDataRaw
-      let NewDataList: Item[] = []
-      for (let i = 0, maxi = ListDataRaw.length; i < maxi; i++) {
-        let item = ListDataRaw[i]
-        if (!filemap.has(item.share_id)) {
-          NewDataList.push(item)
+    mDeleteFiles(share_idList: string[]) {
+      const fileMap = new Set(share_idList)
+      const listDataRaw = this.ListDataRaw
+      const newDataList: Item[] = []
+      for (let i = 0, maxi = listDataRaw.length; i < maxi; i++) {
+        const item = listDataRaw[i]
+        if (!fileMap.has(item.share_id)) {
+          newDataList.push(item)
         }
       }
-      if (this.ListDataRaw.length != NewDataList.length) {
-        this.ListDataRaw = NewDataList
+      if (this.ListDataRaw.length != newDataList.length) {
+        this.ListDataRaw = newDataList
         this.mRefreshListDataShow(true) 
       }
     },
     mUpdateShare(success: UpdateShareModel[]) {
-      let ListDataRaw = this.ListDataRaw
-      const timenow = new Date().getTime()
+      const listDataRaw = this.ListDataRaw
+      const timeNow = new Date().getTime()
       for (let j = 0, jmax = success.length; j < jmax; j++) {
-        let info = success[j]
-        for (let i = 0, maxi = ListDataRaw.length; i < maxi; i++) {
-          let item = ListDataRaw[i]
+        const info = success[j]
+        for (let i = 0, maxi = listDataRaw.length; i < maxi; i++) {
+          const item = listDataRaw[i]
           if (item.share_id == info.share_id) {
             item.share_pwd = info.share_pwd
             item.share_name = info.share_name
             item.description = HanToPin(info.share_name)
             item.expiration = info.expiration
-            item.share_msg = humanExpiration(info.expiration, timenow)
+            item.share_msg = humanExpiration(info.expiration, timeNow)
             item.expired = item.share_msg == '过期失效'
             break
           }

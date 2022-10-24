@@ -71,25 +71,25 @@ export default defineComponent({
         return
       }
 
-      let mindate = new Date()
+      const mindate = new Date()
       mindate.setMinutes(mindate.getMinutes() + 2)
       let expiration = this.form.expiration
       if (expiration) expiration = new Date(expiration) < mindate ? mindate.toISOString() : new Date(expiration).toISOString()
       else expiration = ''
 
       let share_name = this.form.share_name.trim().replaceAll('"', '')
-      share_name = share_name.replace(/[<>\:"\\\|\?\*]+/g, '')
+      share_name = share_name.replace(/[<>:"\\|?*]+/g, '')
       share_name = share_name.replace(/[\f\n\r\t\v]/g, '')
       while (share_name.endsWith(' ') || share_name.endsWith('.')) share_name = share_name.substring(0, share_name.length - 1)
       if (share_name.length < 1) {
         message.error('分享链接标题不能为空')
         return
       }
-      let share_pwd = this.form.share_pwd
+      const share_pwd = this.form.share_pwd
 
       const user_id = pantreeStore.user_id
       const drive_id = pantreeStore.drive_id
-      const file_id_list = ArrayKeyList('file_id', this.filelist)
+      const file_id_list = ArrayKeyList<string>('file_id', this.filelist)
       this.okLoading = true
       
       localStorage.setItem('share_pwd', share_pwd)
@@ -117,7 +117,7 @@ export default defineComponent({
         if (result.reslut.length > 0) {
           let url = ''
           for (let i = 0, maxi = result.reslut.length; i < maxi; i++) {
-            let share = result.reslut[i]
+            const share = result.reslut[i]
             url += GetShareUrlFormate(share.share_name!, share.share_url!, share.share_pwd!) + '\n'
           }
           copyToClipboard(url)
@@ -135,7 +135,7 @@ export default defineComponent({
 </script>
 
 <template>
-  <a-modal :visible="visible" modal-class="modalclass" @cancel="handleHide" @before-open="handleOpen" @close="handleClose" :footer="false" :unmount-on-close="true" :mask-closable="false">
+  <a-modal :visible="visible" modal-class="modalclass" :footer="false" :unmount-on-close="true" :mask-closable="false" @cancel="handleHide" @before-open="handleOpen" @close="handleClose">
     <template #title>
       <span class="modaltitle"
         >创建分享链接<span class="titletips"> (已选择{{ filelist.length }}个文件) </span></span
@@ -158,9 +158,9 @@ export default defineComponent({
           <a-col flex="200px">
             <a-form-item field="expiration">
               <a-date-picker
+                v-model="form.expiration"
                 style="width: 200px; margin: 0"
                 show-time
-                v-model="form.expiration"
                 placeholder="永久有效"
                 value-format="YYYY-MM-DD HH:mm:ss"
                 :shortcuts="[
@@ -188,14 +188,13 @@ export default defineComponent({
                     label: '30天',
                     value: () => dayjs().add(30, 'day')
                   }
-                ]"
-              />
+                ]" />
             </a-form-item>
           </a-col>
           <a-col flex="12px"></a-col>
           <a-col flex="120px">
             <a-form-item field="share_pwd" :rules="[{ length: 4, message: '提取码必须是4个字符' }]">
-              <a-input tabindex="-1" v-model="form.share_pwd" placeholder="没有不填" />
+              <a-input v-model="form.share_pwd" tabindex="-1" placeholder="没有不填" />
             </a-form-item>
           </a-col>
           <a-col flex="auto"></a-col>

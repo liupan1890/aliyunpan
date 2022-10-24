@@ -11,8 +11,9 @@ export default defineComponent({
   },
 
   methods: {
-    selectDir(drive_id: string, dir_id: string) {
-      PanDAL.aReLoadOneDirToShow(drive_id, dir_id, true)
+    selectDir(drive_id: string, file_id: string) {
+      PanDAL.aTreeScrollToDir(file_id)
+      PanDAL.aReLoadOneDirToShow(drive_id, file_id, true)
     }
   }
 })
@@ -21,13 +22,13 @@ export default defineComponent({
 <template>
   <div style="min-height: 26px; max-width: 100%; flex-shrink: 0; flex-grow: 0">
     <div class="toppannav" :style="{ display: settingStore.uiShowPanPath ? '' : 'none' }">
-      <div v-for="(item, index) in pantreeStore.selectDirPath" class="toppannavitem" :title="item.name">
+      <div v-for="(item, index) in pantreeStore.selectDirPath" :key="item.file_id" class="toppannavitem" :title="item.name">
         <a-dropdown v-if="index == 0" class="rightmenu" trigger="hover" position="bl" @click="() => selectDir(item.drive_id, item.file_id)">
           <span> &nbsp; {{ item.name }} </span>
           <template #content>
-            <a-doption v-for="item in pantreeStore.selectDirPath" @click="() => selectDir(item.drive_id, item.file_id)">
+            <a-doption v-for="option in pantreeStore.selectDirPath" :key="'drop' + option.file_id" @click="() => selectDir(option.drive_id, option.file_id)">
               <template #icon> <i class="iconfont iconfile-folder" /> </template>
-              <template #default>{{ item.name }}</template>
+              <template #default>{{ option.name }}</template>
             </a-doption>
           </template>
         </a-dropdown>
@@ -53,7 +54,7 @@ export default defineComponent({
 .toppannavitem {
   flex-grow: 0;
   flex-shrink: 1;
-  min-width: 60px;
+  min-width: 40px;
   max-width: 258px;
   height: 20px;
   padding-right: 4px;

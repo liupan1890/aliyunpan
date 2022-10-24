@@ -14,8 +14,8 @@ export interface IAliDirResp {
 
   m_user_id: string 
   m_drive_id: string 
-  m_dir_id: string 
-  m_dir_name: string 
+  dirID: string 
+  dirName: string 
 }
 
 export interface IDirDataResp {
@@ -24,15 +24,15 @@ export interface IDirDataResp {
 
   m_user_id: string 
   m_drive_id: string 
-  m_dir_id: string 
-  m_dir_name: string 
+  dirID: string 
+  dirName: string 
 }
 
 export interface IAliDirBatchResp {
   items: IAliGetFileModel[]
   itemsKey: Set<string>
   next_marker: string
-  dir_id: string 
+  dirID: string 
 }
 
 export default class AliDirList {
@@ -43,26 +43,26 @@ export default class AliDirList {
       next_marker: '',
       m_user_id: user_id,
       m_drive_id: drive_id,
-      m_dir_id: 'root',
-      m_dir_name: ''
+      dirID: 'root',
+      dirName: ''
     }
     if (!user_id || !drive_id) return result
 
-    const Lock = new Set<string>()
-    let AllMap = new Map<string, IAliGetDirModel>()
-    let errmsg = ''
+    const lockSet = new Set<string>()
+    const allMap = new Map<string, IAliGetDirModel>()
+    let errorMessage = ''
     let next_marker1 = ''
     let next_marker2 = ''
     while (true) {
-      let postdata = '{"requests":['
-      postdata += '{"body": {"drive_id": "' + drive_id + '","query": "type = \\"folder\\"","limit": 100,"fields": "thumbnail","order_by":"name ASC"' + (next_marker1 ? ',"marker":"' + next_marker1 + '"' : '') + '},'
-      postdata += '"headers": { "Content-Type": "application/json" }, "id": "id1","method": "POST","url": "/file/search"},'
-      postdata += '{"body": {"drive_id": "' + drive_id + '","query": "type = \\"folder\\"","limit": 100,"fields": "thumbnail","order_by":"name DESC"' + (next_marker2 ? ',"marker":"' + next_marker2 + '"' : '') + '},'
-      postdata += '"headers": { "Content-Type": "application/json" }, "id": "id2","method": "POST","url": "/file/search"}'
-      postdata += '],"resource":"file"}'
+      let postData = '{"requests":['
+      postData += '{"body": {"drive_id": "' + drive_id + '","query": "type = \\"folder\\"","limit": 100,"fields": "thumbnail","order_by":"name ASC"' + (next_marker1 ? ',"marker":"' + next_marker1 + '"' : '') + '},'
+      postData += '"headers": { "Content-Type": "application/json" }, "id": "id1","method": "POST","url": "/file/search"},'
+      postData += '{"body": {"drive_id": "' + drive_id + '","query": "type = \\"folder\\"","limit": 100,"fields": "thumbnail","order_by":"name DESC"' + (next_marker2 ? ',"marker":"' + next_marker2 + '"' : '') + '},'
+      postData += '"headers": { "Content-Type": "application/json" }, "id": "id2","method": "POST","url": "/file/search"}'
+      postData += '],"resource":"file"}'
 
       const url = 'v2/batch?jsonmask=responses(id%2Cstatus%2Cbody(next_marker%2Citems(name%2Cfile_id%2Cdrive_id%2Cupdated_at%2Csize%2Cdescription%2Cparent_file_id)))'
-      const resp = await AliHttp.Post(url, postdata, user_id, '')
+      const resp = await AliHttp.Post(url, postData, user_id, '')
 
       try {
         if (AliHttp.IsSuccess(resp.code)) {
@@ -74,11 +74,11 @@ export default class AliDirList {
 
             let isFind = false
             for (let i = 0, maxi = resp1.body.items.length; i < maxi; i++) {
-              let item = resp1.body.items[i]
-              if (Lock.has(item.file_id)) {
+              const item = resp1.body.items[i]
+              if (lockSet.has(item.file_id)) {
                 isFind = true
               } else {
-                let add: IAliGetDirModel = {
+                const add: IAliGetDirModel = {
                   __v_skip: true,
                   drive_id: item.drive_id,
                   file_id: item.file_id,
@@ -90,16 +90,16 @@ export default class AliDirList {
                   
                   description: item.description || ''
                 }
-                AllMap.set(add.file_id, add)
-                Lock.add(item.file_id)
+                allMap.set(add.file_id, add)
+                lockSet.add(item.file_id)
               }
             }
             for (let i = 0, maxi = resp2.body.items.length; i < maxi; i++) {
-              let item = resp2.body.items[i]
-              if (Lock.has(item.file_id)) {
+              const item = resp2.body.items[i]
+              if (lockSet.has(item.file_id)) {
                 isFind = true
               } else {
-                let add: IAliGetDirModel = {
+                const add: IAliGetDirModel = {
                   __v_skip: true,
                   drive_id: item.drive_id,
                   file_id: item.file_id,
@@ -111,16 +111,16 @@ export default class AliDirList {
                   
                   description: item.description || ''
                 }
-                AllMap.set(add.file_id, add)
-                Lock.add(item.file_id)
+                allMap.set(add.file_id, add)
+                lockSet.add(item.file_id)
               }
             }
             if (isFind) break 
             if (resp1.body.next_marker == '' && resp2.body.next_marker == '') break 
           } else {
             
-            errmsg += 'err1' + (resp1.status || '')
-            errmsg += 'err2' + (resp2.status || '')
+            errorMessage += 'err1' + (resp1.status || '')
+            errorMessage += 'err2' + (resp2.status || '')
             break
           }
         } else if (resp.code == 402) {
@@ -128,60 +128,61 @@ export default class AliDirList {
           DebugLog.mSaveWarning('ApiFastAllDirList err=' + drive_id + ' ' + (resp.code || ''))
           break
         } else {
-          errmsg += 'err' + (resp.code || '')
+          errorMessage += 'err' + (resp.code || '')
           DebugLog.mSaveWarning('ApiFastAllDirList err=' + (resp.code || ''))
         }
       } catch (err: any) {
         
-        errmsg += 'err' + (err.message || '')
+        errorMessage += 'err' + (err.message || '')
         DebugLog.mSaveWarning('ApiFastAllDirList', err)
         break
       }
     }
 
-    const list = MapValueToArray(AllMap)
+    const list = MapValueToArray(allMap)
     console.log('listcount', list.length)
-    result.items = errmsg ? [] : list
-    result.next_marker = errmsg
+    result.items = errorMessage ? [] : list
+    result.next_marker = errorMessage
 
     return result
   }
+
   
-  static async ApiBatchDirFileList(user_id: string, drive_id: string, dirlist: IAliDirBatchResp[], limit: number, listtypeorquery: string) {
+  static async ApiBatchDirFileList(user_id: string, drive_id: string, dirList: IAliDirBatchResp[], limit: number, listTypeOrQuery: string): Promise<boolean> {
     if (!user_id || !drive_id) return false
 
-    let postdata = '{"requests":['
-    for (let i = 0, maxi = dirlist.length; i < maxi; i++) {
-      if (i > 0) postdata = postdata + ','
+    let postData = '{"requests":['
+    for (let i = 0, maxi = dirList.length; i < maxi; i++) {
+      if (i > 0) postData = postData + ','
 
-      let query = 'parent_file_id="' + dirlist[i].dir_id + '"'
-      if (listtypeorquery == 'all') query = 'parent_file_id="' + dirlist[i].dir_id + '"'
-      else if (listtypeorquery == 'folder') query = 'parent_file_id="' + dirlist[i].dir_id + '" and type = "folder"'
-      else if (listtypeorquery == 'file') query = 'parent_file_id="' + dirlist[i].dir_id + '" and type = "file"'
-      else query = query + listtypeorquery
+      let query = 'parent_file_id="' + dirList[i].dirID + '"'
+      if (listTypeOrQuery == 'all') query = 'parent_file_id="' + dirList[i].dirID + '"'
+      else if (listTypeOrQuery == 'folder') query = 'parent_file_id="' + dirList[i].dirID + '" and type = "folder"'
+      else if (listTypeOrQuery == 'file') query = 'parent_file_id="' + dirList[i].dirID + '" and type = "file"'
+      else query = query + listTypeOrQuery
       const data2 = {
         body: {
           drive_id: drive_id,
           query: query,
-          marker: dirlist[i].next_marker,
+          marker: dirList[i].next_marker,
           url_expire_sec: 14400,
           limit: limit,
-          //fields: 'thumbnail',
+          // fields: 'thumbnail',
           image_thumbnail_process: '',
           video_thumbnail_process: '',
           image_url_process: ''
         },
         headers: { 'Content-Type': 'application/json' },
-        id: dirlist[i].dir_id,
+        id: dirList[i].dirID,
         method: 'POST',
         url: '/file/search'
       }
-      postdata = postdata + JSON.stringify(data2)
+      postData = postData + JSON.stringify(data2)
     }
-    postdata += '],"resource":"file"}'
+    postData += '],"resource":"file"}'
 
     const url = 'v2/batch'
-    const resp = await AliHttp.Post(url, postdata, user_id, '')
+    const resp = await AliHttp.Post(url, postData, user_id, '')
 
     try {
       if (AliHttp.IsSuccess(resp.code)) {
@@ -191,9 +192,9 @@ export default class AliDirList {
           if (status >= 200 && status <= 205) {
             const respi = responses[j]
             const id = respi.id || ''
-            for (let i = 0, maxi = dirlist.length; i < maxi; i++) {
-              if (dirlist[i].dir_id == id) {
-                const dir = dirlist[i]
+            for (let i = 0, maxi = dirList.length; i < maxi; i++) {
+              if (dirList[i].dirID == id) {
+                const dir = dirList[i]
                 dir.next_marker = respi.body.next_marker
                 const items = respi.body.items
                 for (let i = 0, maxi = items.length; i < maxi; i++) {
@@ -222,74 +223,74 @@ export default class AliDirList {
       next_marker: '',
       m_user_id: user_id,
       m_drive_id: drive_id,
-      m_dir_id: 'root',
-      m_dir_name: ''
+      dirID: 'root',
+      dirName: ''
     }
     if (!user_id || !drive_id) return result
 
     
-    let AllMap = new Map<string, IAliGetDirModel>()
+    const allMap = new Map<string, IAliGetDirModel>()
 
-    let dirlist: IAliDirBatchResp[] = []
+    let dirList: IAliDirBatchResp[] = []
     let time = dayjs(created_at).add(1, 'hour')
-    let DAY = 10
-    let END = dayjs().add(DAY + 1, 'day')
-    let errmsg = ''
+    const day = 10
+    const end = dayjs().add(day + 1, 'day')
+    let errorMessage = ''
     while (true) {
-      while (dirlist.length < 30) {
-        let timeend = time.add(DAY, 'day')
-        if (timeend.isBefore(END)) {
-          let dir_id = 'created_at > "' + time.toISOString().substring(0, 19) + '" and created_at <= "' + timeend.toISOString().substring(0, 19) + '"'
-          dirlist.push({ dir_id: dir_id, next_marker: '', items: [], itemsKey: new Set() })
-          time = timeend
+      while (dirList.length < 30) {
+        const timeEnd = time.add(day, 'day')
+        if (timeEnd.isBefore(end)) {
+          const dirID = 'created_at > "' + time.toISOString().substring(0, 19) + '" and created_at <= "' + timeEnd.toISOString().substring(0, 19) + '"'
+          dirList.push({ dirID: dirID, next_marker: '', items: [], itemsKey: new Set() } as IAliDirBatchResp)
+          time = timeEnd
         } else break
       }
-      if (dirlist.length == 0) break
-      console.log('dirlist.length', dirlist.length)
+      if (dirList.length == 0) break
+      console.log('dirList.length', dirList.length)
 
-      let postdata = '{"requests":['
-      for (let i = 0, maxi = dirlist.length; i < maxi; i++) {
-        if (i > 0) postdata = postdata + ','
-        let query = 'type="folder" and ' + dirlist[i].dir_id
+      let postData = '{"requests":['
+      for (let i = 0, maxi = dirList.length; i < maxi; i++) {
+        if (i > 0) postData = postData + ','
+        const query = 'type="folder" and ' + dirList[i].dirID
         const data2 = {
           body: {
             drive_id: drive_id,
             query: query,
-            marker: dirlist[i].next_marker,
+            marker: dirList[i].next_marker,
             limit: 100,
             fields: 'thumbnail'
           },
           headers: { 'Content-Type': 'application/json' },
-          id: dirlist[i].dir_id.replaceAll('"', '').replaceAll(' ', '').replaceAll('-', '').replaceAll(':', '').replaceAll(',', ''),
+          id: dirList[i].dirID.replaceAll('"', '').replaceAll(' ', '').replaceAll('-', '').replaceAll(':', '').replaceAll(',', ''),
           method: 'POST',
           url: '/file/search'
         }
-        postdata = postdata + JSON.stringify(data2)
+        postData = postData + JSON.stringify(data2)
       }
-      postdata += '],"resource":"file"}'
+      postData += '],"resource":"file"}'
 
       const url = 'v2/batch?jsonmask=responses(id%2Cstatus%2Cbody(next_marker%2Citems(name%2Cfile_id%2Cdrive_id%2Cupdated_at%2Csize%2Cdescription%2Cparent_file_id)))'
-      const resp = await AliHttp.Post(url, postdata, user_id, '')
+      const resp = await AliHttp.Post(url, postData, user_id, '')
 
       try {
         if (AliHttp.IsSuccess(resp.code)) {
           const responses = resp.body.responses
-          let list: IAliDirBatchResp[] = []
+          const list: IAliDirBatchResp[] = []
           for (let j = 0, maxj = responses.length; j < maxj; j++) {
             const status = responses[j].status as number
             if (status >= 200 && status <= 205) {
               const respi = responses[j]
               const id = respi.id || ''
-              for (let i = 0, maxi = dirlist.length; i < maxi; i++) {
-                if (dirlist[i].dir_id.replaceAll('"', '').replaceAll(' ', '').replaceAll('-', '').replaceAll(':', '').replaceAll(',', '') == id) {
-                  const dir = dirlist[i]
+              for (let i = 0, maxi = dirList.length; i < maxi; i++) {
+                if (dirList[i].dirID.replaceAll('"', '').replaceAll(' ', '').replaceAll('-', '').replaceAll(':', '').replaceAll(',', '') == id) {
+                  const dir = dirList[i]
                   const items = respi.body.items
                   dir.next_marker = respi.body.next_marker
                   if (dir.next_marker) list.push(dir)
                   for (let i = 0, maxi = items.length; i < maxi; i++) {
-                    if (AllMap.has(items[i].file_id)) continue
-                    let item = items[i]
-                    let add: IAliGetDirModel = {
+                    if (allMap.has(items[i].file_id)) continue
+                    const item = items[i]
+                    const add: IAliGetDirModel = {
                       __v_skip: true,
                       drive_id: item.drive_id,
                       file_id: item.file_id,
@@ -301,35 +302,35 @@ export default class AliDirList {
                       
                       description: item.description || ''
                     }
-                    AllMap.set(add.file_id, add)
+                    allMap.set(add.file_id, add)
                   }
                   break
                 }
               }
             }
           }
-          dirlist.length = 0
-          dirlist = list
+          dirList.length = 0
+          dirList = list
         } else {
-          errmsg = (resp.code || '').toString()
+          errorMessage = (resp.code || '').toString()
           DebugLog.mSaveWarning('SSApiBatchDirFileList err=' + (resp.code || ''))
         }
       } catch (err: any) {
-        errmsg = err.message || ''
+        errorMessage = err.message || ''
         DebugLog.mSaveWarning('ApiBatchDirFileList', err)
       }
     }
 
-    const list = MapValueToArray(AllMap)
+    const list = MapValueToArray(allMap)
     console.log('listcount', list.length)
-    result.items = errmsg ? [] : list
-    result.next_marker = errmsg
+    result.items = errorMessage ? [] : list
+    result.next_marker = errorMessage
     return result
   }
 
   static async _ApiDirFileListInfo(user_id: string, drive_id: string) {
-    let url = 'adrive/v3/file/search'
-    let postdata = {
+    const url = 'adrive/v3/file/search'
+    const postData = {
       drive_id: drive_id,
       marker: '',
       limit: 1,
@@ -340,12 +341,12 @@ export default class AliDirList {
       order_by: 'created_at ASC',
       return_total_count: true
     }
-    const resp = await AliHttp.Post(url, postdata, user_id, '')
+    const resp = await AliHttp.Post(url, postData, user_id, '')
     try {
       if (AliHttp.IsSuccess(resp.code)) {
-        let items = resp.body.items || []
-        let created_at = items.length > 0 ? new Date(items[0].created_at) : new Date()
-        let total_count = resp.body.total_count || 0
+        const items = resp.body.items || []
+        const created_at = items.length > 0 ? new Date(items[0].created_at) : new Date()
+        const total_count = resp.body.total_count || 0
         return { created_at, total_count }
       } else {
         DebugLog.mSaveWarning('_ApiDirFileListInfo err=' + (resp.code || ''))
@@ -355,6 +356,7 @@ export default class AliDirList {
     }
     return { created_at: new Date(), total_count: 0 }
   }
+
   
   static async ApiFastAllDirListByPID(user_id: string, drive_id: string): Promise<IDirDataResp> {
     const result: IDirDataResp = {
@@ -362,19 +364,19 @@ export default class AliDirList {
       next_marker: '',
       m_user_id: user_id,
       m_drive_id: drive_id,
-      m_dir_id: 'root',
-      m_dir_name: ''
+      dirID: 'root',
+      dirName: ''
     }
     if (!user_id || !drive_id) return result
 
-    let AllMap = new Map<string, DirData>()
-    let DirCount = await AliUser.ApiUserDriveFileCount(user_id, '', 'folder')
-    let PIDList: string[] = []
+    const allMap = new Map<string, DirData>()
+    const dirCount = await AliUser.ApiUserDriveFileCount(user_id, '', 'folder')
+    const PIDList: string[] = []
     
-    let root = await AliTrash.ApiDirFileListNoLock(user_id, drive_id, 'root', '', 'name ASC', 'folder', 0)
+    const root = await AliTrash.ApiDirFileListNoLock(user_id, drive_id, 'root', '', 'name ASC', 'folder', 0)
     for (let i = 0, maxi = root.items.length; i < maxi; i++) {
-      let item = root.items[i]
-      let add: DirData = {
+      const item = root.items[i]
+      const add: DirData = {
         file_id: item.file_id,
         parent_file_id: item.parent_file_id,
         name: item.name,
@@ -382,81 +384,81 @@ export default class AliDirList {
         size: 0
       }
 
-      AllMap.set(add.file_id, add)
+      allMap.set(add.file_id, add)
       PIDList.push(add.file_id)
     }
 
     
-    let dirlist: IAliDirBatchResp[] = []
-    let errmsg = ''
+    let dirList: IAliDirBatchResp[] = []
+    let errorMessage = ''
     let index = 0
     while (true) {
-      while (dirlist.length < 30) {
+      while (dirList.length < 30) {
         if (PIDList.length > index) {
-          let dir_id = 'parent_file_id in ['
+          let dirID = 'parent_file_id in ['
           let add = 0
           for (let maxj = PIDList.length; index < maxj; index++) {
-            dir_id += add == 0 ? '"' + PIDList[index] + '"' : ',"' + PIDList[index] + '"'
+            dirID += add == 0 ? '"' + PIDList[index] + '"' : ',"' + PIDList[index] + '"'
             add++
             if (add >= 50) break
           }
-          dir_id += ']'
-          dirlist.push({ dir_id: dir_id, next_marker: '', items: [], itemsKey: new Set() })
+          dirID += ']'
+          dirList.push({ dirID: dirID, next_marker: '', items: [], itemsKey: new Set() } as IAliDirBatchResp)
         } else break
       }
-      if (dirlist.length == 0) break
+      if (dirList.length == 0) break
 
-      let postdata = '{"requests":['
-      for (let i = 0, maxi = dirlist.length; i < maxi; i++) {
-        if (i > 0) postdata = postdata + ','
-        let query = 'type="folder" and ' + dirlist[i].dir_id
+      let postData = '{"requests":['
+      for (let i = 0, maxi = dirList.length; i < maxi; i++) {
+        if (i > 0) postData = postData + ','
+        const query = 'type="folder" and ' + dirList[i].dirID
         const data2 = {
           body: {
             drive_id: drive_id,
             query: query,
-            marker: dirlist[i].next_marker,
+            marker: dirList[i].next_marker,
             limit: 100,
             fields: 'thumbnail',
             order_by: 'name ASC'
           },
           headers: { 'Content-Type': 'application/json' },
-          id: dirlist[i].dir_id.replaceAll('"', '').replaceAll(' ', '').replaceAll(',', '').substring(0, 54),
+          id: dirList[i].dirID.replaceAll('"', '').replaceAll(' ', '').replaceAll(',', '').substring(0, 54),
           method: 'POST',
           url: '/file/search'
         }
-        postdata = postdata + JSON.stringify(data2)
+        postData = postData + JSON.stringify(data2)
       }
-      postdata += '],"resource":"file"}'
+      postData += '],"resource":"file"}'
 
       const url = 'v2/batch?jsonmask=responses(id%2Cstatus%2Cbody(next_marker%2Citems(name%2Cfile_id%2Cdrive_id%2Cupdated_at%2Csize%2Cdescription%2Cparent_file_id)))'
-      const resp = await AliHttp.Post(url, postdata, user_id, '')
+      const resp = await AliHttp.Post(url, postData, user_id, '')
 
       try {
         if (AliHttp.IsSuccess(resp.code)) {
           const responses = resp.body.responses
-          let list: IAliDirBatchResp[] = []
+          const list: IAliDirBatchResp[] = []
           for (let j = 0, maxj = responses.length; j < maxj; j++) {
             const status = responses[j].status as number
             if (status >= 200 && status <= 205) {
               const respi = responses[j]
               const id = respi.id || ''
-              for (let i = 0, maxi = dirlist.length; i < maxi; i++) {
-                if (dirlist[i].dir_id.replaceAll('"', '').replaceAll(' ', '').replaceAll(',', '').substring(0, 54) == id) {
-                  const dir = dirlist[i]
+              for (let i = 0, maxi = dirList.length; i < maxi; i++) {
+                if (dirList[i].dirID.replaceAll('"', '').replaceAll(' ', '').replaceAll(',', '').substring(0, 54) == id) {
+                  const dir = dirList[i]
                   const items = respi.body.items
                   dir.next_marker = respi.body.next_marker
                   if (dir.next_marker) list.push(dir)
                   for (let i = 0, maxi = items.length; i < maxi; i++) {
-                    if (AllMap.has(items[i].file_id)) continue
-                    let item = items[i]
-                    let add: DirData = {
+                    if (allMap.has(items[i].file_id)) continue
+                    const item = items[i]
+                    const add: DirData = {
                       file_id: item.file_id,
                       parent_file_id: item.parent_file_id,
                       name: item.name,
                       time: new Date(item.updated_at).getTime(),
                       size: 0
                     }
-                    AllMap.set(add.file_id, add)
+                    allMap.set(add.file_id, add)
                     PIDList.push(add.file_id)
                   }
                   break
@@ -464,23 +466,23 @@ export default class AliDirList {
               }
             }
           }
-          dirlist.length = 0
-          dirlist = list
-          if (window.WinMsgToMain) window.WinMsgToMain({ cmd: 'MainShowAllDirProgress', drive_id, index: AllMap.size, total: DirCount })
+          dirList.length = 0
+          dirList = list
+          if (window.WinMsgToMain) window.WinMsgToMain({ cmd: 'MainShowAllDirProgress', drive_id, index: allMap.size, total: dirCount })
         } else {
-          errmsg = (resp.code || '').toString()
+          errorMessage = (resp.code || '').toString()
           DebugLog.mSaveWarning('SSApiBatchDirFileList err=' + (resp.code || ''))
         }
       } catch (err: any) {
-        errmsg = err.message || ''
+        errorMessage = err.message || ''
         DebugLog.mSaveWarning('ApiBatchDirFileList', err)
       }
     }
 
-    const list = MapValueToArray(AllMap)
+    const list = MapValueToArray(allMap)
     console.log('listcount', list.length)
-    result.items = errmsg ? [] : list
-    result.next_marker = errmsg
+    result.items = errorMessage ? [] : list
+    result.next_marker = errorMessage
 
     return result
   }

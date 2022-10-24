@@ -1,6 +1,7 @@
 import { getCrxPath, getResourcesPath, getUserDataPath } from './mainfile'
 import { release } from 'os'
 import { AppWindow, creatElectronWindow, createMainWindow, createTray, Referer, ShowError, ShowErrorAndExit, ua } from './window'
+const Electron = require('electron')
 const { app, BrowserWindow, dialog, Menu, MenuItem, ipcMain, shell, session } = require('electron')
 const { exec, spawn } = require('child_process')
 const { existsSync, readFileSync, writeFileSync } = require('fs')
@@ -20,7 +21,7 @@ process.on('uncaughtException', (err) => {
 })
 
 
-//app.commandLine.appendSwitch('proxy-server', '192.168.31.74:8888')
+// app.commandLine.appendSwitch('proxy-server', '192.168.31.74:8888')
 app.commandLine.appendSwitch('no-sandbox')
 app.commandLine.appendSwitch('disable-web-security')
 app.commandLine.appendSwitch('disable-renderer-backgrounding')
@@ -35,11 +36,11 @@ app.setAppUserModelId('com.github.liupan1890')
 app.name = 'alixby3'
 const DEBUGGING = !app.isPackaged
 
-let userData = getResourcesPath('userdir.config')
+const userData = getResourcesPath('userdir.config')
 try {
   if (existsSync(userData)) {
-    let configdata = readFileSync(userData, 'utf-8')
-    if (configdata) app.setPath('userData', configdata)
+    const configData = readFileSync(userData, 'utf-8')
+    if (configData) app.setPath('userData', configData)
   }
 } catch {}
 
@@ -64,12 +65,15 @@ if (process.argv && process.argv.join(' ').indexOf('exit') >= 0) {
   app.exit()
 }
 app.on('window-all-closed', () => {
-  app.quit()
-  if (process.platform !== 'darwin') app.quit() //未测试应该使用哪一个
+  if (process.platform == 'darwin') {
+    AppWindow.appTray?.destroy()
+  } else {
+    app.quit() // 未测试应该使用哪一个
+  }
 })
 
 app.on('activate', () => {
-  if (AppWindow.mainWindow == null || AppWindow.mainWindow.isDestroyed()) createMainWindow()
+  if (!AppWindow.mainWindow || AppWindow.mainWindow.isDestroyed()) createMainWindow()
   else {
     if (AppWindow.mainWindow.isMinimized()) AppWindow.mainWindow.restore()
     AppWindow.mainWindow.show()
@@ -81,7 +85,7 @@ app.on('will-quit', () => {
   try {
     if (AppWindow.appTray) {
       AppWindow.appTray.destroy()
-      AppWindow.appTray = null
+      AppWindow.appTray = undefined
     }
   } catch {
     
@@ -96,19 +100,19 @@ app.setAboutPanelOptions({
   applicationVersion: '30'
 })
 
-let usertoken: { access_token: string; user_id: string; refresh: boolean } = {
+let userToken: { access_token: string; user_id: string; refresh: boolean } = {
   access_token: '',
   user_id: '',
   refresh: false
 }
 ipcMain.on('WebUserToken', (event, data) => {
   if (data.login) {
-    usertoken = data
-  } else if (usertoken.user_id == data.user_id) {
-    usertoken = data
-    //ShowError('WebUserToken', 'update' + data.name)
+    userToken = data
+  } else if (userToken.user_id == data.user_id) {
+    userToken = data
+    // ShowError('WebUserToken', 'update' + data.name)
   } else {
-    //ShowError('WebUserToken', 'nothing' + data.name)
+    // ShowError('WebUserToken', 'nothing' + data.name)
   }
 })
 
@@ -117,32 +121,32 @@ app
   .then(() => {
     session.defaultSession.webRequest.onBeforeSendHeaders((details, cb) => {
       
-      const should115referer = details.url.indexOf('.115.com') > 0
-      const shouldgieereferer = details.url.indexOf('gitee.com') > 0
-      const shouldaliOrigin = details.url.indexOf('.aliyundrive.com') > 0
+      const should115Referer = details.url.indexOf('.115.com') > 0
+      const shouldGieeReferer = details.url.indexOf('gitee.com') > 0
+      const shouldAliOrigin = details.url.indexOf('.aliyundrive.com') > 0
 
-      const shouldaliReferer = !should115referer && !shouldgieereferer && (details.referrer == undefined || details.referrer.trim() === '' || /(\/localhost:)|(^file:\/\/)|(\/127.0.0.1:)/.exec(details.referrer) !== null)
-      const shouldtoken = details.url.includes('aliyundrive') && details.url.includes('download')
+      const shouldAliReferer = !should115Referer && !shouldGieeReferer && (!details.referrer || details.referrer.trim() === '' || /(\/localhost:)|(^file:\/\/)|(\/127.0.0.1:)/.exec(details.referrer) !== null)
+      const shouldToken = details.url.includes('aliyundrive') && details.url.includes('download')
 
       cb({
         cancel: false,
         requestHeaders: {
           ...details.requestHeaders,
-          ...(should115referer && {
+          ...(should115Referer && {
             Referer: 'http://115.com/s/swn4bs33z88',
             Origin: 'http://115.com'
           }),
-          ...(shouldgieereferer && {
+          ...(shouldGieeReferer && {
             Referer: 'https://gitee.com/'
           }),
-          ...(shouldaliOrigin && {
+          ...(shouldAliOrigin && {
             Origin: 'https://www.aliyundrive.com'
           }),
-          ...(shouldaliReferer && {
+          ...(shouldAliReferer && {
             Referer: 'https://www.aliyundrive.com/'
           }),
-          ...(shouldtoken && {
-            Authorization: usertoken.access_token
+          ...(shouldToken && {
+            Authorization: userToken.access_token
           }),
           'X-Canary': 'client=web,app=adrive,version=v3.0.0',
           'Accept-Language': 'zh-CN,zh;q=0.9'
@@ -161,8 +165,9 @@ app
   })
 
 
-var menuEdit: Electron.Menu | null = null
-var menuCopy: Electron.Menu | null = null
+
+let menuEdit: Electron.Menu | undefined
+let menuCopy: Electron.Menu | undefined
 
 export function createMenu() {
   menuEdit = new Menu()
@@ -184,7 +189,7 @@ ipcMain.on('WebToElectron', (event, data) => {
   } else if (data.cmd && data.cmd === 'exit') {
     if (mainWindow && !mainWindow.isDestroyed()) {
       mainWindow.destroy()
-      mainWindow = null
+      mainWindow = undefined
     }
     try {
       app.exit()
@@ -209,7 +214,7 @@ ipcMain.on('WebToElectron', (event, data) => {
 })
 
 ipcMain.on('WebToElectronCB', (event, data) => {
-  let mainWindow = AppWindow.mainWindow
+  const mainWindow = AppWindow.mainWindow
   if (data.cmd && data.cmd === 'maxsize') {
     if (mainWindow && !mainWindow.isDestroyed()) {
       if (mainWindow.isMaximized()) {
@@ -237,21 +242,21 @@ ipcMain.on('WebShowSaveDialogSync', (event, config) => {
   })
 })
 
-ipcMain.on('WebShowItemInFolder', (event, fullpath) => {
+ipcMain.on('WebShowItemInFolder', (event, fullPath) => {
   for (let i = 0; i < 5; i++) {
-    if (existsSync(fullpath)) break
-    if (fullpath.lastIndexOf(path.sep) > 0) {
-      fullpath = fullpath.substring(0, fullpath.lastIndexOf(path.sep))
+    if (existsSync(fullPath)) break
+    if (fullPath.lastIndexOf(path.sep) > 0) {
+      fullPath = fullPath.substring(0, fullPath.lastIndexOf(path.sep))
     } else return
   }
-  if (fullpath.length > 2) shell.showItemInFolder(fullpath)
+  if (fullPath.length > 2) shell.showItemInFolder(fullPath)
 })
 
 ipcMain.on('WebPlatformSync', (event) => {
-  let asarPath = app.getAppPath()
-  let basePath = path.resolve(asarPath, '..') 
-  let findMPV = process.platform !== 'win32' || existsSync(path.join(basePath, 'MPV', 'mpv.exe'))
-  let appPath = app.getPath('userData')
+  const asarPath = app.getAppPath()
+  const basePath = path.resolve(asarPath, '..') 
+  const findMPV = process.platform !== 'win32' || existsSync(path.join(basePath, 'MPV', 'mpv.exe'))
+  const appPath = app.getPath('userData')
   event.returnValue = {
     platform: process.platform,
     arch: process.arch,
@@ -271,7 +276,7 @@ ipcMain.on('WebSpawnSync', (event, data) => {
     options.stdio = 'ignore'
 
     if (data.command === 'mpv') {
-      let basePath = path.resolve(app.getAppPath(), '..') 
+      const basePath = path.resolve(app.getAppPath(), '..') 
       if (process.platform === 'win32') {
         data.command = path.join(basePath, 'MPV', 'mpv.exe')
       } else if (process.platform === 'darwin') {
@@ -302,9 +307,9 @@ ipcMain.on('WebSpawnSync', (event, data) => {
 })
 ipcMain.on('WebExecSync', (event, data) => {
   try {
-    let cmdarguments = []
+    const cmdArguments = []
     if (data.command === 'mpv') {
-      let basePath = path.resolve(app.getAppPath(), '..') 
+      const basePath = path.resolve(app.getAppPath(), '..') 
       if (process.platform === 'win32') {
         const exe = path.join(basePath, 'MPV', 'mpv.exe')
         if (existsSync(exe) == false) {
@@ -312,7 +317,7 @@ ipcMain.on('WebExecSync', (event, data) => {
           ShowError('找不到文件', data.command + ' ' + exe)
           return
         }
-        cmdarguments.push('"' + exe + '"')
+        cmdArguments.push('"' + exe + '"')
       } else if (process.platform === 'darwin') {
         const exe = path.join(basePath, 'mpv')
         if (existsSync(exe) == false) {
@@ -320,19 +325,19 @@ ipcMain.on('WebExecSync', (event, data) => {
           ShowError('找不到文件', data.command + ' ' + exe)
           return
         }
-        cmdarguments.push("'" + exe + "'")
+        cmdArguments.push("'" + exe + "'")
       } else {
-        cmdarguments.push('mpv')
+        cmdArguments.push('mpv')
       }
     } else {
-      cmdarguments.push(data.command)
+      cmdArguments.push(data.command)
     }
 
-    if (data.args) cmdarguments.push(...data.args)
+    if (data.args) cmdArguments.push(...data.args)
 
-    const finalcmd = cmdarguments.join(' ')
+    const finalCmd = cmdArguments.join(' ')
     
-    exec(finalcmd, (err: any) => {
+    exec(finalCmd, (err: any) => {
       event.returnValue = err
     })
     event.returnValue = ''
@@ -343,8 +348,8 @@ ipcMain.on('WebExecSync', (event, data) => {
 
 ipcMain.on('WebSaveTheme', (event, data) => {
   try {
-    const themejson = getUserDataPath('theme.json')
-    writeFileSync(themejson, `{"theme":"${data.theme || ''}"}`, 'utf-8')
+    const themeJson = getUserDataPath('theme.json')
+    writeFileSync(themeJson, `{"theme":"${data.theme || ''}"}`, 'utf-8')
   } catch {}
 })
 
@@ -385,8 +390,10 @@ ipcMain.on('WebRelaunch', (event, data) => {
 
 ipcMain.on('WebSetProgressBar', (event, data) => {
   if (AppWindow.mainWindow && !AppWindow.mainWindow.isDestroyed()) {
-    if (data.pro) AppWindow.mainWindow.setProgressBar(data.pro)
-    else AppWindow.mainWindow.setProgressBar(-1)
+    if (data.pro) {
+      
+      AppWindow.mainWindow.setProgressBar(data.pro, { mode: data.mode || 'normal' })
+    } else AppWindow.mainWindow.setProgressBar(-1)
   }
 })
 
@@ -394,52 +401,58 @@ ipcMain.on('WebShutDown', (event, data) => {
   if (process.platform === 'darwin') {
     const shutdownCmd = 'osascript -e \'tell application "System Events" to shut down\''
     exec(shutdownCmd, (err: any) => {
-      if (data.quitapp) {
+      if (data.quitApp) {
         try {
           app.exit()
         } catch {}
+      }
+      if (err) {
+        // donothing
       }
     })
   } else {
-    const cmdarguments = ['shutdown']
+    const cmdArguments = ['shutdown']
     if (process.platform === 'linux') {
       if (data.sudo) {
-        cmdarguments.unshift('sudo')
+        cmdArguments.unshift('sudo')
       }
-      cmdarguments.push('-h') 
-      cmdarguments.push('now')
+      cmdArguments.push('-h') 
+      cmdArguments.push('now')
     }
     if (process.platform === 'win32') {
-      cmdarguments.push('-s') 
-      cmdarguments.push('-f')
-      cmdarguments.push('-t 0') 
+      cmdArguments.push('-s') 
+      cmdArguments.push('-f')
+      cmdArguments.push('-t 0') 
     }
 
-    const finalcmd = cmdarguments.join(' ')
+    const finalcmd = cmdArguments.join(' ')
     
     exec(finalcmd, (err: any) => {
-      if (data.quitapp) {
+      if (data.quitApp) {
         try {
           app.exit()
         } catch {}
+      }
+      if (err) {
+        // donothing
       }
     })
   }
 })
 
 ipcMain.on('WebSetProxy', (event, data) => {
-  //if (data.proxyurl) app.commandLine.appendSwitch('proxy-server', data.proxyurl)
-  //else app.commandLine.removeSwitch('proxy-server')
+  // if (data.proxyUrl) app.commandLine.appendSwitch('proxy-server', data.proxyUrl)
+  // else app.commandLine.removeSwitch('proxy-server')
   console.log(JSON.stringify(data))
-  if (data.proxyurl) {
-    session.defaultSession.setProxy({ proxyRules: data.proxyurl })
+  if (data.proxyUrl) {
+    session.defaultSession.setProxy({ proxyRules: data.proxyUrl })
   } else {
     session.defaultSession.setProxy({})
   }
 })
 
 ipcMain.on('WebOpenWindow', (event, data) => {
-  let win = creatElectronWindow(AppWindow.winWidth, AppWindow.winHeight, true, 'main2', data.theme)
+  const win = creatElectronWindow(AppWindow.winWidth, AppWindow.winHeight, true, 'main2', data.theme)
 
   win.on('ready-to-show', function () {
     win.webContents.send('setPage', data)
@@ -448,7 +461,7 @@ ipcMain.on('WebOpenWindow', (event, data) => {
   })
 })
 ipcMain.on('WebOpenUrl', (event, data) => {
-  let win = new BrowserWindow({
+  const win = new BrowserWindow({
     show: false,
     width: AppWindow.winWidth,
     height: AppWindow.winHeight,

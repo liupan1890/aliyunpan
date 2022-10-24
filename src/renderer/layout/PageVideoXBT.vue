@@ -19,15 +19,15 @@ export default defineComponent({
     const loading = ref(false)
     const preview = ref(false)
     const error = ref('')
-    const fileinfo = ref<IAliFileItem>()
+    const fileInfo = ref<IAliFileItem>()
     const rowNum = ref(4)
-    const imagelist = ref<IVideoXBTUrl[]>([])
+    const imageList = ref<IVideoXBTUrl[]>([])
 
     onMounted(() => {
       handleWinSizeClick(settingStore.uiXBTWidth || 960)
       loadXBT()
 
-      let name = '视频雪碧图 ' + (appStore.pageVideoXBT?.file_name || '')
+      const name = '视频雪碧图 ' + (appStore.pageVideoXBT?.file_name || '')
       setTimeout(() => {
         document.title = name
       }, 1000)
@@ -41,38 +41,40 @@ export default defineComponent({
 
       
       loading.value = true
-      let alifile = await AliFile.ApiFileInfo(pageVideoXBT.user_id, pageVideoXBT.drive_id, pageVideoXBT.file_id)
+      const alifile = await AliFile.ApiFileInfo(pageVideoXBT.user_id, pageVideoXBT.drive_id, pageVideoXBT.file_id)
 
-      if (alifile == undefined) {
+      if (!alifile) {
         message.error('错误的文件')
         error.value = '错误的文件'
         return
       }
-      const duration = Math.ceil(Number.parseFloat(alifile.video_media_metadata?.duration?.toString() || alifile.video_preview_metadata?.duration?.toString() || '0'))
+      let duration = Math.ceil(Number.parseFloat(alifile.video_media_metadata?.duration?.toString() || alifile.video_preview_metadata?.duration?.toString() || '0'))
       if (duration <= 0) {
         message.error('错误的文件(视频时长错误)')
         error.value = '错误的文件(视频时长错误)'
-        fileinfo.value = alifile
-        return
+        fileInfo.value = alifile
+        duration = 1800 
       }
 
-      let x = Math.max(alifile?.video_media_metadata?.width || 0, alifile?.video_preview_metadata?.width || 0)
-      let y = Math.max(alifile?.video_media_metadata?.height || 0, alifile?.video_preview_metadata?.height || 0)
+      const x = Math.max(alifile?.video_media_metadata?.width || 0, alifile?.video_preview_metadata?.width || 0)
+      const y = Math.max(alifile?.video_media_metadata?.height || 0, alifile?.video_preview_metadata?.height || 0)
 
-      let uiXBTNumber = settingStore.uiXBTNumber || 36
+      const uiXBTNumber = settingStore.uiXBTNumber || 36
       
       AliFile.ApiBiXueTuBatch(pageVideoXBT.user_id, pageVideoXBT.drive_id, pageVideoXBT.file_id, duration, uiXBTNumber, 720).then((data) => {
-        fileinfo.value = alifile
+        fileInfo.value = alifile
         rowNum.value = x > y ? 3 : 4
         loading.value = false
-        imagelist.value = data
+        imageList.value = data
       })
     }
 
     const handleWinSizeClick = (size: number) => {
       settingStore.uiXBTWidth = size
       window.resizeTo(size + 32, window.outerHeight)
-      var node = document.getElementById('docxbt')
+      let node = document.getElementById('docxbttop')
+      if (node) node.style.width = size + 'px'
+      node = document.getElementById('docxbt')
       if (node) node.style.width = size + 'px'
     }
 
@@ -101,13 +103,13 @@ export default defineComponent({
 
     const handleSaveImageClick = () => {
       loading.value = true
-      var node = document.getElementById('docxbt')
-      var width = node?.clientWidth || 0
+      const node = document.getElementById('docxbt')
+      const width = node?.clientWidth || 0
       domtoimage
         .toPng(node, { bgcolor: '#23232e' })
         .then((dataUrl: any) => {
           loading.value = false
-          var link = document.createElement('a')
+          const link = document.createElement('a')
           link.download = appStore.pageVideoXBT?.file_name + '_' + width.toString() + '.png'
           link.href = dataUrl
           link.click()
@@ -119,24 +121,24 @@ export default defineComponent({
     }
 
     const getFenBianLv = computed(() => {
-      let x = Math.max(fileinfo.value?.video_media_metadata?.width || 0, fileinfo.value?.video_preview_metadata?.width || 0)
-      let y = Math.max(fileinfo.value?.video_media_metadata?.height || 0, fileinfo.value?.video_preview_metadata?.height || 0)
+      const x = Math.max(fileInfo.value?.video_media_metadata?.width || 0, fileInfo.value?.video_preview_metadata?.width || 0)
+      const y = Math.max(fileInfo.value?.video_media_metadata?.height || 0, fileInfo.value?.video_preview_metadata?.height || 0)
       return x.toString() + 'x' + y.toString()
     })
 
     const getVideoInfo = computed(() => {
       let info = ''
       let metas: IAliFileVideoMeta[] = []
-      if (fileinfo.value?.video_media_metadata?.video_media_video_stream) {
-        if (Array.isArray(fileinfo.value?.video_media_metadata?.video_media_video_stream)) {
-          metas = fileinfo.value?.video_media_metadata?.video_media_video_stream
+      if (fileInfo.value?.video_media_metadata?.video_media_video_stream) {
+        if (Array.isArray(fileInfo.value?.video_media_metadata?.video_media_video_stream)) {
+          metas = fileInfo.value?.video_media_metadata?.video_media_video_stream
         } else {
-          metas = [fileinfo.value?.video_media_metadata?.video_media_video_stream]
+          metas = [fileInfo.value?.video_media_metadata?.video_media_video_stream]
         }
       }
 
       for (let i = 0, maxi = metas.length; i < maxi; i++) {
-        let meta = metas[i]
+        const meta = metas[i]
         if (meta.code_name == 'mjpeg') continue
         let one = ''
 
@@ -156,9 +158,9 @@ export default defineComponent({
         }
         if (meta.fps) {
           one += '    帧率=' + meta.fps
-          let fps = meta.fps.split('/')
+          const fps = meta.fps.split('/')
           if (fps.length == 2) {
-            let fpsn = parseInt(fps[0]) / parseInt(fps[1])
+            const fpsn = parseInt(fps[0]) / parseInt(fps[1])
             one += ' (' + fpsn.toFixed(1) + ')'
           }
         }
@@ -174,17 +176,17 @@ export default defineComponent({
     const getAudioInfo = computed(() => {
       let info = ''
       let metas: IAliFileAudioMeta[] = []
-      if (fileinfo.value?.video_media_metadata?.video_media_audio_stream) {
-        if (Array.isArray(fileinfo.value?.video_media_metadata?.video_media_audio_stream)) {
-          metas = fileinfo.value?.video_media_metadata?.video_media_audio_stream
+      if (fileInfo.value?.video_media_metadata?.video_media_audio_stream) {
+        if (Array.isArray(fileInfo.value?.video_media_metadata?.video_media_audio_stream)) {
+          metas = fileInfo.value?.video_media_metadata?.video_media_audio_stream
         } else {
-          metas = [fileinfo.value?.video_media_metadata?.video_media_audio_stream]
+          metas = [fileInfo.value?.video_media_metadata?.video_media_audio_stream]
         }
       }
 
-      let audlist: string[] = []
+      const audioList: string[] = []
       for (let i = 0, maxi = metas.length; i < maxi; i++) {
-        let meta = metas[i]
+        const meta = metas[i]
         let one = ''
         if (meta.code_name) one += '    编码=' + meta.code_name.toUpperCase()
 
@@ -204,12 +206,12 @@ export default defineComponent({
         if (meta.sample_rate) one += '    采样率=' + meta.sample_rate + 'Hz'
         if (meta.channels) one += '    声道数=' + meta.channels
         if (meta.channel_layout) one += '    声道=' + meta.channel_layout.replace('stereo', '立体声').replace('mono', '单声道').replace('quad', '四通道')
-        if (audlist.includes(one) == false) {
-          audlist.push(one)
+        if (audioList.includes(one) == false) {
+          audioList.push(one)
         }
       }
       if (metas.length > 1) info = '    音轨=' + metas.length.toString()
-      info += audlist.join(';')
+      info += audioList.join(';')
       info = info.trimStart()
       if (!info) return ''
       return info
@@ -217,7 +219,7 @@ export default defineComponent({
 
     const getPreviewInfo = computed(() => {
       let info = ''
-      let meta = fileinfo.value?.video_preview_metadata
+      const meta = fileInfo.value?.video_preview_metadata
       if (meta) {
         let one = ''
         if (meta.video_format) one += '    视频编码=' + meta.video_format.toUpperCase()
@@ -236,9 +238,9 @@ export default defineComponent({
         }
         if (meta.frame_rate) {
           one += '    帧率=' + meta.frame_rate
-          let fps = meta.frame_rate.split('/')
+          const fps = meta.frame_rate.split('/')
           if (fps.length == 2) {
-            let fpsn = parseInt(fps[0]) / parseInt(fps[1])
+            const fpsn = parseInt(fps[0]) / parseInt(fps[1])
             one += ' (' + fpsn.toFixed(1) + ')'
           }
         }
@@ -257,8 +259,8 @@ export default defineComponent({
       loading,
       preview,
       rowNum,
-      fileinfo,
-      imagelist,
+      fileinfo: fileInfo,
+      imagelist: imageList,
       handleWinSizeClick,
       handleCopyM3U8Click,
       handleCopyDownClick,
@@ -289,8 +291,8 @@ export default defineComponent({
       </div>
     </a-layout-header>
     <a-layout-content style="height: calc(100vh - 42px); padding: 12px 6px 12px 16px">
-      <div class="doc-preview" id="doc-preview" style="width: 100%; height: 100%; overflow: auto">
-        <div class="xbtbtns settingbody">
+      <div id="doc-preview" class="doc-preview" style="width: 100%; height: 100%; overflow: auto; text-align: center">
+        <div id="docxbttop" class="xbtbtns settingbody" style="text-align: left">
           <a-radio-group type="button" size="small" tabindex="-1" :model-value="settingStore.uiXBTWidth" @update:model-value="handleWinSizeClick($event as number)">
             <a-radio tabindex="-1" :value="720">720P</a-radio>
             <a-radio tabindex="-1" :value="960">960P</a-radio>
@@ -300,18 +302,18 @@ export default defineComponent({
 
           <div style="margin-right: 12px"></div>
 
-          <a-button type="outline" size="small" tabindex="-1" :loading="loading" @click="handleSaveImageClick" title="下载雪碧图到本地"> <i class="iconfont icondownload"></i>保存雪碧图 </a-button>
+          <a-button type="outline" size="small" tabindex="-1" :loading="loading" title="下载雪碧图到本地" @click="handleSaveImageClick"> <i class="iconfont icondownload"></i>保存雪碧图 </a-button>
 
           <div style="flex-grow: 1"></div>
-          <a-button v-if="false" type="outline" size="small" tabindex="-1" @click="handleCopyM3U8Click" title="复制M3U8链接"> <i class="iconfont iconlink2"></i>M3U8链接 </a-button>
+          <a-button v-if="false" type="outline" size="small" tabindex="-1" title="复制M3U8链接" @click="handleCopyM3U8Click"> <i class="iconfont iconlink2"></i>M3U8链接 </a-button>
 
           <div style="margin-right: 12px"></div>
-          <a-button v-if="false" type="outline" size="small" tabindex="-1" @click="handleCopyDownClick" title="复制原文件链接"> <i class="iconfont iconlink2"></i>下载链接 </a-button>
+          <a-button v-if="false" type="outline" size="small" tabindex="-1" title="复制原文件链接" @click="handleCopyDownClick"> <i class="iconfont iconlink2"></i>下载链接 </a-button>
 
           <div style="margin-right: 12px"></div>
         </div>
 
-        <div id="docxbt">
+        <div id="docxbt" style="margin: 0 auto; text-align: left">
           <div class="xbtinfo" style="color: #ffffffd9; padding: 24px 8px 16px 16px; background: #17171f; border-radius: 4px; white-space: pre-wrap; margin-bottom: 2px">
             <h3 style="color: #fffffff2; font-size: 18px; font-weight: 500; line-height: 1.40625">{{ fileinfo?.name }}</h3>
             <div>
@@ -348,7 +350,7 @@ export default defineComponent({
           </div>
           <div class="xbtvideo" style="display: flex; flex-wrap: wrap; border: 2px solid #17171f; border-bottom: 24px solid #17171f; padding: 16px; border-radius: 4px; background: #17171f">
             <a-image-preview-group @visible-change="(val:boolean)=>{preview=val}">
-              <div v-for="(item, index) in imagelist" class="xbtimage" :key="'xbt-' + index.toString()" :style="{ width: rowNum == 4 ? '25%' : '33.333%' }">
+              <div v-for="(item, index) in imagelist" :key="'xbt-' + index.toString()" class="xbtimage" :style="{ width: rowNum == 4 ? '25%' : '33.333%' }">
                 <a-image width="100%" :src="item.url" />
                 <div class="xbttime" style="text-align: center; color: #ffffffa6">
                   {{ item.time }}
@@ -364,7 +366,7 @@ export default defineComponent({
 
 <style>
 .xbtbtns {
-  margin: 14px 0 36px 0;
+  margin: 14px auto 36px auto;
   display: flex;
 }
 

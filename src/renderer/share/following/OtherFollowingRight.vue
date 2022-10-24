@@ -15,7 +15,7 @@ keyboardStore.$subscribe((_m: any, state: KeyboardState) => {
 
   if (TestKey('f5', state.KeyDownEvent, handleRefresh)) return
 })
-const handleRefresh = () => FollowingDAL.aReloadOtherFollowingList(useUserStore().userID, true)
+const handleRefresh = () => FollowingDAL.aReloadOtherFollowingList(useUserStore().user_id, true)
 
 const tuijianSelectKey = ref(otherfollowingStore.TuiJianList[0].key)
 const tuijianList = ref<IAliOtherFollowingModel[]>(otherfollowingStore.TuiJianList[0].list)
@@ -44,9 +44,9 @@ const handleOpenLink = (followingid: string) => {
   const url = 'https://www.aliyundrive.com/u/' + followingid + '/feed'
   openExternal(url)
 }
-const handleFollowing = (followingid: string, following: boolean) => {
+const handleFollowing = (followingid: string, isFollowing: boolean) => {
   const userStore = useUserStore()
-  FollowingDAL.aSetFollowing(userStore.userID, followingid, following)
+  FollowingDAL.aSetFollowing(userStore.user_id, followingid, isFollowing)
 }
 </script>
 
@@ -57,10 +57,10 @@ const handleFollowing = (followingid: string, following: boolean) => {
     <div class="tuijian">
       <div class="tuijianmenu">
         <a-tag checkable :checked="false" color="arcoblue" :loading="otherfollowingStore.TuiJianLoading" @click="handleRefresh">刷新</a-tag>
-        <a-tag checkable v-for="item in otherfollowingStore.TuiJianList" :color="item.color" :checked="item.key == tuijianSelectKey" @click="handleSelectList(item.key)">{{ item.key }}</a-tag>
+        <a-tag v-for="item in otherfollowingStore.TuiJianList" :key="item.key" checkable :color="item.color" :checked="item.key == tuijianSelectKey" @click="handleSelectList(item.key)">{{ item.key }}</a-tag>
       </div>
       <div class="tuijianlist">
-        <div class="dingyuecardp" v-for="item in tuijianList">
+        <div v-for="item in tuijianList" :key="item.user_id" class="dingyuecardp">
           <div class="dingyuecard">
             <div class="dingyueimage">
               <a-avatar v-if="item.avatar" :size="120" shape="square">
@@ -72,8 +72,8 @@ const handleFollowing = (followingid: string, following: boolean) => {
             <div class="dingyuedesc">{{ item.description }}</div>
 
             <div class="dingyueaction">
-              <a-button type="text" size="small" tabindex="-1" v-if="myfollowingStore.FollowingKeys.has(item.user_id)" title="取消订阅" @click="handleFollowing(item.user_id, false)"><i class="iconfont icondingyueno" /></a-button>
-              <a-button type="text" size="small" tabindex="-1" v-else title="订阅" @click="handleFollowing(item.user_id, true)"><i class="iconfont icondingyue" /></a-button>
+              <a-button v-if="myfollowingStore.FollowingKeys.has(item.user_id)" type="text" size="small" tabindex="-1" title="取消订阅" @click="handleFollowing(item.user_id, false)"><i class="iconfont icondingyueno" /></a-button>
+              <a-button v-else type="text" size="small" tabindex="-1" title="订阅" @click="handleFollowing(item.user_id, true)"><i class="iconfont icondingyue" /></a-button>
               <a-button type="text" size="small" tabindex="-1" title="查看详情" @click="handleOpenLink(item.user_id)"><i class="iconfont iconchakan" /></a-button>
               <a-button type="text" size="small" tabindex="-1" title="复制链接" @click="handleCopyLink(item.user_id, item.nick_name)"><i class="iconfont iconcopy" /></a-button>
             </div>

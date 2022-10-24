@@ -29,18 +29,17 @@ export default defineComponent({
     const formRef = ref()
 
     const form = reactive({
-      dirname: '',
-      dirindex: 1
+      dirName: '',
+      dirIndex: 1
     })
     const handleOpen = () => {
       setTimeout(() => {
-        const autofocus = document.getElementById('CreatNewDirInput')
-        if (autofocus) autofocus.focus()
+        document.getElementById('CreatNewDirInput')?.focus()
       }, 200)
 
       if (props.dirtype == 'datefolder') {
-        let dirname = ''
-        let dirindex = 1
+        let dirName = ''
+        let dirIndex = 1
 
         const date = new Date(Date.now())
         const y = date.getFullYear().toString()
@@ -56,18 +55,18 @@ export default defineComponent({
         second = second < 10 ? '0' + second.toString() : second.toString()
 
         const settingStore = useSettingStore()
-        dirname = settingStore.uiTimeFolderFormate.replace(/yyyy/gi, y).replace(/MM/g, m).replace(/dd/gi, d).replace(/HH/gi, h).replace(/mm/g, minute).replace(/ss/gi, second)
+        dirName = settingStore.uiTimeFolderFormate.replace(/yyyy/gi, y).replace(/MM/g, m).replace(/dd/gi, d).replace(/HH/gi, h).replace(/mm/g, minute).replace(/ss/gi, second)
         if (settingStore.uiTimeFolderFormate.indexOf('#') >= 0) {
-          dirindex = settingStore.uiTimeFolderIndex
-          dirname = dirname.replace(/\#{1,}/g, function (val) {
-            return dirindex.toString().padStart(val.length, '0')
+          dirIndex = settingStore.uiTimeFolderIndex
+          dirName = dirName.replace(/#{1,}/g, function (val) {
+            return dirIndex.toString().padStart(val.length, '0')
           })
         }
-        form.dirname = dirname
-        form.dirindex = dirindex
+        form.dirName = dirName
+        form.dirIndex = dirIndex
       } else {
-        form.dirname = ''
-        form.dirindex = 1
+        form.dirName = ''
+        form.dirIndex = 1
       }
     }
 
@@ -83,7 +82,7 @@ export default defineComponent({
       { maxLength: 100, message: '文件夹名太长(100)' },
       {
         validator: (value: string, cb: any) => {
-          let chk = CheckFileName(value)
+          const chk = CheckFileName(value)
           if (chk) cb('文件夹名' + chk)
         }
       }
@@ -105,21 +104,21 @@ export default defineComponent({
           return
         }
 
-        let newname = ClearFileName(this.form.dirname)
-        if (!newname) {
+        const newName = ClearFileName(this.form.dirName)
+        if (!newName) {
           message.error('新建文件夹失败 文件夹名不能为空')
           return
         }
 
         this.okLoading = true
         let newdirid = ''
-        AliFileCmd.ApiCreatNewForder(pantreeStore.user_id, pantreeStore.drive_id, this.parentdirid || pantreeStore.selectDir.file_id, newname)
+        AliFileCmd.ApiCreatNewForder(pantreeStore.user_id, pantreeStore.drive_id, this.parentdirid || pantreeStore.selectDir.file_id, newName)
           .then((data) => {
             if (data.error) message.error('新建文件夹 失败' + data.error)
             else {
               newdirid = data.file_id
               message.success('新建文件夹 成功')
-              if (this.form.dirindex) useSettingStore().updateStore({ uiTimeFolderIndex: this.form.dirindex + 1 })
+              if (this.form.dirIndex) useSettingStore().updateStore({ uiTimeFolderIndex: this.form.dirIndex + 1 })
               if (!this.parentdirid || pantreeStore.selectDir.file_id == this.parentdirid) {
                 
                 PanDAL.aReLoadOneDirToShow('', 'refresh', false)
@@ -143,15 +142,15 @@ export default defineComponent({
 </script>
 
 <template>
-  <a-modal :visible="visible" modal-class="modalclass" @cancel="handleHide" @before-open="handleOpen" @close="handleClose" :footer="false" :unmount-on-close="true" :mask-closable="false">
+  <a-modal :visible="visible" modal-class="modalclass" :footer="false" :unmount-on-close="true" :mask-closable="false" @cancel="handleHide" @before-open="handleOpen" @close="handleClose">
     <template #title>
       <span class="modaltitle">新建文件夹</span>
     </template>
     <div class="modalbody" style="width: 440px">
       <a-form ref="formRef" :model="form" layout="vertical">
-        <a-form-item field="dirname" :rules="rules">
+        <a-form-item field="dirName" :rules="rules">
           <template #label>文件夹名：<span class="opblue" style="margin-left: 16px; font-size: 12px"> 不要有特殊字符 &lt; > : * ? \\ / \' " </span> </template>
-          <a-input v-model.trim="form.dirname" placeholder="例如：新建文件夹" allow-clear :input-attrs="{ id: 'CreatNewDirInput', autofocus: 'autofocus' }" />
+          <a-input v-model.trim="form.dirName" placeholder="例如：新建文件夹" allow-clear :input-attrs="{ id: 'CreatNewDirInput', autofocus: 'autofocus' }" />
         </a-form-item>
       </a-form>
       <br />

@@ -1,10 +1,10 @@
-import { ApiGetAsyncTask, ApiGetAsyncTaskUnzip } from '../aliapi/utils'
-import { IUploadingModel } from '../down/uploadingstore'
+import { ApiGetAsyncTask, ApiGetAsyncTaskUnzip, AsyncType, Drive } from '../aliapi/utils'
 import PanDAL from '../pan/pandal'
 import DebugLog from '../utils/debuglog'
 import { humanTimeFM } from '../utils/format'
 import { defineStore } from 'pinia'
 import { ITokenInfo } from '../user/userstore'
+import useAppStore from './appstore'
 
 export interface AsyncModel {
   user_id: string
@@ -27,62 +27,66 @@ export interface FootState {
   taskVisible: boolean
   
   taskList: AsyncModel[]
+
   
-  uploadingList: IUploadingModel[]
-  
-  downingList: IUploadingModel[]
-  
-  audiourl: string
+  audioUrl: string
   
   rightWidth: number
   
-  pandirinfo: string
+  panDirInfo: string
   
-  picdirinfo: string
+  picDirInfo: string
   
-  loadinginfo: string
+  uploadingInfo: string
   
-  panspaceinfo: string
+  downloadingInfo: string
   
-  picspaceinfo: string
+  loadingInfo: string
   
-  appTab: string
+  panSpaceInfo: string
+  
+  picSpaceInfo: string
 }
 
 const useFootStore = defineStore('foot', {
   state: (): FootState => ({
     taskVisible: false,
     taskList: [],
-    uploadingList: [],
-    downingList: [],
-    audiourl: '',
+    audioUrl: '',
     rightWidth: 301,
-    pandirinfo: '',
-    picdirinfo: '',
-    loadinginfo: '',
-    panspaceinfo: '',
-    picspaceinfo: '',
-    appTab: 'pan'
+    panDirInfo: '',
+    picDirInfo: '',
+    uploadingInfo: '',
+    downloadingInfo: '',
+    loadingInfo: '',
+    panSpaceInfo: '',
+    picSpaceInfo: ''
   }),
 
   getters: {
     GetIsRunning(state: FootState): boolean {
-      let isrunning = false
+      let isRunning = false
       state.taskList.map((t) => {
-        if (t.status == 'running') isrunning = true
+        if (t.status == 'running') isRunning = true
+        return true
       })
-      return isrunning
+      return isRunning
     },
     GetSpaceInfo(state: FootState): string {
-      if (state.loadinginfo) return '' 
-      if (state.appTab == 'pan') return state.panspaceinfo
-      if (state.appTab == 'pic') return state.panspaceinfo
+      if (state.loadingInfo) return '' 
+      const appTab = useAppStore().appTab
+      if (appTab == 'pan') return state.panSpaceInfo
+      if (appTab == 'pic') return state.panSpaceInfo
       return ''
     },
-    GetDirInfo(state: FootState): string {
-      if (state.audiourl) return ''
-      if (state.appTab == 'pan') return state.pandirinfo
-      if (state.appTab == 'pic') return state.pandirinfo
+    GetInfo(state: FootState): string {
+      if (state.audioUrl) return ''
+      const appTab = useAppStore().appTab
+      const appPage = useAppStore().GetAppTabMenu
+      if (appTab == 'pan') return state.panDirInfo
+      if (appTab == 'pic') return state.panDirInfo
+      if (appPage == 'DowningRight') return state.downloadingInfo
+      if (appPage == 'UploadingRight') return state.uploadingInfo
       return ''
     }
   },
@@ -91,25 +95,26 @@ const useFootStore = defineStore('foot', {
     updateStore(partial: Partial<FootState>) {
       this.$patch(partial)
     },
+
     
     mDeleteTask(key: string) {
       this.taskList = this.taskList.filter((t) => t.key != key)
     },
     
     mAddTask(user_id: string, key: string, type: AsyncType, title: string, todrive_id: string, tofile_id: string) {
-      this.taskList = [{ user_id, todrive_id, tofile_id, zipdrive_id: '', zipfile_id: '', zipdomain_id: '', key, type, title: type + ' ' + title, status: 'running', starttime: new Date().getTime(), endtime: 0, usetime: '' }].concat(this.taskList)
+      this.taskList = [{ user_id, todrive_id, tofile_id, zipdrive_id: '', zipfile_id: '', zipdomain_id: '', key, type, title: type + ' ' + title, status: 'running', starttime: new Date().getTime(), endtime: 0, usetime: '' } as AsyncModel].concat(this.taskList)
       this.taskVisible = true
     },
     
     mAddTaskZip(user_id: string, key: string, type: AsyncType, title: string, todrive_id: string, tofile_id: string, zipdrive_id: string, zipfile_id: string, zipdomain_id: string) {
-      this.taskList = [{ user_id, todrive_id, tofile_id, zipdrive_id, zipfile_id, zipdomain_id, key, type, title: type + ' ' + title, status: 'running', starttime: new Date().getTime(), endtime: 0, usetime: '' }].concat(this.taskList)
+      this.taskList = [{ user_id, todrive_id, tofile_id, zipdrive_id, zipfile_id, zipdomain_id, key, type, title: type + ' ' + title, status: 'running', starttime: new Date().getTime(), endtime: 0, usetime: '' } as AsyncModel].concat(this.taskList)
       this.taskVisible = true
     },
     
     aUpdateTask() {
-      let list = this.taskList
+      const list = this.taskList
       for (let i = 0, maxi = list.length; i < maxi; i++) {
-        let item = list[i]
+        const item = list[i]
         if (item.status == 'running') {
           let result
           if (item.type == '解压') {
@@ -138,33 +143,30 @@ const useFootStore = defineStore('foot', {
     },
     
     mClearTask() {
-      let list = this.taskList
-      let newlist: AsyncModel[] = []
+      const list = this.taskList
+      const newList: AsyncModel[] = []
       for (let i = 0, maxi = list.length; i < maxi; i++) {
-        if (list[i].status == 'running') newlist.push(list[i])
+        if (list[i].status == 'running') newList.push(list[i])
       }
-      this.taskList = newlist
+      this.taskList = newList
     },
-    mSaveUploadingList(list: IUploadingModel[]) {
-      this.uploadingList = list
-    },
-    mSaveDowningList(list: IUploadingModel[]) {
-      this.downingList = list
+    mSaveUploadingInfo(total: number) {
+      this.uploadingInfo = total > 1000 ? '前 1000 / ' + total + ' 个' : ''
     },
     
     mSaveAudioUrl(url: string) {
-      this.audiourl = url
+      this.audioUrl = url
     },
     
     mSaveLoading(title: string) {
-      this.loadinginfo = title
+      this.loadingInfo = title
     },
     mSaveUserInfo(token: ITokenInfo) {
-      this.panspaceinfo = '总空间 ' + token.spaceinfo
+      this.panSpaceInfo = '总空间 ' + token.spaceinfo
     },
     mSaveDirInfo(drive: Drive, info: string) {
-      if (drive == 'pan') this.pandirinfo = info
-      if (drive == 'pic') this.picdirinfo = info
+      if (drive == 'pan') this.panDirInfo = info
+      if (drive == 'pic') this.picDirInfo = info
     }
   }
 })

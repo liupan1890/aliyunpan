@@ -30,7 +30,7 @@ export default defineComponent({
 
       if (time.value == 1) {
         percent.value = 1
-        window.WebShutDown({ quitapp: true })
+        window.WebShutDown({ quitApp: true })
       } else if (time.value > 1) timeid = window.setTimeout(subtime, 1000)
     }
 
@@ -40,7 +40,7 @@ export default defineComponent({
 </script>
 
 <template>
-  <a-modal :visible="appStore.appShutDown" @before-open="handleOpen" @close="handleClose" :footer="false" :unmount-on-close="true" :mask-closable="false" :closable="false" :esc-to-close="false">
+  <a-modal :visible="appStore.appShutDown" :footer="false" :unmount-on-close="true" :mask-closable="false" :closable="false" :esc-to-close="false" @before-open="handleOpen" @close="handleClose">
     <template #title> 传输完成后自动关机 </template>
     <div>
       <div class="flex flexnoauto" style="justify-content: center; align-items: center; margin-bottom: 32px">

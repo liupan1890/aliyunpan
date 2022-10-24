@@ -25,18 +25,17 @@ const handleProxyConn = async () => {
     rejectUnauthorized: false,
     timeout: 5000 
   }
-  let proxy = settingStore.getProxy()
+  const proxy = settingStore.getProxy()
   if (proxy) {
-    console.log(proxy)
     if (settingStore.proxyType.startsWith('http')) {
-      var agenth = HttpsProxyAgent(proxy)
+      const agenth = HttpsProxyAgent(proxy)
       option = Object.assign(option, { agent: agenth })
     } else {
-      var agents = new SocksProxyAgent(proxy)
+      const agents = new SocksProxyAgent(proxy)
       option = Object.assign(option, { agent: agents })
     }
 
-    let result = await new Promise<string>(async (resolve) => {
+    const result = await new Promise<string>(async (resolve) => {
       nodehttps
         .get(AliHttp.baseapi, option, (res: any) => {
           resolve('success')
@@ -65,7 +64,7 @@ const handleProxyConn = async () => {
   <div class="settingcard">
     <div class="settinghead">:代理类型</div>
     <div class="settingrow">
-      <a-select tabindex="-1" :style="{ width: '168px' }" :model-value="settingStore.proxyType" @update:model-value="cb({ proxyType: $event })" :popup-container="'#SettingDiv'">
+      <a-select tabindex="-1" :style="{ width: '168px' }" :model-value="settingStore.proxyType" :popup-container="'#SettingDiv'" @update:model-value="cb({ proxyType: $event })">
         <a-option value="none">None</a-option>
         <a-option value="http">HTTP</a-option>
         <a-option value="https">HTTPS</a-option>

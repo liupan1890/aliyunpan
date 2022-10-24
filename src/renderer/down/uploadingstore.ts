@@ -3,34 +3,30 @@ import { GetSelectedList, GetFocusNext, SelectAll, MouseSelectOne, KeyboardSelec
 
 
 export interface IUploadingModel {
-  UploadID: string
+  UploadID: number
+  TaskID: number
 
   
-  LocalFilePath: string
+  localFilePath: string
   
   name: string
   
-  sizestr: string
-
+  sizeStr: string
   icon: string
   isDir: boolean
-
   
-  UploadState: string
-
+  uploadState: string
   
-  SpeedStr: string
+  speedStr: string
   
   Progress: number
   
   ProgressStr: string
   
-  ErrorMessage: string
+  errorMessage: string
 }
 
 type Item = IUploadingModel
-type State = UploadingState
-const KEY = 'UploadID'
 
 export interface UploadingState {
   
@@ -39,30 +35,33 @@ export interface UploadingState {
   ListDataShow: Item[]
 
   
-  ListSelected: Set<string>
+  ListSelected: Set<number>
   
-  ListFocusKey: string
+  ListFocusKey: number
   
-  ListSelectKey: string
+  ListSelectKey: number
   
   ListDataCount: number
 
   
-  ShowDirKey: string
+  showTaskID: number
   
-  ShowDirName: string
+  ShowTaskName: string
 }
+
+type State = UploadingState
+let KEY: 'UploadID' | 'TaskID' = 'UploadID'
 
 const useUploadingStore = defineStore('uploading', {
   state: (): UploadingState => ({
     ListLoading: false,
     ListDataShow: [],
-    ListSelected: new Set<string>(),
-    ListFocusKey: '',
-    ListSelectKey: '',
+    ListSelected: new Set<number>(),
+    ListFocusKey: 0,
+    ListSelectKey: 0,
     ListDataCount: 0,
-    ShowDirKey: '',
-    ShowDirName: ''
+    showTaskID: 0,
+    ShowTaskName: ''
   }),
 
   getters: {
@@ -83,48 +82,60 @@ const useUploadingStore = defineStore('uploading', {
 
   actions: {
     
-    aLoadListData(dirkey: string, dirname: string, list: Item[], count: number) {
+    aLoadListData(TaskID: number, TaskName: string, list: Item[], count: number) {
+      KEY = TaskID ? 'UploadID' : 'TaskID'
       this.ListDataShow = list
       
 
-      if (this.ShowDirKey == dirkey) {
+      if (this.showTaskID == TaskID) {
         
-        let oldSelected = this.ListSelected
-        let newSelected = new Set<string>()
+        const oldSelected = this.ListSelected
+        const newSelected = new Set<number>()
         let findFocusKey = false
-        let key = ''
-        let ListFocusKey = this.ListFocusKey
+        let findSelectKey = false
+        let key = 0
+        let listFocusKey = this.ListFocusKey
+        let listSelectKey = this.ListSelectKey
         for (let i = 0, maxi = list.length; i < maxi; i++) {
           key = list[i][KEY]
           if (oldSelected.has(key)) newSelected.add(key) 
-          if (key == ListFocusKey) findFocusKey = true
+          if (key == listFocusKey) findFocusKey = true
+          if (key == listSelectKey) findSelectKey = true
         }
+
+        if (!findFocusKey) listFocusKey = 0
+        if (!findSelectKey) listSelectKey = 0
         
-        this.$patch({ ListSelected: newSelected, ListFocusKey: findFocusKey ? ListFocusKey : '', ListSelectKey: '', ListDataCount: count })
+        this.$patch({ ListSelected: newSelected, ListFocusKey: listFocusKey, ListSelectKey: listSelectKey, ListDataCount: count })
       } else {
         
         
-        this.$patch({ ShowDirKey: dirkey, ShowDirName: dirname, ListSelected: new Set<string>(), ListFocusKey: '', ListSelectKey: '', ListDataCount: count })
+        this.$patch({ showTaskID: TaskID, ShowTaskName: TaskName, ListSelected: new Set<string>(), ListFocusKey: 0, ListSelectKey: 0, ListDataCount: count })
       }
       this.mRefreshListDataShow(true) 
+    },
+
+    mShowTask(TaskID: number, TaskName: string) {
+      KEY = TaskID ? 'UploadID' : 'TaskID'
+      this.$patch({ showTaskID: TaskID, ShowTaskName: TaskName, ListSelected: new Set<number>(), ListFocusKey: 0, ListSelectKey: 0, ListDataShow: [] })
     },
 
     
     mRefreshListDataShow(refreshRaw: boolean) {
       if (!refreshRaw) {
-        let ListDataShow = this.ListDataShow.concat() 
-        Object.freeze(ListDataShow)
-        this.ListDataShow = ListDataShow
+        const listDataShow = this.ListDataShow.concat() 
+        Object.freeze(listDataShow)
+        this.ListDataShow = listDataShow
         return
       }
 
       
-      let freezelist = this.ListDataShow
-      let oldSelected = this.ListSelected
-      let newSelected = new Set<string>()
-      let key = ''
-      for (let i = 0, maxi = freezelist.length; i < maxi; i++) {
-        key = freezelist[i][KEY]
+      const freezeList = this.ListDataShow
+      const oldSelected = this.ListSelected
+      const newSelected = new Set<number>()
+      let key = 0
+      for (let i = 0, maxi = freezeList.length; i < maxi; i++) {
+        key = freezeList[i][KEY]
         if (oldSelected.has(key)) newSelected.add(key) 
       }
       this.ListSelected = newSelected
@@ -132,18 +143,18 @@ const useUploadingStore = defineStore('uploading', {
 
     
     mSelectAll() {
-      this.$patch({ ListSelected: SelectAll(this.ListDataShow, KEY, this.ListSelected), ListFocusKey: '', ListSelectKey: '' })
+      this.$patch({ ListSelected: SelectAll(this.ListDataShow, KEY, this.ListSelected), ListFocusKey: 0, ListSelectKey: 0 })
       this.mRefreshListDataShow(false) 
     },
-    mMouseSelect(key: string, Ctrl: boolean, Shift: boolean) {
+    mMouseSelect(key: number, Ctrl: boolean, Shift: boolean) {
       if (this.ListDataShow.length == 0) return
-      const data = MouseSelectOne(this.ListDataShow, KEY, this.ListSelected, this.ListFocusKey, this.ListSelectKey, key, Ctrl, Shift)
+      const data = MouseSelectOne(this.ListDataShow, KEY, this.ListSelected, this.ListFocusKey, this.ListSelectKey, key, Ctrl, Shift, 0)
       this.$patch({ ListSelected: data.selectedNew, ListFocusKey: data.focusLast, ListSelectKey: data.selectedLast })
       this.mRefreshListDataShow(false) 
     },
-    mKeyboardSelect(key: string, Ctrl: boolean, Shift: boolean) {
+    mKeyboardSelect(key: number, Ctrl: boolean, Shift: boolean) {
       if (this.ListDataShow.length == 0) return
-      const data = KeyboardSelectOne(this.ListDataShow, KEY, this.ListSelected, this.ListFocusKey, this.ListSelectKey, key, Ctrl, Shift)
+      const data = KeyboardSelectOne(this.ListDataShow, KEY, this.ListSelected, this.ListFocusKey, this.ListSelectKey, key, Ctrl, Shift, 0)
       this.$patch({ ListSelected: data.selectedNew, ListFocusKey: data.focusLast, ListSelectKey: data.selectedLast })
       this.mRefreshListDataShow(false) 
     },
@@ -154,34 +165,34 @@ const useUploadingStore = defineStore('uploading', {
     },
     
     GetSelectedFirst() {
-      let list = GetSelectedList(this.ListDataShow, KEY, this.ListSelected)
+      const list = GetSelectedList(this.ListDataShow, KEY, this.ListSelected)
       if (list.length > 0) return list[0]
       return undefined
     },
-    mSetFocus(key: string) {
+    mSetFocus(key: number) {
       this.ListFocusKey = key
       this.mRefreshListDataShow(false) 
     },
     
     mGetFocus() {
-      if (this.ListFocusKey == '' && this.ListDataShow.length > 0) return this.ListDataShow[0][KEY]
+      if (this.ListFocusKey > 0 && this.ListDataShow.length > 0) return this.ListDataShow[0][KEY]
       return this.ListFocusKey
     },
     
     mGetFocusNext(position: string) {
-      return GetFocusNext(this.ListDataShow, KEY, this.ListFocusKey, position)
+      return GetFocusNext(this.ListDataShow, KEY, this.ListFocusKey, position, 0)
     },
-    mDeleteFiles(shareidlist: string[]) {
-      let filemap = new Set(shareidlist)
-      let ListDataRaw = this.ListDataShow
-      let NewDataList: Item[] = []
-      for (let i = 0, maxi = ListDataRaw.length; i < maxi; i++) {
-        let item = ListDataRaw[i]
-        if (!filemap.has(item.UploadID)) {
-          NewDataList.push(item)
+    mDeleteFiles(idList: number[]) {
+      const fileMap = new Set(idList)
+      const listDataRaw = this.ListDataShow
+      const newDataList: Item[] = []
+      for (let i = 0, maxi = listDataRaw.length; i < maxi; i++) {
+        const item = listDataRaw[i]
+        if (!fileMap.has(item.UploadID)) {
+          newDataList.push(item)
         }
       }
-      this.ListDataShow = NewDataList
+      this.ListDataShow = newDataList
       this.mRefreshListDataShow(true) 
     }
   }

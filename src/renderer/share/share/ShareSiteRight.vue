@@ -18,7 +18,7 @@ const handleSite = (url: string) => {
 <template>
   <div class="fullscroll">
     <a-card :bordered="false" style="width: calc(100% - 32px); margin: 24px 24px 24px 8px; box-sizing: border-box" title="搜索到的一些阿里云盘分享网站,欢迎投稿" class="sitelist">
-      <a-card-grid v-for="(item, index) in serverStore.ShareSiteList" :key="index" :hoverable="index % 2 === 0" class="sitelistitem">
+      <a-card-grid v-for="(item, index) in serverStore.shareSiteList" :key="index" :hoverable="index % 2 === 0" class="sitelistitem">
         <a @click="handleSite(item.url)" v-html="item.title.replace('[', '<small>').replace(']', '</small>')"></a>
       </a-card-grid>
     </a-card>

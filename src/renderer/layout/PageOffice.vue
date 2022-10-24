@@ -6,6 +6,7 @@ declare namespace aliyun {
   class Config {
     setToken(token: { token: string }): any
   }
+  // eslint-disable-next-line no-unused-vars
   function config({ mount, url }: { mount: Element; url: string }): Config
 }
 
@@ -22,9 +23,9 @@ export default defineComponent({
         url: appStore.pageOffice?.preview_url || '' 
       })
       docOptions.setToken({ token: appStore.pageOffice?.access_token || '' })
-      let doc = document.getElementById('iframe-preview')
+      const doc = document.getElementById('iframe-preview')
       if (doc) doc.setAttribute('src', appStore.pageOffice?.preview_url || '')
-      let name = appStore.pageOffice?.file_name || '文档在线预览'
+      const name = appStore.pageOffice?.file_name || '文档在线预览'
       setTimeout(() => {
         document.title = name
       }, 1000)
@@ -52,7 +53,7 @@ export default defineComponent({
       </div>
     </a-layout-header>
     <a-layout-content style="height: calc(100vh - 42px); padding-top: 8px; background: #f2f4f7">
-      <div class="doc-preview" id="doc-preview" style="width: 100%; height: 100%"></div>
+      <div id="doc-preview" class="doc-preview" style="width: 100%; height: 100%"></div>
     </a-layout-content>
   </a-layout>
 </template>

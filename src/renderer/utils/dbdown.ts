@@ -49,15 +49,18 @@ class XBYDB3Down extends Dexie {
     if (val) return val
     else return undefined
   }
-  async deleteDowningGzip(key: string) {
+
+  async deleteDowningGzip(key: string): Promise<void> {
     if (!this.isOpen()) await this.open().catch(() => {})
     return this.downingGzip.delete(key)
   }
-  async saveDowningGzip(key: string, value: Buffer) {
+
+  async saveDowningGzip(key: string, value: Buffer): Promise<string | void> {
     if (!this.isOpen()) await this.open().catch(() => {})
     return this.downingGzip.put(value, key).catch(() => {})
   }
-  async deleteDowningGzipAll() {
+
+  async deleteDowningGzipAll(): Promise<void> {
     if (!this.isOpen()) await this.open().catch(() => {})
     return this.downingGzip.clear()
   }
@@ -68,15 +71,18 @@ class XBYDB3Down extends Dexie {
     if (val) return val
     else return undefined
   }
-  async deleteDownedGzip(key: string) {
+
+  async deleteDownedGzip(key: string): Promise<void> {
     if (!this.isOpen()) await this.open().catch(() => {})
     return this.downedGzip.delete(key)
   }
-  async saveDownedGzip(key: string, value: Buffer) {
+
+  async saveDownedGzip(key: string, value: Buffer): Promise<string | void> {
     if (!this.isOpen()) await this.open().catch(() => {})
     return this.downedGzip.put(value, key).catch(() => {})
   }
-  async deleteDownedGzipAll() {
+
+  async deleteDownedGzipAll(): Promise<void> {
     if (!this.isOpen()) await this.open().catch(() => {})
     return this.downedGzip.clear()
   }
@@ -87,15 +93,18 @@ class XBYDB3Down extends Dexie {
     if (val) return val
     else return undefined
   }
-  async deleteDowningInfo(key: string) {
+
+  async deleteDowningInfo(key: string): Promise<void> {
     if (!this.isOpen()) await this.open().catch(() => {})
     return this.downingInfo.delete(key)
   }
-  async saveDowningInfo(key: string, value: IDowningInfo) {
+
+  async saveDowningInfo(key: string, value: IDowningInfo): Promise<string | void> {
     if (!this.isOpen()) await this.open().catch(() => {})
     return this.downingInfo.put(value, key).catch(() => {})
   }
-  async deleteDowningInfoAll() {
+
+  async deleteDowningInfoAll(): Promise<void> {
     if (!this.isOpen()) await this.open().catch(() => {})
     return this.downingInfo.clear()
   }
@@ -106,15 +115,18 @@ class XBYDB3Down extends Dexie {
     if (val) return val
     else return undefined
   }
-  async deleteDowningProgress(key: string) {
+
+  async deleteDowningProgress(key: string): Promise<void> {
     if (!this.isOpen()) await this.open().catch(() => {})
     return this.downingProgress.delete(key)
   }
-  async saveDowningProgress(key: string, value: object) {
+
+  async saveDowningProgress(key: string, value: object): Promise<string | void> {
     if (!this.isOpen()) await this.open().catch(() => {})
     return this.downingProgress.put(value, key).catch(() => {})
   }
-  async deleteDowningProgressAll() {
+
+  async deleteDowningProgressAll(): Promise<void> {
     if (!this.isOpen()) await this.open().catch(() => {})
     return this.downingProgress.clear()
   }

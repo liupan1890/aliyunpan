@@ -5,7 +5,7 @@ import { usePanFileStore, usePanTreeStore } from '../../store'
 import message from '../../utils/message'
 import { modalCloseAll, modalRename } from '../../utils/modal'
 import { CheckFileName, ClearFileName } from '../../utils/filehelper'
-import { defineComponent, ref, reactive } from 'vue'
+import { defineComponent, ref, reactive, nextTick } from 'vue'
 import PanDAL from '../pandal'
 
 export default defineComponent({
@@ -26,40 +26,46 @@ export default defineComponent({
     const form = reactive({
       file_id: '',
       parent_file_id: '',
-      isdir: false,
-      filename: '',
-      bakname: ''
+      isDir: false,
+      fileName: '',
+      bakName: ''
     })
 
-    let filelist: IAliGetFileModel[] = []
+    let fileList: IAliGetFileModel[] = []
 
     const handleOpen = () => {
       setTimeout(() => {
-        const autofocus = document.getElementById('RenameInput')
-        if (autofocus) autofocus.focus()
+        document.getElementById('RenameInput')?.focus()
       }, 200)
 
       if (props.istree) {
         const pantreeStore = usePanTreeStore()
-        filelist = [{ ...pantreeStore.selectDir, isdir: true, ext: '', category: '', icon: '', sizestr: '', timestr: '', starred: false, thumbnail: '' }]
+        fileList = [{ ...pantreeStore.selectDir, isDir: true, ext: '', category: '', icon: '', sizeStr: '', timeStr: '', starred: false, thumbnail: '' } as IAliGetFileModel]
       } else {
         const panfileStore = usePanFileStore()
-        filelist = panfileStore.GetSelected()
+        fileList = panfileStore.GetSelected()
+        if (fileList.length == 0) {
+          const focus = panfileStore.mGetFocus()
+          panfileStore.mKeyboardSelect(focus, false, false)
+          fileList = panfileStore.GetSelected()
+        }
       }
-      if (filelist.length == 0) {
+      if (fileList.length == 0) {
         form.file_id = ''
         form.parent_file_id = ''
-        form.isdir = false
-        form.filename = ''
-        form.bakname = ''
-        message.error('没有选中任何文件')
+        form.isDir = false
+        form.fileName = ''
+        form.bakName = ''
+        nextTick(() => {
+          modalCloseAll()
+        })
       } else {
         
-        form.file_id = filelist[0].file_id
-        form.parent_file_id = filelist[0].parent_file_id
-        form.isdir = filelist[0].isdir
-        form.filename = filelist[0].name
-        form.bakname = filelist[0].name
+        form.file_id = fileList[0].file_id
+        form.parent_file_id = fileList[0].parent_file_id
+        form.isDir = fileList[0].isDir
+        form.fileName = fileList[0].name
+        form.bakName = fileList[0].name
       }
     }
 
@@ -75,7 +81,7 @@ export default defineComponent({
       { maxLength: 100, message: '文件夹太长(100)' },
       {
         validator: (value: string, cb: any) => {
-          let chk = CheckFileName(value)
+          const chk = CheckFileName(value)
           if (chk) cb('文件名' + chk)
         }
       }
@@ -95,13 +101,13 @@ export default defineComponent({
       this.formRef.validate((data: any) => {
         if (data) return 
 
-        let newname = ClearFileName(this.form.filename)
-        if (!newname) {
+        const newName = ClearFileName(this.form.fileName)
+        if (!newName) {
           message.error('重命名失败 文件名不能为空')
           return
         }
 
-        if (newname == this.form.bakname) {
+        if (newName == this.form.bakName) {
           
           modalCloseAll()
           return
@@ -114,7 +120,7 @@ export default defineComponent({
         }
 
         this.okLoading = true
-        AliFileCmd.ApiRenameBatch(pantreeStore.user_id, pantreeStore.drive_id, [this.form.file_id], [newname])
+        AliFileCmd.ApiRenameBatch(pantreeStore.user_id, pantreeStore.drive_id, [this.form.file_id], [newName])
           .then((data) => {
             if (data.length == 1) {
               
@@ -141,15 +147,15 @@ export default defineComponent({
 </script>
 
 <template>
-  <a-modal :visible="visible" modal-class="modalclass" @cancel="handleHide" @before-open="handleOpen" @close="handleClose" :footer="false" :unmount-on-close="true" :mask-closable="false">
+  <a-modal :visible="visible" modal-class="modalclass" :footer="false" :unmount-on-close="true" :mask-closable="false" @cancel="handleHide" @before-open="handleOpen" @close="handleClose">
     <template #title>
       <span class="modaltitle">重命名一个文件</span>
     </template>
     <div class="modalbody" style="width: 440px">
       <a-form ref="formRef" :model="form" layout="vertical">
-        <a-form-item field="filename" :rules="rules">
+        <a-form-item field="fileName" :rules="rules">
           <template #label>文件名：<span class="opblue" style="margin-left: 16px; font-size: 12px"> 不要有特殊字符 &lt; > : * ? \\ / \' " </span> </template>
-          <a-input v-model.trim="form.filename" :placeholder="form.bakname" allow-clear :input-attrs="{ id: 'RenameInput', autofocus: 'autofocus' }" />
+          <a-input v-model.trim="form.fileName" :placeholder="form.bakName" allow-clear :input-attrs="{ id: 'RenameInput', autofocus: 'autofocus' }" />
         </a-form-item>
       </a-form>
       <br />

@@ -1,5 +1,4 @@
 <script lang="ts">
-import { IAliGetFileModel } from '../../aliapi/alimodels'
 import { usePanTreeStore } from '../../store'
 import message from '../../utils/message'
 import { modalCloseAll } from '../../utils/modal'
@@ -28,8 +27,6 @@ export default defineComponent({
       ext: '',
       fav: false
     })
-
-    let filelist: IAliGetFileModel[] = []
 
     const handleOpen = () => {
       formRef.value.resetFields()
@@ -78,14 +75,14 @@ export default defineComponent({
         if (this.form.end) searchid += 'end:' + this.form.end + ' '
 
         if (this.form.type && this.form.type.length > 0) {
-          let type = this.form.type.filter((t) => t)
+          const type = this.form.type.filter((t) => t)
           if (type.length > 0) searchid += 'type:' + type.join(',') + ' '
         }
 
         if (this.form.name) searchid += this.form.name.trim() + ' '
 
         if (this.form.ext) {
-          let ext = this.form.ext.replaceAll('，', ',').replaceAll(' ', '').replaceAll('.', '')
+          const ext = this.form.ext.replaceAll('，', ',').replaceAll(' ', '').replaceAll('.', '')
           if (ext != this.form.ext) this.form.ext = ext
           searchid += 'ext:' + ext + ' '
         }
@@ -104,7 +101,7 @@ export default defineComponent({
 </script>
 
 <template>
-  <a-modal :visible="visible" modal-class="modalclass" @cancel="handleHide" @before-open="handleOpen" @close="handleClose" :footer="false" :unmount-on-close="true" :mask-closable="false">
+  <a-modal :visible="visible" modal-class="modalclass" :footer="false" :unmount-on-close="true" :mask-closable="false" @cancel="handleHide" @before-open="handleOpen" @close="handleClose">
     <template #title>
       <span class="modaltitle">在整个网盘内 高级搜索</span>
     </template>
@@ -135,11 +132,11 @@ export default defineComponent({
 
         <a-form-item field="min">
           <template #label>体积：</template>
-          <a-input-number tabindex="-1" style="width: 170px" :min="0" :max="102400" v-model="form.min">
+          <a-input-number v-model="form.min" tabindex="-1" style="width: 170px" :min="0" :max="102400">
             <template #prefix> 最小 </template>
           </a-input-number>
           <div style="flex: auto"></div>
-          <a-input-number tabindex="-1" style="width: 170px" :min="form.min" :max="102400" v-model="form.max">
+          <a-input-number v-model="form.max" tabindex="-1" style="width: 170px" :min="form.min" :max="102400">
             <template #prefix> 最大 </template>
           </a-input-number>
           <template #extra> <span style="font-size: 12px">填0不限制大小，单位兆(MB) 例如:1百兆填</span><span class="opblue" style="font-size: 12px">100</span><span style="font-size: 12px">，1GB填</span><span class="opblue" style="font-size: 12px">1024</span> </template>
@@ -153,12 +150,12 @@ export default defineComponent({
         <a-form-item field="begin">
           <template #label>开始： </template>
           <a-date-picker
-            style="width: 265px; margin: 0"
             v-model="form.begin"
+            style="width: 265px; margin: 0"
             shortcuts-position="right"
             placeholder="可以不填,列出某一天 之后 上传的"
             value-format="YYYY-MM-DD"
-            :disabledDate="(current:any) => dayjs(current).isAfter(dayjs(form.end||dayjs().add(-1, 'day')))"
+            :disabled-date="(current:any) => dayjs(current).isAfter(dayjs(form.end||dayjs().add(-1, 'day')))"
             :shortcuts="[
               {
                 label: '1周前',
@@ -176,18 +173,17 @@ export default defineComponent({
                 label: '一年前',
                 value: () => dayjs().add(-1, 'year')
               }
-            ]"
-          />
+            ]" />
         </a-form-item>
         <a-form-item field="end">
           <template #label>结束： </template>
           <a-date-picker
-            style="width: 265px; margin: 0"
             v-model="form.end"
+            style="width: 265px; margin: 0"
             shortcuts-position="right"
             placeholder="可以不填,列出某一天 之前 上传的"
             value-format="YYYY-MM-DD"
-            :disabledDate="(current:any) => {return dayjs(current).isBefore(dayjs(form.begin||'2020-01-01'))||dayjs(current).isAfter(dayjs().add(1, 'day'))}"
+            :disabled-date="(current:any) => {return dayjs(current).isBefore(dayjs(form.begin||'2020-01-01'))||dayjs(current).isAfter(dayjs().add(1, 'day'))}"
             :shortcuts="[
               {
                 label: '1周前',
@@ -205,8 +201,7 @@ export default defineComponent({
                 label: '一年前',
                 value: () => dayjs().add(-1, 'year')
               }
-            ]"
-          />
+            ]" />
         </a-form-item>
       </a-form>
       <br />

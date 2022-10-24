@@ -3,8 +3,6 @@ import { defineStore } from 'pinia'
 import { IStateDownFile } from './downdal'
 
 type Item = IStateDownFile
-type State = DownState
-const KEY = 'DownID'
 
 export interface DownState {
   
@@ -18,6 +16,8 @@ export interface DownState {
   
   ListSelectKey: string
 }
+type State = DownState
+const KEY = 'DownID'
 
 const useDownStore = defineStore('downing', {
   state: (): DownState => ({
@@ -47,23 +47,8 @@ const useDownStore = defineStore('downing', {
     },
 
     ListStats(state: State) {
-      let stats = { preview: 0, download: 0, save: 0, previewMax: 0, forbidden: 0, expired: 0, expir2day: 0 }
-      let list = state.ListDataShow
-      let item: Item
-      let exp = 0
-      let day = new Date().getTime()
-      for (let i = 0, maxi = list.length; i < maxi; i++) {
-        item = list[i]
-        /*
-        stats.preview += item.preview_count
-        stats.previewMax = Math.max(stats.previewMax, item.preview_count)
-        stats.download += item.download_count
-        stats.save += item.save_count
-        if (item.status == 'forbidden') stats.forbidden++
-        if (item.expired) stats.expired++
-        else if (new Date(item.expiration).getTime() - day < 2 * 24 * 60 * 60 * 1000) stats.expir2day++
-        */
-      }
+      const stats = { preview: 0, download: 0, save: 0, previewMax: 0, forbidden: 0, expired: 0, expir2day: 0 }
+
       return stats
     }
   },
@@ -72,37 +57,42 @@ const useDownStore = defineStore('downing', {
     
     aLoadListData(list: Item[]) {
       
-      let oldSelected = this.ListSelected
-      let newSelected = new Set<string>()
+      const oldSelected = this.ListSelected
+      const newSelected = new Set<string>()
       let key = ''
       let findFocusKey = false
-      let ListFocusKey = this.ListFocusKey
+      let findSelectKey = false
+      let listFocusKey = this.ListFocusKey
+      let listSelectKey = this.ListSelectKey
       for (let i = 0, maxi = list.length; i < maxi; i++) {
         key = list[i][KEY]
         if (oldSelected.has(key)) newSelected.add(key) 
-        if (key == ListFocusKey) findFocusKey = true
+        if (key == listFocusKey) findFocusKey = true
+        if (key == listSelectKey) findSelectKey = true
       }
+      if (!findFocusKey) listFocusKey = ''
+      if (!findSelectKey) listSelectKey = ''
       
-      this.$patch({ ListSelected: newSelected, ListFocusKey: findFocusKey ? ListFocusKey : '', ListSelectKey: '' })
+      this.$patch({ ListSelected: newSelected, ListFocusKey: listFocusKey, ListSelectKey: listSelectKey })
       this.mRefreshListDataShow(true) 
     },
 
     
     mRefreshListDataShow(refreshRaw: boolean) {
       if (!refreshRaw) {
-        let ListDataShow = this.ListDataShow.concat() 
-        Object.freeze(ListDataShow)
-        this.ListDataShow = ListDataShow
+        const listDataShow = this.ListDataShow.concat() 
+        Object.freeze(listDataShow)
+        this.ListDataShow = listDataShow
         return
       }
 
       
-      let freezelist = this.ListDataShow
-      let oldSelected = this.ListSelected
-      let newSelected = new Set<string>()
+      const freezeList = this.ListDataShow
+      const oldSelected = this.ListSelected
+      const newSelected = new Set<string>()
       let key = ''
-      for (let i = 0, maxi = freezelist.length; i < maxi; i++) {
-        key = freezelist[i][KEY]
+      for (let i = 0, maxi = freezeList.length; i < maxi; i++) {
+        key = freezeList[i][KEY]
         if (oldSelected.has(key)) newSelected.add(key) 
       }
       this.ListSelected = newSelected
@@ -115,13 +105,13 @@ const useDownStore = defineStore('downing', {
     },
     mMouseSelect(key: string, Ctrl: boolean, Shift: boolean) {
       if (this.ListDataShow.length == 0) return
-      const data = MouseSelectOne(this.ListDataShow, KEY, this.ListSelected, this.ListFocusKey, this.ListSelectKey, key, Ctrl, Shift)
+      const data = MouseSelectOne(this.ListDataShow, KEY, this.ListSelected, this.ListFocusKey, this.ListSelectKey, key, Ctrl, Shift, '')
       this.$patch({ ListSelected: data.selectedNew, ListFocusKey: data.focusLast, ListSelectKey: data.selectedLast })
       this.mRefreshListDataShow(false) 
     },
     mKeyboardSelect(key: string, Ctrl: boolean, Shift: boolean) {
       if (this.ListDataShow.length == 0) return
-      const data = KeyboardSelectOne(this.ListDataShow, KEY, this.ListSelected, this.ListFocusKey, this.ListSelectKey, key, Ctrl, Shift)
+      const data = KeyboardSelectOne(this.ListDataShow, KEY, this.ListSelected, this.ListFocusKey, this.ListSelectKey, key, Ctrl, Shift, '')
       this.$patch({ ListSelected: data.selectedNew, ListFocusKey: data.focusLast, ListSelectKey: data.selectedLast })
       this.mRefreshListDataShow(false) 
     },
@@ -132,7 +122,7 @@ const useDownStore = defineStore('downing', {
     },
     
     GetSelectedFirst() {
-      let list = GetSelectedList(this.ListDataShow, KEY, this.ListSelected)
+      const list = GetSelectedList(this.ListDataShow, KEY, this.ListSelected)
       if (list.length > 0) return list[0]
       return undefined
     },
@@ -142,12 +132,12 @@ const useDownStore = defineStore('downing', {
     },
     
     mGetFocus() {
-      if (this.ListFocusKey == '' && this.ListDataShow.length > 0) return this.ListDataShow[0][KEY]
+      if (!this.ListFocusKey && this.ListDataShow.length > 0) return this.ListDataShow[0][KEY]
       return this.ListFocusKey
     },
     
     mGetFocusNext(position: string) {
-      return GetFocusNext(this.ListDataShow, KEY, this.ListFocusKey, position)
+      return GetFocusNext(this.ListDataShow, KEY, this.ListFocusKey, position, '')
     }
   }
 })

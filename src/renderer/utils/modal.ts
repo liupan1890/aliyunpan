@@ -38,7 +38,7 @@ export function modalShowShareLink(share_id: string, share_pwd: string, share_to
   useModalStore().showModal('showshare', { share_id, share_pwd, share_token, withsave, file_id_list })
 }
 
-export function modalSelectPanDir(selecttype: string, selectid: string, callback: (user_id: string, drive_id: string, dir_id: string, dir_name: string) => void) {
+export function modalSelectPanDir(selecttype: string, selectid: string, callback: (user_id: string, drive_id: string, dirID: string, dirName: string) => void) {
   useModalStore().showModal('selectpandir', { selecttype, selectid, callback })
 }
 
@@ -68,4 +68,12 @@ export function modalArchive(user_id: string, drive_id: string, file_id: string,
 
 export function modalArchivePassword(user_id: string, drive_id: string, file_id: string, file_name: string, parent_file_id: string, domain_id: string, ext: string) {
   useModalStore().showModal('archivepassword', { user_id, drive_id, file_id, file_name, parent_file_id, domain_id, ext })
+}
+
+export function modalUpload(file_id: string, filelist: string[]) {
+  useModalStore().showModal('upload', { file_id, filelist })
+}
+
+export function modalDownload(istree: boolean) {
+  useModalStore().showModal('download', { istree })
 }

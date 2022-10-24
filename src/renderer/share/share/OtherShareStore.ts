@@ -19,8 +19,6 @@ export interface IOtherShareLinkModel {
 }
 
 type Item = IOtherShareLinkModel
-type State = OtherShareState
-const KEY = 'share_id'
 
 export interface OtherShareState {
   
@@ -41,6 +39,8 @@ export interface OtherShareState {
   
   ListSearchKey: string
 }
+type State = OtherShareState
+const KEY = 'share_id'
 
 const useOtherShareStore = defineStore('othershare', {
   state: (): State => ({
@@ -84,18 +84,23 @@ const useOtherShareStore = defineStore('othershare', {
       }
       this.ListDataRaw = this.mGetOrder(this.ListOrderKey, list)
       
-      let oldSelected = this.ListSelected
-      let newSelected = new Set<string>()
+      const oldSelected = this.ListSelected
+      const newSelected = new Set<string>()
       let key = ''
       let findFocusKey = false
-      let ListFocusKey = this.ListFocusKey
+      let findSelectKey = false
+      let listFocusKey = this.ListFocusKey
+      let listSelectKey = this.ListSelectKey
       for (let i = 0, maxi = list.length; i < maxi; i++) {
         key = list[i][KEY]
         if (oldSelected.has(key)) newSelected.add(key) 
-        if (key == ListFocusKey) findFocusKey = true
+        if (key == listFocusKey) findFocusKey = true
+        if (key == listSelectKey) findSelectKey = true
       }
+      if (!findFocusKey) listFocusKey = ''
+      if (!findSelectKey) listSelectKey = ''
       
-      this.$patch({ ListSelected: newSelected, ListFocusKey: findFocusKey ? ListFocusKey : '', ListSelectKey: '', ListSearchKey: '' })
+      this.$patch({ ListSelected: newSelected, ListFocusKey: listFocusKey, ListSelectKey: listSelectKey, ListSearchKey: '' })
       this.mRefreshListDataShow(true) 
     },
     
@@ -120,37 +125,37 @@ const useOtherShareStore = defineStore('othershare', {
     
     mRefreshListDataShow(refreshRaw: boolean) {
       if (!refreshRaw) {
-        let ListDataShow = this.ListDataShow.concat() 
-        Object.freeze(ListDataShow)
-        this.ListDataShow = ListDataShow
+        const listDataShow = this.ListDataShow.concat() 
+        Object.freeze(listDataShow)
+        this.ListDataShow = listDataShow
         return
       }
       if (this.ListSearchKey) {
         
-        let searchlist: Item[] = []
-        let results = fuzzysort.go(this.ListSearchKey, this.ListDataRaw, {
+        const searchList: Item[] = []
+        const results = fuzzysort.go(this.ListSearchKey, this.ListDataRaw, {
           threshold: -200000,
           keys: ['share_name', 'description'],
           scoreFn: (a) => Math.max(a[0] ? a[0].score : -200000, a[1] ? a[1].score : -200000)
         })
         for (let i = 0, maxi = results.length; i < maxi; i++) {
-          if (results[i].score > -200000) searchlist.push(results[i].obj)
+          if (results[i].score > -200000) searchList.push(results[i].obj)
         }
-        Object.freeze(searchlist)
-        this.ListDataShow = searchlist
+        Object.freeze(searchList)
+        this.ListDataShow = searchList
       } else {
         
-        let ListDataShow = this.ListDataRaw.concat() 
-        Object.freeze(ListDataShow)
-        this.ListDataShow = ListDataShow
+        const listDataShow = this.ListDataRaw.concat() 
+        Object.freeze(listDataShow)
+        this.ListDataShow = listDataShow
       }
       
-      let freezelist = this.ListDataShow
-      let oldSelected = this.ListSelected
-      let newSelected = new Set<string>()
+      const freezeList = this.ListDataShow
+      const oldSelected = this.ListSelected
+      const newSelected = new Set<string>()
       let key = ''
-      for (let i = 0, maxi = freezelist.length; i < maxi; i++) {
-        key = freezelist[i][KEY]
+      for (let i = 0, maxi = freezeList.length; i < maxi; i++) {
+        key = freezeList[i][KEY]
         if (oldSelected.has(key)) newSelected.add(key) 
       }
       this.ListSelected = newSelected
@@ -163,13 +168,13 @@ const useOtherShareStore = defineStore('othershare', {
     },
     mMouseSelect(key: string, Ctrl: boolean, Shift: boolean) {
       if (this.ListDataShow.length == 0) return
-      const data = MouseSelectOne(this.ListDataShow, KEY, this.ListSelected, this.ListFocusKey, this.ListSelectKey, key, Ctrl, Shift)
+      const data = MouseSelectOne(this.ListDataShow, KEY, this.ListSelected, this.ListFocusKey, this.ListSelectKey, key, Ctrl, Shift, '')
       this.$patch({ ListSelected: data.selectedNew, ListFocusKey: data.focusLast, ListSelectKey: data.selectedLast })
       this.mRefreshListDataShow(false) 
     },
     mKeyboardSelect(key: string, Ctrl: boolean, Shift: boolean) {
       if (this.ListDataShow.length == 0) return
-      const data = KeyboardSelectOne(this.ListDataShow, KEY, this.ListSelected, this.ListFocusKey, this.ListSelectKey, key, Ctrl, Shift)
+      const data = KeyboardSelectOne(this.ListDataShow, KEY, this.ListSelected, this.ListFocusKey, this.ListSelectKey, key, Ctrl, Shift, '')
       this.$patch({ ListSelected: data.selectedNew, ListFocusKey: data.focusLast, ListSelectKey: data.selectedLast })
       this.mRefreshListDataShow(false) 
     },
@@ -180,7 +185,7 @@ const useOtherShareStore = defineStore('othershare', {
     },
     
     GetSelectedFirst() {
-      let list = GetSelectedList(this.ListDataShow, KEY, this.ListSelected)
+      const list = GetSelectedList(this.ListDataShow, KEY, this.ListSelected)
       if (list.length > 0) return list[0]
       return undefined
     },
@@ -190,24 +195,24 @@ const useOtherShareStore = defineStore('othershare', {
     },
     
     mGetFocus() {
-      if (this.ListFocusKey == '' && this.ListDataShow.length > 0) return this.ListDataShow[0][KEY]
+      if (!this.ListFocusKey && this.ListDataShow.length > 0) return this.ListDataShow[0][KEY]
       return this.ListFocusKey
     },
     
     mGetFocusNext(position: string) {
-      return GetFocusNext(this.ListDataShow, KEY, this.ListFocusKey, position)
+      return GetFocusNext(this.ListDataShow, KEY, this.ListFocusKey, position, '')
     },
-    mDeleteFiles(shareidlist: string[]) {
-      let filemap = new Set(shareidlist)
-      let ListDataRaw = this.ListDataRaw
-      let NewDataList: Item[] = []
-      for (let i = 0, maxi = ListDataRaw.length; i < maxi; i++) {
-        let item = ListDataRaw[i]
-        if (!filemap.has(item.share_id)) {
-          NewDataList.push(item)
+    mDeleteFiles(share_idList: string[]) {
+      const fileMap = new Set(share_idList)
+      const listDataRaw = this.ListDataRaw
+      const newDataList: Item[] = []
+      for (let i = 0, maxi = listDataRaw.length; i < maxi; i++) {
+        const item = listDataRaw[i]
+        if (!fileMap.has(item.share_id)) {
+          newDataList.push(item)
         }
       }
-      this.ListDataRaw = NewDataList
+      this.ListDataRaw = newDataList
       this.mRefreshListDataShow(true) 
     }
   }

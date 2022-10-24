@@ -343,6 +343,7 @@ body[arco-theme='dark'] .toppanbtn .arco-btn.danger:active {
   max-width: 100%;
   min-width: 440px;
   user-select: none;
+  padding-left: 6px;
 }
 .toppanbtn {
   display: flex;
@@ -704,7 +705,11 @@ body[arco-theme='dark'] .toppanarea {
   border-radius: 4px !important;
 }
 
-.workertitle{
+.workertitle {
   margin-top: 64px;
   color: rgb(var(--primary-6));
+}
+
+.arco-scrollbar {
+  height: 100%;
 }

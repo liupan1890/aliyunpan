@@ -15,7 +15,7 @@ export default defineComponent({
 </script>
 
 <template>
-  <a-dropdown id="rightpantrashmenu" class="rightmenu" :popup-visible="true" style="z-index: -1; left: -200px; opacity: 0;">
+  <a-dropdown id="rightpantrashmenu" class="rightmenu" :popup-visible="true" style="z-index: -1; left: -200px; opacity: 0">
     <template #content>
       <a-doption v-show="dirtype == 'recover'" @click="topRecoverSelectedFile">
         <template #icon> <i class="iconfont iconrecover" /> </template>

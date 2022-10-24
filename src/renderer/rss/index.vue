@@ -18,7 +18,7 @@ const appStore = useAppStore()
   <a-layout style="height: 100%">
     <a-layout-sider hide-trigger :width="158" class="xbyleft">
       <div class="headdesc">好玩的插件</div>
-      <a-menu :selected-keys="[appStore.GetAppTabMenu]" @update:selected-keys="appStore.toggleTabMenu('rss', $event[0])" :style="{ width: '100%' }" class="xbyleftmenu">
+      <a-menu :style="{ width: '100%' }" class="xbyleftmenu" :selected-keys="[appStore.GetAppTabMenu]" @update:selected-keys="appStore.toggleTabMenu('rss', $event[0])">
         <a-menu-item key="AppSame">
           <template #icon><i class="iconfont iconcopy" /></template>
           重复文件清理

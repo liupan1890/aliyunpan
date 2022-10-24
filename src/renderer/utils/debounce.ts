@@ -1,23 +1,25 @@
+import message from './message'
 
-export function debounce(func: Function, wait: number, immediate: boolean = true, lastcall: boolean = true, leakcall: boolean = false) {
-  if (lastcall !== false) lastcall = true
+
+export function debounce(func: Function, wait: number, immediate: boolean = true, lastCall: boolean = true, leakCall: boolean = false) {
+  if (lastCall !== false) lastCall = true
   if (immediate !== false) immediate = true
-  var previous = 0
-  var timer: any = null
+  let previous = 0
+  let timer: any
   return function (...args: any) {
     // @ts-ignore
-    var context = this
-    var now = Date.now()
+    const context = this
+    const now = Date.now()
 
-    var timeoutToCall = function timeoutToCall() {
-      if (!leakcall && timer) {
+    const timeoutToCall = function timeoutToCall() {
+      if (!leakCall && timer) {
         clearTimeout(timer)
-        timer = null
+        timer = undefined
       }
 
       if (!timer) {
         timer = setTimeout(function () {
-          timer = null
+          timer = undefined
           func.apply(context, args)
         }, wait)
       }
@@ -28,17 +30,37 @@ export function debounce(func: Function, wait: number, immediate: boolean = true
 
       if (immediate) {
         func.apply(context, args)
-      } else if (lastcall) {
+      } else if (lastCall) {
         timeoutToCall()
       }
     } else {
       previous = now
-      if (lastcall) timeoutToCall()
+      if (lastCall) timeoutToCall()
     }
   }
 }
 
 
-export function throttle(func: Function, wait: number, immediate: boolean = true, lastcall: boolean = true) {
-  return debounce(func, wait, immediate, lastcall, true)
+export function throttle(func: Function, wait: number, immediate: boolean = true, lastCall: boolean = true) {
+  return debounce(func, wait, immediate, lastCall, true)
+}
+
+const clkcimap = new Set<string>()
+
+export function clickWait(cmdkey: string, wait: number = -1): boolean {
+  if (clkcimap.has(cmdkey)) {
+    message.info('上一个操作还在执行中，稍等1秒再点')
+    return true
+  }
+  clkcimap.add(cmdkey)
+  if (wait > 0) {
+    setTimeout(() => {
+      clkcimap.delete(cmdkey)
+    }, wait)
+  }
+  return false
+}
+
+export function clickWaitDelete(cmdkey: string): void {
+  clkcimap.delete(cmdkey)
 }

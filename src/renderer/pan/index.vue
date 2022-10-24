@@ -2,7 +2,6 @@
 import MySplit from '../layout/MySplit.vue'
 import PanLeft from './PanLeft.vue'
 import PanRight from './PanRight.vue'
-
 </script>
 
 <template>

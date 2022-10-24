@@ -3,8 +3,8 @@ import { DirData } from '../store/treestore'
 
 
 export function OrderNode(order: string, list: DirData[]) {
-  let orders = order.split(' ')
-  let orderby = orders[0].toLowerCase()
+  const orders = order.split(' ')
+  const orderby = orders[0].toLowerCase()
   order = orders[1].toLowerCase()
   if (orderby == 'size' && order == 'asc') return OrderBySizeAsc(list)
   if (orderby == 'size' && order == 'desc') return OrderBySizeDesc(list)
@@ -51,7 +51,7 @@ function OrderByTimeAsc(list: { time: number; name: string }[]) {
 
 function OrderByTimeDesc(list: { time: number; name: string }[]) {
   return list.sort(function (b, a) {
-    let t = a.time - b.time
+    const t = a.time - b.time
     if (t == 0) return _OrderName(a.name, b.name)
     else return t
   })
@@ -59,7 +59,7 @@ function OrderByTimeDesc(list: { time: number; name: string }[]) {
 
 function OrderBySizeAsc(list: { size: number; name: string }[]) {
   return list.sort(function (a, b) {
-    let t = a.size - b.size
+    const t = a.size - b.size
     if (t == 0) return _OrderName(a.name, b.name)
     else return t
   })
@@ -67,7 +67,7 @@ function OrderBySizeAsc(list: { size: number; name: string }[]) {
 
 function OrderBySizeDesc(list: { size: number; name: string }[]) {
   return list.sort(function (b, a) {
-    let t = a.size - b.size
+    const t = a.size - b.size
     if (t == 0) return _OrderName(a.name, b.name)
     else return t
   })
@@ -85,25 +85,9 @@ function OrderByNameDesc(list: { name: string }[]) {
   })
 }
 
-const pad = '00000'
-
-function _OrderName2(a: string, b: string) {
-  
-  a = replaceHanNumber(a)
-  b = replaceHanNumber(b)
-  
-  a = a.replace(/\d+/g, function (digits) {
-    return digits.length > 4 ? digits : pad.substring(0, 5 - digits.length) + digits
-  })
-  b = b.replace(/\d+/g, function (digits) {
-    return digits.length > 4 ? digits : pad.substring(0, 5 - digits.length) + digits
-  })
-  return a.localeCompare(b)
-}
-
 const intlcn = new Intl.Collator(['zh-CN-u-co-pinyin', 'jp', 'en'], { numeric: true })
 const intlen = new Intl.Collator(['en', 'zh-CN-u-co-pinyin', 'jp'], { numeric: true })
-const azreg = new RegExp(/[a-zA-Z]/)
+const azreg = new RegExp('[a-zA-Z]')
 
 function _OrderName(a: string, b: string) {
   

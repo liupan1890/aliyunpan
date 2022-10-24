@@ -11,18 +11,18 @@ export const UserTokenMap = new Map<string, ITokenInfo>()
 export default class UserDAL {
   
   static async aLoadFromDB() {
-    const tokenlist = await DB.getUserAll()
-    let defaultUser = await DB.getValueString('uiDefaultUser')
+    const tokenList = await DB.getUserAll()
+    const defaultUser = await DB.getValueString('uiDefaultUser')
     let defaultUserAdd = false
     UserTokenMap.clear()
     if (defaultUser) {
       
       try {
-        for (let i = 0, maxi = tokenlist.length; i < maxi; i++) {
-          const token = tokenlist[i]
+        for (let i = 0, maxi = tokenList.length; i < maxi; i++) {
+          const token = tokenList[i]
           if (token.user_id == defaultUser && token.user_id) {
-            const islogin = await AliUser.ApiTokenRefreshAccount(token, false) 
-            if (islogin) {
+            const isLogin = await AliUser.ApiTokenRefreshAccount(token, false) 
+            if (isLogin) {
               defaultUserAdd = true
               await this.UserLogin(token).catch(() => {}) 
               break
@@ -34,12 +34,12 @@ export default class UserDAL {
       }
     }
 
-    for (let i = 0, maxi = tokenlist.length; i < maxi; i++) {
-      const token = tokenlist[i]
+    for (let i = 0, maxi = tokenList.length; i < maxi; i++) {
+      const token = tokenList[i]
       try {
         if (token.user_id != defaultUser && token.user_id) {
-          const islogin = await AliUser.ApiTokenRefreshAccount(token, false) 
-          if (islogin) {
+          const isLogin = await AliUser.ApiTokenRefreshAccount(token, false) 
+          if (isLogin) {
             if (defaultUserAdd == false) {
               
               defaultUserAdd = true
@@ -57,24 +57,25 @@ export default class UserDAL {
       useUserStore().userShowLogin = true
     }
   }
+
   
   static async aRefreshAllUserToken() {
-    const tokenlist = await DB.getUserAll()
-    let datenow = new Date().getTime()
-    for (let i = 0, maxi = tokenlist.length; i < maxi; i++) {
-      const token = tokenlist[i]
+    const tokenList = await DB.getUserAll()
+    const dateNow = new Date().getTime()
+    for (let i = 0, maxi = tokenList.length; i < maxi; i++) {
+      const token = tokenList[i]
       try {
-        let expire_time = new Date(token.expire_time).getTime()
+        const expire_time = new Date(token.expire_time).getTime()
         
-        if (expire_time - datenow < 1800000) await AliUser.ApiTokenRefreshAccount(token, false)
+        if (expire_time - dateNow < 1800000) await AliUser.ApiTokenRefreshAccount(token, false)
       } catch (err: any) {
         DebugLog.mSaveDanger('aRefreshAllUserToken', err)
       }
     }
   }
 
-  static GetUserToken(userID: string): ITokenInfo {
-    if (userID && UserTokenMap.has(userID)) return UserTokenMap.get(userID)!
+  static GetUserToken(user_id: string): ITokenInfo {
+    if (user_id && UserTokenMap.has(user_id)) return UserTokenMap.get(user_id)!
 
     return {
       tokenfrom: 'token',
@@ -107,15 +108,23 @@ export default class UserDAL {
     }
   }
 
-  static async GetUserTokenFromDB(userID: string) {
-    if (!userID) return undefined
-    if (UserTokenMap.has(userID)) return UserTokenMap.get(userID)
-    return await DB.getUser(userID)
+  static async GetUserTokenFromDB(user_id: string) {
+    if (!user_id) return undefined
+    if (UserTokenMap.has(user_id)) return UserTokenMap.get(user_id)
+    const user = await DB.getUser(user_id)
+    if (user) UserTokenMap.set(user.user_id, user)
+    return user
+  }
+
+  
+  static async ClearUserTokenMap() {
+    UserTokenMap.clear()
   }
 
   static GetUserList() {
     const list: ITokenInfo[] = []
-    for (let [id, token] of UserTokenMap) {
+    // eslint-disable-next-line no-unused-vars
+    for (const [_, token] of UserTokenMap) {
       list.push(token)
     }
     return list.sort((a, b) => a.name.localeCompare(b.name))
@@ -125,14 +134,19 @@ export default class UserDAL {
   static SaveUserToken(token: ITokenInfo) {
     if (token.user_id) {
       UserTokenMap.set(token.user_id, token)
-      DB.saveUser(token).catch(() => {})
+      DB.saveUser(token)
+        .then(() => {
+          window.WinMsgToUpload({ cmd: 'ClearUserToken' })
+          window.WinMsgToDownload({ cmd: 'ClearUserToken' })
+        })
+        .catch(() => {})
     }
   }
 
   
   static async UserLogin(token: ITokenInfo) {
-    const loadingkey = 'userlogin_' + Date.now().toString()
-    message.loading('加载用户信息中...', 0, loadingkey)
+    const loadingKey = 'userlogin_' + Date.now().toString()
+    message.loading('加载用户信息中...', 0, loadingKey)
     UserTokenMap.set(token.user_id, token)
 
     
@@ -155,22 +169,22 @@ export default class UserDAL {
     
     PanDAL.aReLoadDrive(token.user_id, token.default_drive_id)
     PanDAL.aReLoadQuickFile(token.user_id)
-    //PanDAL.aReLoadDirSizeFromDB(token.user_id, token.pic_drive_id)
-    //PanDAL.GetAllDirList(token.user_id, token.pic_drive_id) 
+    // PanDAL.aReLoadDirSizeFromDB(token.user_id, token.pic_drive_id)
+    // PanDAL.GetAllDirList(token.user_id, token.pic_drive_id) 
 
-    message.success('加载用户成功!', 2, loadingkey)
+    message.success('加载用户成功!', 2, loadingKey)
   }
 
   
-  static async UserLogOff(userID: string) {
-    DB.deleteUser(userID)
-    UserTokenMap.delete(userID)
+  static async UserLogOff(user_id: string): Promise<boolean> {
+    DB.deleteUser(user_id)
+    UserTokenMap.delete(user_id)
 
     
     let newUserID = ''
-    for (let [user_id, token] of UserTokenMap) {
-      const islogin = token.user_id && (await AliUser.ApiTokenRefreshAccount(token, false))
-      if (islogin) {
+    for (const [user_id, token] of UserTokenMap) {
+      const isLogin = token.user_id && (await AliUser.ApiTokenRefreshAccount(token, false))
+      if (isLogin) {
         await this.UserLogin(token).catch(() => {})
         newUserID = user_id
         break
@@ -186,16 +200,21 @@ export default class UserDAL {
     return newUserID != '' 
   }
 
-  
-  static async UserChange(userID: string) {
-    if (UserTokenMap.has(userID) == false) return false
-    const token = UserTokenMap.get(userID)!
+  static async UserClearFromDB(user_id: string): Promise<void> {
+    DB.deleteUser(user_id)
+    UserTokenMap.delete(user_id)
+  }
 
-    const islogin = token.user_id && (await AliUser.ApiTokenRefreshAccount(token, false))
-    if (islogin == false) {
+  
+  static async UserChange(user_id: string): Promise<boolean> {
+    if (UserTokenMap.has(user_id) == false) return false
+    const token = UserTokenMap.get(user_id)!
+
+    const isLogin = token.user_id && (await AliUser.ApiTokenRefreshAccount(token, false))
+    if (isLogin == false) {
       message.warning('该账号需要重新登陆[' + token.name + ']')
-      DB.deleteUser(userID)
-      UserTokenMap.delete(userID)
+      DB.deleteUser(user_id)
+      UserTokenMap.delete(user_id)
       return false
     }
 
@@ -204,8 +223,8 @@ export default class UserDAL {
   }
 
   
-  static async UserRefreshByUserFace(userID: string, force: boolean) {
-    let token = UserDAL.GetUserToken(userID)
+  static async UserRefreshByUserFace(user_id: string, force: boolean): Promise<boolean> {
+    const token = UserDAL.GetUserToken(user_id)
     if (!token || !token.access_token) {
       return false
     }
@@ -219,8 +238,8 @@ export default class UserDAL {
       return true 
     } else {
       
-      const islogin = token.user_id && (await AliUser.ApiTokenRefreshAccount(token, true))
-      if (islogin == false) return false 
+      const isLogin = token.user_id && (await AliUser.ApiTokenRefreshAccount(token, true))
+      if (isLogin == false) return false 
 
       
       await Promise.all([AliUser.ApiUserInfo(token), AliUser.ApiUserPic(token), AliUser.ApiUserVip(token)]).catch(() => {})
@@ -230,12 +249,8 @@ export default class UserDAL {
   }
 
   
-  static CurrUserToken() {
-    const userID = useUserStore().userID
-    const token = UserTokenMap.get(userID)
-    if (token) {
-      return token.user_id + '\n' + token.default_drive_id + '\n' + token.refresh_token + '\n' + token.token_type + ' ' + token.access_token
-    }
+  static CurrUserToken(): string {
+
     return ''
   }
 }

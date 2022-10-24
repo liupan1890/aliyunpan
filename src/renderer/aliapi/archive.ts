@@ -1,45 +1,46 @@
 import AliHttp from './alihttp'
 
+export interface ILinkTxtFile {
+  key: string
+  name: string
+  size: number
+  sha1: string
+}
+export interface ILinkTxt {
+  key?: string
+  name: string
+  size: number
+  fileList: (ILinkTxtFile | string)[]
+  dirList: ILinkTxt[]
+}
 export interface IArchiveData {
   state: string
   task_id: string
   progress: number
   file_list: ILinkTxt
 }
-export interface ILinkTxt {
-  Key?: string
-  Name: string
-  Size: number
-  FileList: (ILinkTxtFile | string)[]
-  DirList: ILinkTxt[]
-}
-export interface ILinkTxtFile {
-  Key: string
-  Name: string
-  Size: number
-  Sha1: string
-}
+
 export default class AliArchive {
   
-  static ApiGetFileList(result: IArchiveData, file_list: any) {
+  static ApiGetFileList(result: IArchiveData, file_list: any): void {
     const func = function (file_list: any, link: ILinkTxt) {
-      if (file_list == undefined) return
-      const parentkey = link.Key == '' ? '' : link.Key + '/'
+      if (!file_list) return
+      const parentKey = link.key ? link.key + '/' : ''
       for (let i = 0; i < file_list.length; i++) {
         let name = file_list[i].name as string
-        if (name.startsWith(parentkey)) name = name.substr(parentkey.length)
+        if (name.startsWith(parentKey)) name = name.substr(parentKey.length)
         if (file_list[i].is_folder == true) {
           const item: ILinkTxt = {
-            Key: file_list[i].name,
-            Name: name,
-            Size: file_list[i].size,
-            FileList: [],
-            DirList: []
+            key: file_list[i].name,
+            name: name,
+            size: file_list[i].size,
+            fileList: [],
+            dirList: []
           }
           func(file_list[i].items, item)
-          link.DirList.push(item)
+          link.dirList.push(item)
         } else {
-          link.FileList.push({ Key: file_list[i].name, Name: name, Size: file_list[i].size, Sha1: '' })
+          link.fileList.push({ key: file_list[i].name, name: name, size: file_list[i].size, sha1: '' } as ILinkTxtFile)
         }
       }
     }
@@ -51,31 +52,31 @@ export default class AliArchive {
     }
     func(files, result.file_list)
   }
+
   
   static async ApiArchiveList(user_id: string, drive_id: string, file_id: string, domain_id: string, archive_type: string, password: string): Promise<IArchiveData | undefined> {
     if (!user_id || !drive_id || !file_id) return undefined
     const url = 'v2/archive/list'
-    const postdata: {
+    const postData: {
       drive_id: string
       file_id: string
       domain_id: string
-      archive_type: string 
+      archive_type: string
       password?: string
     } = {
-      drive_id: drive_id,
-      file_id: file_id,
+      drive_id,
+      file_id,
       domain_id,
       archive_type 
     }
-    if (password) postdata.password = password
-    const resp = await AliHttp.Post(url, postdata, user_id, '')
-    //{"state":"Running","file_list":{},"task_id":"7ae00bddf0c99e5a244e89032c21c413"}
+    if (password) postData.password = password
+    const resp = await AliHttp.Post(url, postData, user_id, '')
 
     const result: IArchiveData = {
       state: '',
       task_id: '',
       progress: 0,
-      file_list: { Name: '', Size: 0, FileList: [], DirList: [] }
+      file_list: { name: '', size: 0, fileList: [], dirList: [] }
     }
     if (AliHttp.IsSuccess(resp.code)) {
       result.state = resp.body.state as string
@@ -102,19 +103,18 @@ export default class AliArchive {
   static async ApiArchiveStatus(user_id: string, drive_id: string, file_id: string, domain_id: string, task_id: string): Promise<IArchiveData | undefined> {
     if (!user_id || !drive_id || !file_id) return undefined
     const url = 'v2/archive/status'
-    const postdata = {
-      drive_id: drive_id,
-      file_id: file_id,
+    const postData = {
+      drive_id,
+      file_id,
       domain_id,
       task_id
     }
-    const resp = await AliHttp.Post(url, postdata, user_id, '')
-    //{"state":"Running","file_list":{},"task_id":"3e74135777ec321e683b2ee9cb67871e","progress":0}
+    const resp = await AliHttp.Post(url, postData, user_id, '')
     const result: IArchiveData = {
       state: '',
       task_id: '',
       progress: 0,
-      file_list: { Key: '', Name: '', Size: 0, FileList: [], DirList: [] }
+      file_list: { key: '', name: '', size: 0, fileList: [], dirList: [] }
     }
     if (AliHttp.IsSuccess(resp.code)) {
       result.state = resp.body.state as string
@@ -135,12 +135,12 @@ export default class AliArchive {
     else result.state = '未知错误'
     return result
   }
+
   
   static async ApiArchiveUncompress(user_id: string, drive_id: string, file_id: string, domain_id: string, archive_type: string, target_drive_id: string, target_file_id: string, password: string, file_list: string[]): Promise<IArchiveData | undefined> {
     if (!user_id || !drive_id || !file_id || !target_drive_id || !target_file_id) return undefined
-
     const url = 'v2/archive/uncompress'
-    const postdata: {
+    const postData: {
       drive_id: string
       file_id: string
       domain_id: string
@@ -150,23 +150,21 @@ export default class AliArchive {
       file_list?: string[]
       password?: string
     } = {
-      drive_id: drive_id,
-      file_id: file_id,
+      drive_id,
+      file_id,
       domain_id,
       target_drive_id,
       target_file_id,
       archive_type 
     }
-    if (file_list.length > 0) postdata.file_list = file_list
-    if (password != '') postdata.password = password
-    const resp = await AliHttp.Post(url, postdata, user_id, '')
-    //{"drive_id":"8699982","file_id":"6129aa5003f94b7bd7f14bbab90b3f1f98098562","domain_id":"bj29","target_drive_id":"8699982","target_file_id":"6125bc01b62175eacfc34eb683bf2680e286c4d2","archive_type":"zip"}
-    //{"state":"Running","file_list":{},"task_id":"7ae00bddf0c99e5a244e89032c21c413"}
+    if (file_list.length > 0) postData.file_list = file_list
+    if (password != '') postData.password = password
+    const resp = await AliHttp.Post(url, postData, user_id, '')
     const result: IArchiveData = {
       state: '',
       task_id: '',
       progress: 0,
-      file_list: { Name: '', Size: 0, FileList: [], DirList: [] }
+      file_list: { name: '', size: 0, fileList: [], dirList: [] }
     }
     if (AliHttp.IsSuccess(resp.code)) {
       result.state = resp.body.state as string

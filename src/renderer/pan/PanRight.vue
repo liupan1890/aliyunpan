@@ -1,16 +1,17 @@
+<!-- eslint-disable no-irregular-whitespace -->
 <script setup lang="ts">
 import { IAliGetFileModel } from '../aliapi/alimodels'
-import { KeyboardState, useAppStore, useFootStore, useKeyboardStore, usePanFileStore, usePanTreeStore, useSettingStore } from '../store'
+import { KeyboardState, useAppStore, useFootStore, useKeyboardStore, usePanFileStore, useSettingStore } from '../store'
 import useWinStore from '../store/winstore'
-import { onShowRightMenu, RefreshScroll, RefreshScrollTo, TestCtrl, TestCtrlShift, TestKey, TestKeyboardScroll, TestKeyboardSelect, onHideRightMenuScroll } from '../utils/keyboardhelper'
-import { onMounted, ref } from 'vue'
+import { onShowRightMenu, TestCtrl, TestCtrlShift, TestKey, TestKeyboardScroll, TestKeyboardSelect, onHideRightMenuScroll } from '../utils/keyboardhelper'
+import { onMounted, ref, watchEffect } from 'vue'
 import PanDAL from './pandal'
 
 import { Tooltip as AntdTooltip } from 'ant-design-vue'
 import 'ant-design-vue/es/tooltip/style/css'
 
 import { handleUpload, topFavorDeleteAll, menuFavSelectFile, menuTrashSelectFile, menuCopySelectedFile, menuCreatShare, topSearchAll, dropMoveSelectedFile } from './topbtns/topbtn'
-import { modalCreatNewFile, modalCreatNewDir, modalRename, modalDaoRuShareLink } from '../utils/modal'
+import { modalCreatNewFile, modalCreatNewDir, modalRename, modalDaoRuShareLink, modalUpload } from '../utils/modal'
 import { PanFileState } from './panfilestore'
 import PanTopbtn from './menus/PanTopbtn.vue'
 import FileTopbtn from './menus/FileTopbtn.vue'
@@ -21,7 +22,6 @@ import DirTopPath from './menus/DirTopPath.vue'
 import message from '../utils/message'
 import { menuOpenFile } from '../utils/openfile'
 import { throttle } from '../utils/debounce'
-import UploadDAL from '../down/uploaddal'
 
 const viewlist = ref()
 const inputsearch = ref()
@@ -31,16 +31,27 @@ const winStore = useWinStore()
 const panfileStore = usePanFileStore()
 
 
-let dirid = ''
+let dirID = ''
 panfileStore.$subscribe((_m: any, state: PanFileState) => {
-  if (state.DirID != dirid) {
-    dirid = state.DirID
-    if (viewlist.value && viewlist.value.$el) RefreshScrollTo(viewlist.value.$el, 0)
+  if (state.DirID != dirID) {
+    dirID = state.DirID
+    if (viewlist.value) viewlist.value.scrollIntoView(0)
   }
-  let isTrash = panfileStore.SelectDirType == 'trash' || panfileStore.SelectDirType == 'recover'
-  let selectitem = panfileStore.GetSelectedFirst()
-  menuShowVideo.value = !isTrash && panfileStore.ListSelected.size == 1 && selectitem?.category == 'video'
-  menuShowZip.value = !isTrash && panfileStore.ListSelected.size == 1 && (selectitem?.ext == 'zip' || selectitem?.ext == 'rar')
+
+  const isTrash = panfileStore.SelectDirType == 'trash' || panfileStore.SelectDirType == 'recover'
+  const selectItem = panfileStore.GetSelectedFirst()
+  const isShowVideo = !isTrash && panfileStore.ListSelected.size == 1 && selectItem?.category == 'video'
+  if (menuShowVideo.value != isShowVideo) menuShowVideo.value = isShowVideo
+  const isShowZip = !isTrash && panfileStore.ListSelected.size == 1 && (selectItem?.ext == 'zip' || selectItem?.ext == 'rar')
+  if (menuShowZip.value != isShowZip) menuShowZip.value = isShowZip
+})
+
+watchEffect(() => {
+  const scrollToFile = panfileStore.scrollToFile
+  if (scrollToFile) {
+    if (viewlist.value) viewlist.value.scrollIntoView({ key: scrollToFile, align: 'top', offset: 220 })
+    panfileStore.mSaveFileScrollTo('')
+  }
 })
 
 const keyboardStore = useKeyboardStore()
@@ -56,8 +67,7 @@ keyboardStore.$subscribe((_m: any, state: KeyboardState) => {
     TestCtrlShift('f', state.KeyDownEvent, () => {
       PanDAL.aReLoadOneDirToShow('', 'search', false)
       setTimeout(() => {
-        let doc = document.getElementById('searchpan')?.getElementsByTagName('INPUT')[0] as any
-        doc.focus()
+        document.getElementById('searchpanInput')?.focus()
       }, 300)
     }) 
   )
@@ -79,8 +89,8 @@ keyboardStore.$subscribe((_m: any, state: KeyboardState) => {
   if (TestCtrl('s', state.KeyDownEvent, () => menuCreatShare(false, 'pan'))) return 
   if (TestCtrl('g', state.KeyDownEvent, () => menuFavSelectFile(false, !panfileStore.IsListSelectedFavAll))) return 
   if (TestCtrl('q', state.KeyDownEvent, onSelectRangStart)) return 
-  if (TestKeyboardScroll(state.KeyDownEvent, viewlist.value, panfileStore)) return 
   if (TestKeyboardSelect(state.KeyDownEvent, viewlist.value, panfileStore, handleOpenFile)) return 
+  if (TestKeyboardScroll(state.KeyDownEvent, viewlist.value, panfileStore)) return 
 })
 
 const handleRefresh = () => PanDAL.aReLoadOneDirToShow('', 'refresh', false)
@@ -90,7 +100,7 @@ const handleHome = () => PanDAL.aReLoadOneDirToShow('', 'root', false)
 const handleSelectAll = () => panfileStore.mSelectAll()
 
 
-const handleSelect = (file_id: string, event: any) => {
+const handleSelect = (file_id: string, event: any, isCtrl: boolean = false) => {
   onHideRightMenuScroll()
 
   if (rangIsSelecting.value) {
@@ -113,14 +123,14 @@ const handleSelect = (file_id: string, event: any) => {
         if (children[i].file_id == start) b = i
         if (a > 0 && b > 0) break
       }
-      const filelist: string[] = []
+      const fileList: string[] = []
       if (a >= 0 && b >= 0) {
         if (a > b) [a, b] = [b, a] 
         for (let n = a; n <= b; n++) {
-          filelist.push(children[n].file_id)
+          fileList.push(children[n].file_id)
         }
       }
-      panfileStore.mRangSelect(file_id, filelist)
+      panfileStore.mRangSelect(file_id, fileList)
       rangIsSelecting.value = false
       rangSelectID.value = ''
       rangSelectStart.value = ''
@@ -129,7 +139,7 @@ const handleSelect = (file_id: string, event: any) => {
     }
     panfileStore.mRefreshListDataShow(false) 
   } else {
-    panfileStore.mMouseSelect(file_id, event.ctrlKey, event.shiftKey)
+    panfileStore.mMouseSelect(file_id, event.ctrlKey || isCtrl, event.shiftKey)
   }
 }
 
@@ -141,7 +151,7 @@ const handleOpenFile = (event: Event, file: IAliGetFileModel | undefined) => {
   if (!file) file = panfileStore.GetSelectedFirst()
   if (!file) return
 
-  if (file.isdir) {
+  if (file.isDir) {
     
     PanDAL.aReLoadOneDirToShow('', file.compilation_id ? 'video' + file.name : file.file_id, true)
     return
@@ -154,21 +164,21 @@ const handleOpenFile = (event: Event, file: IAliGetFileModel | undefined) => {
 
 const handleSearchInput = (value: string) => {
   panfileStore.mSearchListData(value)
-  RefreshScrollTo(viewlist.value.$el, 0)
+  viewlist.value.scrollIntoView(0)
 }
 const handleSearchEnter = (event: any) => {
   event.target.blur()
-  RefreshScroll(viewlist.value.$el)
+  viewlist.value.scrollIntoView(0)
 }
 
 const menuShowVideo = ref(false)
 const menuShowZip = ref(false)
 const handleRightClick = (e: { event: MouseEvent; node: any }) => {
-  let key = e.node.key
+  const key = e.node.key
   
   if (!panfileStore.ListSelected.has(key)) panfileStore.mMouseSelect(key, false, false)
-  let dirtype = panfileStore.SelectDirType
-  onShowRightMenu(dirtype == 'trash' || dirtype == 'recover' ? 'rightpantrashmenu' : 'rightpanmenu', e.event.clientX, e.event.clientY)
+  const dirType = panfileStore.SelectDirType
+  onShowRightMenu(dirType == 'trash' || dirType == 'recover' ? 'rightpantrashmenu' : 'rightpanmenu', e.event.clientX, e.event.clientY)
 }
 
 
@@ -181,6 +191,7 @@ const resizeObserver = new ResizeObserver((entries) => {
   let newWidth = 0
   entries.map((t) => {
     newWidth = t.contentRect?.width || 0
+    return true
   })
 
   if (listGridWidth != newWidth && newWidth > 400) {
@@ -208,11 +219,11 @@ const handleListGridMode = (mode: string) => {
       listGridColumn.value = 1
     }
   } else if (mode == 'image') {
-    let count = Math.max(3, Math.floor(listGridWidth / 150))
+    const count = Math.max(3, Math.floor(listGridWidth / 150))
     if (listGridItemHeight.value != 180) listGridItemHeight.value = 180
     if (listGridColumn.value != count) listGridColumn.value = count
   } else {
-    let count = Math.max(2, Math.floor(listGridWidth / 200))
+    const count = Math.max(2, Math.floor(listGridWidth / 200))
     if (listGridItemHeight.value != 180) listGridItemHeight.value = 240
     if (listGridColumn.value != count) listGridColumn.value = count
   }
@@ -273,7 +284,6 @@ const onSelectRang = (file_id: string) => {
 
 const dragingRowItem = ref(false)
 const onRowItemDragStart = (ev: any, file_id: string) => {
-  console.log(ev, file_id)
   if (rangIsSelecting.value) {
     ev.stopPropagation()
     ev.preventDefault()
@@ -285,6 +295,7 @@ const onRowItemDragStart = (ev: any, file_id: string) => {
   
   if (!panfileStore.ListSelected.has(file_id)) panfileStore.mMouseSelect(file_id, false, false)
   const files = panfileStore.GetSelected()
+  if (files.length == 0) return
 
   const dragImage = document.createElement('div')
   dragImage.className = 'dragrowitem'
@@ -295,7 +306,6 @@ const onRowItemDragStart = (ev: any, file_id: string) => {
   }
 
   if (ev.dataTransfer) {
-    console.log('dragImage')
     document.body.appendChild(dragImage)
     ev.dataTransfer.setDragImage(dragImage, -16, 10)
     ev.dataTransfer.dropEffect = 'move'
@@ -343,8 +353,6 @@ const onRowItemDragEnd = (ev: any) => {
 
 const showDragUpload = ref(false)
 const onPanDrop = (e: any) => {
-  console.log('onPanDrop', e)
-
   if (!e.dataTransfer.files || e.dataTransfer.files.length == 0) return
   e.stopPropagation()
   e.preventDefault() 
@@ -371,16 +379,16 @@ const onPanDrop = (e: any) => {
   }
 
   
-  const fileslist = e.dataTransfer.files
-  if (fileslist && fileslist.length > 0) {
+  const filesList = e.dataTransfer.files
+  if (filesList && filesList.length > 0) {
     const files: string[] = []
     
-    for (let i = 0, maxi = fileslist.length; i < maxi; i++) {
-      const path = fileslist[i].path
+    for (let i = 0, maxi = filesList.length; i < maxi; i++) {
+      const path = filesList[i].path
       files.push(path)
     }
-    const pantreeStore = usePanTreeStore()
-    UploadDAL.UploadLocalFiles(pantreeStore.user_id, pantreeStore.drive_id, pantreeStore.selectDir.file_id, files, true) 
+
+    modalUpload(panfileStore.DirID, files)
   }
 }
 const onPanDragEnter = (ev: any) => {
@@ -422,39 +430,38 @@ const onPanDragEnd = (ev: any) => {
   <div style="height: 14px"></div>
   <div class="toppanbtns" style="height: 26px" tabindex="-1">
     <div class="toppanbtn">
-      <a-button type="text" size="small" tabindex="-1" :disabled="panfileStore.ListLoading" @click="handleBack" title="后退 Back Space">
+      <a-button type="text" size="small" tabindex="-1" :disabled="panfileStore.ListLoading" title="后退 Back Space" @click="handleBack">
         <template #icon>
           <i class="iconfont iconarrow-left-2-icon" />
         </template>
       </a-button>
-      <a-button type="text" size="small" tabindex="-1" :loading="panfileStore.ListLoading" @click="handleRefresh" title="刷新 F5">
+      <a-button type="text" size="small" tabindex="-1" :loading="panfileStore.ListLoading" title="刷新 F5" @click="handleRefresh">
         <template #icon>
           <i class="iconfont iconreload-1-icon" />
         </template>
       </a-button>
-      <a-button type="text" size="small" tabindex="-1" :disabled="panfileStore.ListLoading" @click="handleDingWei" title="定位 F6">
+      <a-button type="text" size="small" tabindex="-1" :disabled="panfileStore.ListLoading" title="定位 F6" @click="handleDingWei">
         <template #icon>
           <i class="iconfont icondingwei" />
         </template>
       </a-button>
     </div>
-    <div class="toppanbtn" v-show="panfileStore.SelectDirType == 'favorite'">
-      <a-button type="text" size="small" tabindex="-1" @click="topFavorDeleteAll" class="danger"><i class="iconfont iconcrown2" />清空收藏夹</a-button>
+    <div v-show="panfileStore.SelectDirType == 'favorite'" class="toppanbtn">
+      <a-button type="text" size="small" tabindex="-1" class="danger" @click="topFavorDeleteAll"><i class="iconfont iconcrown2" />清空收藏夹</a-button>
     </div>
-    <div class="toppanbtn" v-show="panfileStore.SelectDirType == 'search' && !panfileStore.IsListSelected">
+    <div v-show="panfileStore.SelectDirType == 'search' && !panfileStore.IsListSelected" class="toppanbtn">
       <a-input-search
-        id="searchpan"
         class="searchpan"
         style="width: 240px"
         :loading="panfileStore.ListLoading"
         placeholder="输入关键字，搜索整个网盘"
         button-text="搜索"
         search-button
+        :input-attrs="{ id: 'searchpanInput' }"
         @search="(val:string)=>topSearchAll(val)"
         @press-enter="($event:any)=>topSearchAll($event.srcElement.value as string)"
-        @keydown.esc=";($event.target as any).blur()"
-      />
-      <a-button type="text" size="small" tabindex="-1" @click="() => topSearchAll('topSearchAll高级搜索')" style="border: none">高级搜索</a-button>
+        @keydown.esc=";($event.target as any).blur()" />
+      <a-button type="text" size="small" tabindex="-1" style="border: none" @click="() => topSearchAll('topSearchAll高级搜索')">高级搜索</a-button>
     </div>
 
     <PanTopbtn :dirtype="panfileStore.SelectDirType" :isselected="panfileStore.IsListSelected" />
@@ -464,18 +471,17 @@ const onPanDragEnd = (ev: any) => {
     <div style="flex-grow: 1"></div>
     <div class="toppanbtn">
       <a-input-search
-        :input-attrs="{ tabindex: '-1' }"
         ref="inputsearch"
+        :model-value="panfileStore.ListSearchKey"
+        :input-attrs="{ tabindex: '-1' }"
         size="small"
         title="Ctrl+F / F3 / Space"
         placeholder="快速筛选"
         draggable="false"
         @dragenter.stop="() => false"
-        :model-value="panfileStore.ListSearchKey"
         @input="(val:any)=>handleSearchInput(val as string)"
         @press-enter="handleSearchEnter"
-        @keydown.esc=";($event.target as any).blur()"
-      />
+        @keydown.esc=";($event.target as any).blur()" />
     </div>
     <div></div>
   </div>
@@ -483,7 +489,7 @@ const onPanDragEnd = (ev: any) => {
   <div class="toppanarea" tabindex="-1">
     <div style="margin: 0 3px">
       <AntdTooltip title="点击全选" placement="left">
-        <a-button shape="circle" type="text" tabindex="-1" class="select all" @click="handleSelectAll" title="Ctrl+A">
+        <a-button shape="circle" type="text" tabindex="-1" class="select all" title="Ctrl+A" @click="handleSelectAll">
           <i :class="panfileStore.IsListSelectedAll ? 'iconfont iconrsuccess' : 'iconfont iconpic2'" />
         </a-button>
       </AntdTooltip>
@@ -491,7 +497,7 @@ const onPanDragEnd = (ev: any) => {
     <div class="selectInfo">{{ panfileStore.ListDataSelectCountInfo }}</div>
     <div style="margin: 0 2px">
       <AntdTooltip placement="rightTop">
-        <a-button shape="square" type="text" tabindex="-1" class="qujian" :status="rangIsSelecting ? 'danger' : 'normal'" @click="onSelectRangStart" title="Ctrl+Q">
+        <a-button shape="square" type="text" tabindex="-1" class="qujian" :status="rangIsSelecting ? 'danger' : 'normal'" title="Ctrl+Q" @click="onSelectRangStart">
           {{ rangIsSelecting ? '取消选择' : '区间选择' }}
         </a-button>
         <template #title>
@@ -507,7 +513,7 @@ const onPanDragEnd = (ev: any) => {
     </div>
     <div style="flex-grow: 1"></div>
     <div class="fileorder">
-      <a-dropdown @select="(val:any)=>handleFileListOrder(val as string)" trigger="hover" position="bl">
+      <a-dropdown trigger="hover" position="bl" @select="(val:any)=>handleFileListOrder(val as string)">
         <a-button type="text" size="small" tabindex="-1" :disabled="panfileStore.ListLoading"><i class="iconfont iconpaixu1" />{{ panfileStore.FileOrderDesc }} <i class="iconfont icondown" /></a-button>
 
         <template #content>
@@ -554,12 +560,11 @@ const onPanDragEnd = (ev: any) => {
   <div
     id="panfilelist"
     :class="'toppanlist' + (showDragUpload ? ' pandraging' : '') + (dragingRowItem ? ' draging' : '') + (rangIsSelecting ? ' ranging' : '')"
-    @keydown.space.prevent="() => true"
     tabindex="-1"
-    @drop="onPanDrop"
-    @dragenter="onPanDragEnter"
     :style="{ height: winStore.GetListHeight }"
-  >
+    @keydown.space.prevent="() => true"
+    @drop="onPanDrop"
+    @dragenter="onPanDragEnter">
     <a-skeleton v-if="panfileStore.ListLoading && panfileStore.ListDataCount == 0" :loading="true" :animation="true">
       <a-skeleton-line :rows="10" :line-height="50" :line-spacing="50" />
     </a-skeleton>
@@ -569,7 +574,7 @@ const onPanDragEnd = (ev: any) => {
       :bordered="false"
       :split="false"
       :max-height="winStore.GetListHeightNumber"
-      :virtualListProps="{
+      :virtual-list-props="{
         height: winStore.GetListHeightNumber,
         fixedSize: true,
         estimatedSize: 50,
@@ -579,27 +584,25 @@ const onPanDragEnd = (ev: any) => {
       style="width: 100%"
       :data="panfileStore.ListDataShow"
       tabindex="-1"
-      @scroll="onHideRightMenuScroll"
-    >
+      @scroll="onHideRightMenuScroll">
       <template #empty><a-empty description="空文件夹" /></template>
       <template #item="{ item, index }">
-        <div :key="'l-' + item.file_id" class="listitemdiv" :data-id="item.file_id">
+        <div :key="'l-' + item.file_id" class="listitemdiv">
           <div
-            v-if="item.isdir"
+            v-if="item.isDir"
             :class="'fileitem' + (panfileStore.ListSelected.has(item.file_id) ? ' selected' : '') + (panfileStore.ListFocusKey == item.file_id ? ' focus' : '')"
+            draggable="true"
             @click="handleSelect(item.file_id, $event)"
             @mouseover="onSelectRang(item.file_id)"
             @contextmenu="(event:MouseEvent)=>handleRightClick({event,node:{key:item.file_id}} )"
-            draggable="true"
             @dragstart="(ev) => onRowItemDragStart(ev, item.file_id)"
             @dragend="onRowItemDragEnd"
             @drop="onRowItemDrop($event, item.file_id)"
             @dragover="onRowItemDragOver"
             @dragenter="onRowItemDragEnter"
-            @dragleave="onRowItemDragLeave"
-          >
+            @dragleave="onRowItemDragLeave">
             <div :class="'rangselect ' + (rangSelectFiles[item.file_id] ? (rangSelectStart == item.file_id ? 'rangstart' : rangSelectEnd == item.file_id ? 'rangend' : 'rang') : '')">
-              <a-button shape="circle" type="text" tabindex="-1" class="select" :title="index" @click.prevent.stop="handleSelect(item.file_id, { ctrlKey: true, shiftKey: false })">
+              <a-button shape="circle" type="text" tabindex="-1" class="select" :title="index" @click.prevent.stop="handleSelect(item.file_id, $event, true)">
                 <i :class="panfileStore.ListSelected.has(item.file_id) ? (item.starred ? 'iconfont iconcrown3' : 'iconfont iconrsuccess') : item.starred ? 'iconfont iconcrown' : 'iconfont iconpic2'" />
               </a-button>
             </div>
@@ -628,22 +631,21 @@ const onPanDragEnd = (ev: any) => {
               <a-button v-else type="text" tabindex="-1" class="gengduo" disabled> </a-button>
             </div>
 
-            <div class="filesize">{{ item.sizestr }}</div>
-            <div class="filetime">{{ item.timestr }}</div>
+            <div class="filesize">{{ item.sizeStr }}</div>
+            <div class="filetime">{{ item.timeStr }}</div>
           </div>
 
           <div
             v-else
             :class="'fileitem' + (panfileStore.ListSelected.has(item.file_id) ? ' selected' : '') + (panfileStore.ListFocusKey == item.file_id ? ' focus' : '')"
+            draggable="true"
             @click="handleSelect(item.file_id, $event)"
             @mouseover="onSelectRang(item.file_id)"
             @contextmenu="(event:MouseEvent)=>handleRightClick({event,node:{key:item.file_id}} )"
-            draggable="true"
             @dragstart="(ev) => onRowItemDragStart(ev, item.file_id)"
-            @dragend="onRowItemDragEnd"
-          >
+            @dragend="onRowItemDragEnd">
             <div :class="'rangselect ' + (rangSelectFiles[item.file_id] ? (rangSelectStart == item.file_id ? 'rangstart' : rangSelectEnd == item.file_id ? 'rangend' : 'rang') : '')">
-              <a-button shape="circle" type="text" tabindex="-1" class="select" :title="index" @click.prevent.stop="handleSelect(item.file_id, { ctrlKey: true, shiftKey: false })">
+              <a-button shape="circle" type="text" tabindex="-1" class="select" :title="index" @click.prevent.stop="handleSelect(item.file_id, $event, true)">
                 <i :class="panfileStore.ListSelected.has(item.file_id) ? (item.starred ? 'iconfont iconcrown3' : 'iconfont iconrsuccess') : item.starred ? 'iconfont iconcrown' : 'iconfont iconpic2'" />
               </a-button>
             </div>
@@ -673,11 +675,11 @@ const onPanDragEnd = (ev: any) => {
             </div>
 
             <div class="filesize">
-              {{ item.sizestr }}
+              {{ item.sizeStr }}
               <span>{{ item.media_duration }}</span>
               <span>{{ item.media_width > 0 ? item.media_width + 'x' + item.media_height : '' }}</span>
             </div>
-            <div class="filetime">{{ item.timestr }}</div>
+            <div class="filetime">{{ item.timeStr }}</div>
           </div>
         </div>
       </template>
@@ -689,7 +691,7 @@ const onPanDragEnd = (ev: any) => {
       :bordered="false"
       :split="false"
       :max-height="winStore.GetListHeightNumber"
-      :virtualListProps="{
+      :virtual-list-props="{
         height: winStore.GetListHeightNumber,
         fixedSize: true,
         estimatedSize: 200,
@@ -700,27 +702,25 @@ const onPanDragEnd = (ev: any) => {
       style="width: 100%"
       :data="panfileStore.ListDataGrid"
       tabindex="-1"
-      @scroll="onHideRightMenuScroll"
-    >
+      @scroll="onHideRightMenuScroll">
       <template #empty><a-empty description="空文件夹" /></template>
       <template #item="{ item, index }">
-        <div :key="'g-' + item.file_id" class="listitemdiv" :data-id="item.file_id">
+        <div :key="'g-' + item.file_id" class="listitemdiv">
           <div class="gridrow" :style="{ gridTemplateColumns: 'repeat(' + listGridColumn + ', 150px)' }">
-            <template v-for="(grid, gindex) in item.files">
+            <template v-for="(grid, gindex) in item.files" :key="grid.file_id">
               <div
-                v-if="grid.isdir"
+                v-if="grid.isDir"
                 :class="'griditem ' + listGridMode + ' ' + (panfileStore.ListSelected.has(grid.file_id) ? ' selected' : '') + (panfileStore.ListFocusKey == grid.file_id ? ' focus' : '')"
+                draggable="true"
                 @click="handleSelect(grid.file_id, $event)"
                 @mouseover="() => onSelectRang(grid.file_id)"
                 @contextmenu="(event:MouseEvent)=>handleRightClick({event,node:{key:grid.file_id}} )"
-                draggable="true"
                 @dragstart="(ev) => onRowItemDragStart(ev, grid.file_id)"
                 @dragend="onRowItemDragEnd"
                 @drop="onRowItemDrop($event, grid.file_id)"
                 @dragover="onRowItemDragOver"
                 @dragenter="onRowItemDragEnter"
-                @dragleave="onRowItemDragLeave"
-              >
+                @dragleave="onRowItemDragLeave">
                 <div class="gridicon">
                   <i :class="'iconfont ' + grid.icon" aria-hidden="true" role="img"></i>
                 </div>
@@ -736,15 +736,15 @@ const onPanDragEnd = (ev: any) => {
                 </div>
 
                 <div class="gridname">
-                  <div @click="handleOpenFile($event, grid)" :title="grid.sizestr + ' ' + grid.name">
+                  <div :title="grid.sizeStr + ' ' + grid.name" @click="handleOpenFile($event, grid)">
                     {{ grid.name }}
                   </div>
                 </div>
 
-                <div class="gridinfo">{{ grid.timestr }}</div>
+                <div class="gridinfo">{{ grid.timeStr }}</div>
 
                 <div :class="'rangselect ' + (rangSelectFiles[grid.file_id] ? (rangSelectStart == grid.file_id ? 'rangstart' : rangSelectEnd == grid.file_id ? 'rangend' : 'rang') : '')">
-                  <a-button shape="circle" type="text" tabindex="-1" class="select" :title="index * listGridColumn + gindex" @click.prevent.stop="handleSelect(grid.file_id, { ctrlKey: true, shiftKey: false })">
+                  <a-button shape="circle" type="text" tabindex="-1" class="select" :title="(index * listGridColumn + gindex).toString()" @click.prevent.stop="handleSelect(grid.file_id, $event, true)">
                     <i :class="panfileStore.ListSelected.has(grid.file_id) ? (grid.starred ? 'iconfont iconcrown3' : 'iconfont iconrsuccess') : grid.starred ? 'iconfont iconcrown' : 'iconfont iconpic2'" />
                   </a-button>
                   <a-button v-if="grid.description" type="text" tabindex="-1" class="label" title="标记">
@@ -755,13 +755,12 @@ const onPanDragEnd = (ev: any) => {
               <div
                 v-else
                 :class="'griditem ' + listGridMode + ' ' + (panfileStore.ListSelected.has(grid.file_id) ? ' selected' : '') + (panfileStore.ListFocusKey == grid.file_id ? ' focus' : '')"
+                draggable="true"
                 @click="handleSelect(grid.file_id, $event)"
                 @mouseover="() => onSelectRang(grid.file_id)"
                 @contextmenu="(event:MouseEvent)=>handleRightClick({event,node:{key:grid.file_id}} )"
-                draggable="true"
                 @dragstart="(ev) => onRowItemDragStart(ev, grid.file_id)"
-                @dragend="onRowItemDragEnd"
-              >
+                @dragend="onRowItemDragEnd">
                 <div class="gridicon">
                   <i :class="'iconfont ' + grid.icon" aria-hidden="true" role="img"></i>
                 </div>
@@ -777,15 +776,15 @@ const onPanDragEnd = (ev: any) => {
                 </div>
 
                 <div class="gridname">
-                  <div @click="handleOpenFile($event, grid)" :title="grid.sizestr + ' ' + grid.name">
+                  <div :title="grid.sizeStr + ' ' + grid.name" @click="handleOpenFile($event, grid)">
                     {{ grid.name }}
                   </div>
                 </div>
 
-                <div class="gridinfo">{{ grid.timestr }}</div>
+                <div class="gridinfo">{{ grid.timeStr }}</div>
 
                 <div :class="'rangselect ' + (rangSelectFiles[grid.file_id] ? (rangSelectStart == grid.file_id ? 'rangstart' : rangSelectEnd == grid.file_id ? 'rangend' : 'rang') : '')">
-                  <a-button shape="circle" type="text" tabindex="-1" class="select" :title="index * listGridColumn + gindex" @click.prevent.stop="handleSelect(grid.file_id, { ctrlKey: true, shiftKey: false })">
+                  <a-button shape="circle" type="text" tabindex="-1" class="select" :title="(index * listGridColumn + gindex).toString()" @click.prevent.stop="handleSelect(grid.file_id, $event, true)">
                     <i :class="panfileStore.ListSelected.has(grid.file_id) ? (grid.starred ? 'iconfont iconcrown3' : 'iconfont iconrsuccess') : grid.starred ? 'iconfont iconcrown' : 'iconfont iconpic2'" />
                   </a-button>
                   <a-button v-if="grid.description" type="text" tabindex="-1" class="label" title="标记">
@@ -805,7 +804,7 @@ const onPanDragEnd = (ev: any) => {
       :bordered="false"
       :split="false"
       :max-height="winStore.GetListHeightNumber"
-      :virtualListProps="{
+      :virtual-list-props="{
         height: winStore.GetListHeightNumber,
         fixedSize: true,
         estimatedSize: 260,
@@ -816,27 +815,25 @@ const onPanDragEnd = (ev: any) => {
       style="width: 100%"
       :data="panfileStore.ListDataGrid"
       tabindex="-1"
-      @scroll="onHideRightMenuScroll"
-    >
+      @scroll="onHideRightMenuScroll">
       <template #empty><a-empty description="空文件夹" /></template>
       <template #item="{ item, index }">
-        <div :key="'g-' + item.file_id" class="listitemdiv" :data-id="item.file_id">
+        <div :key="'g-' + item.file_id" class="listitemdiv">
           <div class="gridrow" :style="{ gridTemplateColumns: 'repeat(' + listGridColumn + ', 200px)' }">
-            <template v-for="(grid, gindex) in item.files">
+            <template v-for="(grid, gindex) in item.files" :key="grid.file_id">
               <div
-                v-if="grid.isdir"
+                v-if="grid.isDir"
                 :class="'griditem ' + listGridMode + ' ' + (panfileStore.ListSelected.has(grid.file_id) ? ' selected' : '') + (panfileStore.ListFocusKey == grid.file_id ? ' focus' : '')"
+                draggable="true"
                 @click="handleSelect(grid.file_id, $event)"
                 @mouseover="() => onSelectRang(grid.file_id)"
                 @contextmenu="(event:MouseEvent)=>handleRightClick({event,node:{key:grid.file_id}} )"
-                draggable="true"
                 @dragstart="(ev) => onRowItemDragStart(ev, grid.file_id)"
                 @dragend="onRowItemDragEnd"
                 @drop="onRowItemDrop($event, grid.file_id)"
                 @dragover="onRowItemDragOver"
                 @dragenter="onRowItemDragEnter"
-                @dragleave="onRowItemDragLeave"
-              >
+                @dragleave="onRowItemDragLeave">
                 <div class="gridicon">
                   <i :class="'iconfont ' + grid.icon" aria-hidden="true" role="img"></i>
                 </div>
@@ -852,15 +849,15 @@ const onPanDragEnd = (ev: any) => {
                 </div>
 
                 <div class="gridname">
-                  <div @click="handleOpenFile($event, grid)" :title="grid.sizestr + ' ' + grid.name">
+                  <div :title="grid.sizeStr + ' ' + grid.name" @click="handleOpenFile($event, grid)">
                     {{ grid.name }}
                   </div>
                 </div>
 
-                <div class="gridinfo">{{ grid.timestr }}</div>
+                <div class="gridinfo">{{ grid.timeStr }}</div>
 
                 <div :class="'rangselect ' + (rangSelectFiles[grid.file_id] ? (rangSelectStart == grid.file_id ? 'rangstart' : rangSelectEnd == grid.file_id ? 'rangend' : 'rang') : '')">
-                  <a-button shape="circle" type="text" tabindex="-1" class="select" :title="index * listGridColumn + gindex" @click.prevent.stop="handleSelect(grid.file_id, { ctrlKey: true, shiftKey: false })">
+                  <a-button shape="circle" type="text" tabindex="-1" class="select" :title="(index * listGridColumn + gindex).toString()" @click.prevent.stop="handleSelect(grid.file_id, $event, true)">
                     <i :class="panfileStore.ListSelected.has(grid.file_id) ? (grid.starred ? 'iconfont iconcrown3' : 'iconfont iconrsuccess') : grid.starred ? 'iconfont iconcrown' : 'iconfont iconpic2'" />
                   </a-button>
 
@@ -872,13 +869,12 @@ const onPanDragEnd = (ev: any) => {
               <div
                 v-else
                 :class="'griditem ' + listGridMode + ' ' + (panfileStore.ListSelected.has(grid.file_id) ? ' selected' : '') + (panfileStore.ListFocusKey == grid.file_id ? ' focus' : '')"
+                draggable="true"
                 @click="handleSelect(grid.file_id, $event)"
                 @mouseover="() => onSelectRang(grid.file_id)"
                 @contextmenu="(event:MouseEvent)=>handleRightClick({event,node:{key:grid.file_id}} )"
-                draggable="true"
                 @dragstart="(ev) => onRowItemDragStart(ev, grid.file_id)"
-                @dragend="onRowItemDragEnd"
-              >
+                @dragend="onRowItemDragEnd">
                 <div class="gridicon">
                   <i :class="'iconfont ' + grid.icon" aria-hidden="true" role="img"></i>
                 </div>
@@ -894,15 +890,15 @@ const onPanDragEnd = (ev: any) => {
                 </div>
 
                 <div class="gridname">
-                  <div @click="handleOpenFile($event, grid)" :title="grid.sizestr + ' ' + grid.name">
+                  <div :title="grid.sizeStr + ' ' + grid.name" @click="handleOpenFile($event, grid)">
                     {{ grid.name }}
                   </div>
                 </div>
 
-                <div class="gridinfo">{{ grid.timestr }}</div>
+                <div class="gridinfo">{{ grid.timeStr }}</div>
 
                 <div :class="'rangselect ' + (rangSelectFiles[grid.file_id] ? (rangSelectStart == grid.file_id ? 'rangstart' : rangSelectEnd == grid.file_id ? 'rangend' : 'rang') : '')">
-                  <a-button shape="circle" type="text" tabindex="-1" class="select" :title="index * listGridColumn + gindex" @click.prevent.stop="handleSelect(grid.file_id, { ctrlKey: true, shiftKey: false })">
+                  <a-button shape="circle" type="text" tabindex="-1" class="select" :title="(index * listGridColumn + gindex).toString()" @click.prevent.stop="handleSelect(grid.file_id, $event, true)">
                     <i :class="panfileStore.ListSelected.has(grid.file_id) ? (grid.starred ? 'iconfont iconcrown3' : 'iconfont iconrsuccess') : grid.starred ? 'iconfont iconcrown' : 'iconfont iconpic2'" />
                   </a-button>
                   <a-button v-if="grid.description" type="text" tabindex="-1" class="label" title="标记">

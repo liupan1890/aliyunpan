@@ -22,7 +22,7 @@ export interface IAliMyFollowingResp {
 }
 export default class AliFollowing {
   
-  static async ApiOtherFollowingListAll(user_id: string) {
+  static async ApiOtherFollowingListAll(user_id: string): Promise<IAliOtherFollowingResp> {
     const dir: IAliOtherFollowingResp = {
       items: [],
       itemsKey: new Set(),
@@ -32,28 +32,28 @@ export default class AliFollowing {
     }
 
     do {
-      const isget = await AliFollowing.ApiOtherFollowingListOnePage(dir)
-      if (isget != true) {
+      const isGet = await AliFollowing.ApiOtherFollowingListOnePage(dir)
+      if (isGet != true) {
         break 
       }
     } while (dir.next_marker)
     return dir
   }
 
-  static async ApiOtherFollowingListOnePage(dir: IAliOtherFollowingResp) {
+  static async ApiOtherFollowingListOnePage(dir: IAliOtherFollowingResp): Promise<boolean> {
     const url = 'adrive/v1/timeline/user/recommend'
-    let postdata = {
+    let postData = {
       user_id: dir.m_user_id,
       limit: 100,
       order_by: 'updated_at',
       order_direction: 'DESC'
     }
-    if (dir.next_marker) postdata = Object.assign(postdata, { marker: dir.next_marker })
-    const resp = await AliHttp.Post(url, postdata, dir.m_user_id, '')
+    if (dir.next_marker) postData = Object.assign(postData, { marker: dir.next_marker })
+    const resp = await AliHttp.Post(url, postData, dir.m_user_id, '')
     return AliFollowing._OtherFollowingListOnePage(dir, resp)
   }
 
-  static _OtherFollowingListOnePage(dir: IAliOtherFollowingResp, resp: IUrlRespData) {
+  private static _OtherFollowingListOnePage(dir: IAliOtherFollowingResp, resp: IUrlRespData): boolean {
     try {
       if (AliHttp.IsSuccess(resp.code)) {
         dir.next_marker = resp.body.next_marker || ''
@@ -90,7 +90,7 @@ export default class AliFollowing {
   
 
   
-  static async ApiMyFollowingListAll(user_id: string) {
+  static async ApiMyFollowingListAll(user_id: string): Promise<IAliMyFollowingResp> {
     const dir: IAliMyFollowingResp = {
       items: [],
       itemsKey: new Set(),
@@ -100,27 +100,27 @@ export default class AliFollowing {
     }
 
     do {
-      const isget = await AliFollowing.ApiMyFollowingListOnePage(dir)
-      if (isget != true) {
+      const isGet = await AliFollowing.ApiMyFollowingListOnePage(dir)
+      if (isGet != true) {
         break 
       }
     } while (dir.next_marker)
     return dir
   }
 
-  static async ApiMyFollowingListOnePage(dir: IAliMyFollowingResp) {
+  static async ApiMyFollowingListOnePage(dir: IAliMyFollowingResp): Promise<boolean> {
     const url = 'adrive/v1/member/list_following'
-    const postdata = {
+    const postData = {
       marker: dir.next_marker,
       limit: 100,
       order_by: 'updated_at',
       order_direction: 'DESC'
     }
-    const resp = await AliHttp.Post(url, postdata, dir.m_user_id, '')
+    const resp = await AliHttp.Post(url, postData, dir.m_user_id, '')
     return AliFollowing._MyFollowingListOnePage(dir, resp)
   }
 
-  static _MyFollowingListOnePage(dir: IAliMyFollowingResp, resp: IUrlRespData) {
+  private static _MyFollowingListOnePage(dir: IAliMyFollowingResp, resp: IUrlRespData): boolean {
     try {
       if (AliHttp.IsSuccess(resp.code)) {
         dir.next_marker = resp.body.next_marker || ''
@@ -176,29 +176,31 @@ export default class AliFollowing {
   }
 
   
-  static async ApiSetFollowing(user_id: string, followingid: string, following: boolean, tip: boolean) {
+  static async ApiSetFollowing(user_id: string, followingid: string, isFollowing: boolean, tip: boolean): Promise<void> {
     if (!user_id || !followingid || !followingid) return
     let url = 'adrive/v1/member/follow_user'
-    if (!following) url = 'adrive/v1/member/unfollow_user'
-    const postdata = JSON.stringify({ user_id: followingid })
-    const resp = await AliHttp.Post(url, postdata, user_id, '')
+    if (!isFollowing) url = 'adrive/v1/member/unfollow_user'
+    const postData = JSON.stringify({ user_id: followingid })
+    const resp = await AliHttp.Post(url, postData, user_id, '')
     if (AliHttp.IsSuccess(resp.code)) {
-      if (tip) message.success(following ? '订阅成功' : '取消订阅成功')
+      if (tip) message.success(isFollowing ? '订阅成功' : '取消订阅成功')
     } else {
       DebugLog.mSaveWarning('ApiSetFollowing err=' + followingid + ' ' + (resp.code || ''))
-      message.error((following ? '订阅' : '取消订阅') + ' 操作失败，请稍后重试')
+      message.error((isFollowing ? '订阅' : '取消订阅') + ' 操作失败，请稍后重试')
     }
   }
 
   
-  static async ApiSetFollowingMarkRead(user_id: string, followingid: string) {
-    if (!user_id || !followingid) return
+  static async ApiSetFollowingMarkRead(user_id: string, followingid: string): Promise<boolean> {
+    if (!user_id || !followingid) return false
     const url = 'adrive/v1/member/mark_read'
-    const postdata = JSON.stringify({ user_id: followingid })
-    const resp = await AliHttp.Post(url, postdata, user_id, '')
+    const postData = JSON.stringify({ user_id: followingid })
+    const resp = await AliHttp.Post(url, postData, user_id, '')
     if (AliHttp.IsSuccess(resp.code)) {
+      return true
     } else {
       DebugLog.mSaveWarning('ApiSetFollowingMarkRead err=' + followingid + ' ' + (resp.code || ''))
+      return false
     }
   }
   

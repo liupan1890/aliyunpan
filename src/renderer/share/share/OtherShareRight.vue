@@ -2,7 +2,7 @@
 import { ref } from 'vue'
 import { useAppStore, useKeyboardStore, KeyboardState, useOtherShareStore, useWinStore, IOtherShareLinkModel } from '../../store'
 import ShareDAL from './sharedal'
-import { onShowRightMenu, onHideRightMenuScroll, RefreshScroll, RefreshScrollTo, TestCtrl, TestKey, TestKeyboardScroll, TestKeyboardSelect } from '../../utils/keyboardhelper'
+import { onShowRightMenu, onHideRightMenuScroll, TestCtrl, TestKey, TestKeyboardScroll, TestKeyboardSelect } from '../../utils/keyboardhelper'
 import { copyToClipboard, getFromClipboard, openExternal } from '../../utils/electronhelper'
 import message from '../../utils/message'
 
@@ -39,20 +39,21 @@ keyboardStore.$subscribe((_m: any, state: KeyboardState) => {
 
   if (TestKey('f5', state.KeyDownEvent, handleRefresh)) return
 
-  if (TestKeyboardScroll(state.KeyDownEvent, viewlist.value, othershareStore)) return 
   if (TestKeyboardSelect(state.KeyDownEvent, viewlist.value, othershareStore, handleOpenLink)) return 
+  if (TestKeyboardScroll(state.KeyDownEvent, viewlist.value, othershareStore)) return 
 })
 
 const handleRefresh = () => ShareDAL.aReloadOtherShare()
 const handleSelectAll = () => othershareStore.mSelectAll()
 const handleOrder = (order: string) => othershareStore.mOrderListData(order)
-const handleSelect = (shareid: string, event: any) => {
+const handleSelect = (share_id: string, event: any, isCtrl: boolean = false) => {
   onHideRightMenuScroll()
-  othershareStore.mMouseSelect(shareid, event.ctrlKey, event.shiftKey)
+  othershareStore.mMouseSelect(share_id, event.ctrlKey || isCtrl, event.shiftKey)
 }
 
 const handleOpenLink = (share: any) => {
   if (share && share.share_id) {
+    // donothing
   } else {
     share = othershareStore.GetSelectedFirst()
   }
@@ -63,7 +64,7 @@ const handleOpenLink = (share: any) => {
   }
 }
 const handleCopySelectedLink = () => {
-  let list = othershareStore.GetSelected()
+  const list = othershareStore.GetSelected()
   let link = ''
   for (let i = 0, maxi = list.length; i < maxi; i++) {
     const item = list[i]
@@ -77,7 +78,7 @@ const handleCopySelectedLink = () => {
   }
 }
 const handleBrowserLink = () => {
-  let first = othershareStore.GetSelectedFirst()
+  const first = othershareStore.GetSelectedFirst()
   if (!first) return
   if (first.share_id) openExternal('https://www.aliyundrive.com/s/' + first.share_id)
   if (first.share_pwd) {
@@ -96,14 +97,14 @@ const handleDeleteSelectedLink = (delby: string) => {
     return
   }
 
-  let selectkeys = ArrayKeyList('share_id', list)
-  ShareDAL.DeleteOtherShare(selectkeys).then(() => {
-    message.success('成功删除' + selectkeys.length + '条')
+  const selectKeys = ArrayKeyList<string>('share_id', list)
+  ShareDAL.DeleteOtherShare(selectKeys).then(() => {
+    message.success('成功删除' + selectKeys.length + '条')
   })
 }
 const handleDaoRuLink = () => {
   daoruModel.value = true
-  let txt = getFromClipboard()
+  const txt = getFromClipboard()
   if (txt.indexOf('.aliyundrive.com/s/') > 0) {
     daoruModelText.value = txt
     setTimeout(() => {
@@ -113,7 +114,7 @@ const handleDaoRuLink = () => {
 }
 
 const handleSaveDaoRuLink = () => {
-  let text = daoruModelText.value
+  const text = daoruModelText.value
   if (!text) {
     message.error('请先粘贴要导入的分享链接！')
     return
@@ -133,14 +134,14 @@ const handleRefreshStats = () => {
 
 const handleSearchInput = (value: string) => {
   othershareStore.mSearchListData(value)
-  RefreshScrollTo(viewlist.value.$el, 0)
+  viewlist.value.scrollIntoView(0)
 }
 const handleSearchEnter = (event: any) => {
   event.target.blur()
-  RefreshScroll(viewlist.value.$el)
+  viewlist.value.scrollIntoView(0)
 }
 const handleRightClick = (e: { event: MouseEvent; node: any }) => {
-  let key = e.node.key
+  const key = e.node.key
   
   if (!othershareStore.ListSelected.has(key)) othershareStore.mMouseSelect(key, false, false)
   onShowRightMenu('rightothersharemenu', e.event.clientX, e.event.clientY)
@@ -153,7 +154,7 @@ const handleRightClick = (e: { event: MouseEvent; node: any }) => {
   <div style="height: 14px"></div>
   <div class="toppanbtns" style="height: 26px">
     <div class="toppanbtn">
-      <a-button type="text" size="small" tabindex="-1" :loading="othershareStore.ListLoading" @click="handleRefresh" title="F5">
+      <a-button type="text" size="small" tabindex="-1" :loading="othershareStore.ListLoading" title="F5" @click="handleRefresh">
         <template #icon>
           <i class="iconfont iconreload-1-icon" />
         </template>
@@ -161,19 +162,19 @@ const handleRightClick = (e: { event: MouseEvent; node: any }) => {
       >
     </div>
     <div class="toppanbtn">
-      <a-button type="text" size="small" tabindex="-1" @click="handleDaoRuLink" title="Ctrl+N"><i class="iconfont iconlink2" />导入</a-button>
-      <a-button type="text" size="small" tabindex="-1" @click="handleRefreshStats" title="Ctrl+U"><i class="iconfont iconyibu" />更新</a-button>
+      <a-button type="text" size="small" tabindex="-1" title="Ctrl+N" @click="handleDaoRuLink"><i class="iconfont iconlink2" />导入</a-button>
+      <a-button type="text" size="small" tabindex="-1" title="Ctrl+U" @click="handleRefreshStats"><i class="iconfont iconyibu" />更新</a-button>
     </div>
-    <div class="toppanbtn" v-show="othershareStore.IsListSelected">
-      <a-button type="text" size="small" tabindex="-1" @click="handleOpenLink" title="Ctrl+O"><i class="iconfont iconchakan" />查看</a-button>
-      <a-button type="text" size="small" tabindex="-1" @click="handleCopySelectedLink" title="Ctrl+C"><i class="iconfont iconcopy" />复制链接</a-button>
-      <a-button type="text" size="small" tabindex="-1" @click="handleBrowserLink" title="Ctrl+B"><i class="iconfont iconchrome" />浏览器</a-button>
-      <a-button type="text" size="small" tabindex="-1" @click="handleDeleteSelectedLink('selected')" class="danger" title="Ctrl+Delete"><i class="iconfont icondelete" />删除</a-button>
+    <div v-show="othershareStore.IsListSelected" class="toppanbtn">
+      <a-button type="text" size="small" tabindex="-1" title="Ctrl+O" @click="handleOpenLink"><i class="iconfont iconchakan" />查看</a-button>
+      <a-button type="text" size="small" tabindex="-1" title="Ctrl+C" @click="handleCopySelectedLink"><i class="iconfont iconcopy" />复制链接</a-button>
+      <a-button type="text" size="small" tabindex="-1" title="Ctrl+B" @click="handleBrowserLink"><i class="iconfont iconchrome" />浏览器</a-button>
+      <a-button type="text" size="small" tabindex="-1" class="danger" title="Ctrl+Delete" @click="handleDeleteSelectedLink('selected')"><i class="iconfont icondelete" />删除</a-button>
     </div>
 
     <div style="flex-grow: 1"></div>
     <div class="toppanbtn">
-      <a-input-search tabindex="-1" ref="inputsearch" size="small" title="Ctrl+F / F3 / Space" placeholder="快速筛选" :model-value="othershareStore.ListSearchKey" @input="(val:any)=>handleSearchInput(val as string)" @press-enter="handleSearchEnter" @keydown.esc=";($event.target as any).blur()" />
+      <a-input-search ref="inputsearch" tabindex="-1" size="small" title="Ctrl+F / F3 / Space" placeholder="快速筛选" :model-value="othershareStore.ListSearchKey" @input="(val:any)=>handleSearchInput(val as string)" @press-enter="handleSearchEnter" @keydown.esc=";($event.target as any).blur()" />
     </div>
     <div></div>
   </div>
@@ -181,7 +182,7 @@ const handleRightClick = (e: { event: MouseEvent; node: any }) => {
   <div class="toppanarea">
     <div style="margin: 0 3px">
       <AntdTooltip title="点击全选" placement="left">
-        <a-button shape="circle" type="text" tabindex="-1" class="select all" @click="handleSelectAll" title="Ctrl+A">
+        <a-button shape="circle" type="text" tabindex="-1" class="select all" title="Ctrl+A" @click="handleSelectAll">
           <i :class="othershareStore.IsListSelectedAll ? 'iconfont iconrsuccess' : 'iconfont iconpic2'" />
         </a-button>
       </AntdTooltip>
@@ -206,7 +207,7 @@ const handleRightClick = (e: { event: MouseEvent; node: any }) => {
       :bordered="false"
       :split="false"
       :max-height="winStore.GetListHeightNumber"
-      :virtualListProps="{
+      :virtual-list-props="{
         height: winStore.GetListHeightNumber,
         fixedSize: true,
         estimatedSize: 50,
@@ -216,18 +217,16 @@ const handleRightClick = (e: { event: MouseEvent; node: any }) => {
       style="width: 100%"
       :data="othershareStore.ListDataShow"
       tabindex="-1"
-      @scroll="onHideRightMenuScroll"
-    >
+      @scroll="onHideRightMenuScroll">
       <template #empty><a-empty description="没导入过任何分享链接" /></template>
       <template #item="{ item, index }">
-        <div :key="item.share_id" class="listitemdiv" :data-id="item.share_id">
+        <div :key="item.share_id" class="listitemdiv">
           <div
             :class="'fileitem' + (othershareStore.ListSelected.has(item.share_id) ? ' selected' : '') + (othershareStore.ListFocusKey == item.share_id ? ' focus' : '')"
             @click="handleSelect(item.share_id, $event)"
-            @contextmenu="(event:MouseEvent)=>handleRightClick({event,node:{key:item.share_id}} )"
-          >
+            @contextmenu="(event:MouseEvent)=>handleRightClick({event,node:{key:item.share_id}} )">
             <div style="margin: 2px">
-              <a-button shape="circle" type="text" tabindex="-1" class="select" :title="index" @click.prevent.stop="handleSelect(item.share_id, { ctrlKey: true, shiftKey: false })">
+              <a-button shape="circle" type="text" tabindex="-1" class="select" :title="index" @click.prevent.stop="handleSelect(item.share_id, $event, true)">
                 <i :class="othershareStore.ListSelected.has(item.share_id) ? 'iconfont iconrsuccess' : 'iconfont iconpic2'" />
               </a-button>
             </div>
@@ -266,7 +265,7 @@ const handleRightClick = (e: { event: MouseEvent; node: any }) => {
           <template #default>浏览器</template>
         </a-doption>
 
-        <a-doption @click="handleDeleteSelectedLink('selected')" class="danger">
+        <a-doption class="danger" @click="handleDeleteSelectedLink('selected')">
           <template #icon> <i class="iconfont icondelete" /> </template>
           <template #default>删除记录</template>
         </a-doption>

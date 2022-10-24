@@ -4,13 +4,13 @@ import { defineComponent } from 'vue'
 export default defineComponent({
   props: { value: Boolean },
   emits: ['update:value'],
-  setup(props) {}
+  setup() {}
 })
 </script>
 
 <template>
   <div class="myswitch">
-    <a-switch type="round" :model-value="value" @update:model-value="$emit('update:value', $event)" tabindex="-1">
+    <a-switch type="round" :model-value="value" tabindex="-1" @update:model-value="$emit('update:value', $event)">
       <template #checked>✔</template>
       <template #unchecked>✖</template>
     </a-switch>

@@ -22,44 +22,43 @@ export default defineComponent({
     })
     
     const FixFormate = (text: string, enmpty: boolean) => {
-      let linktxt = ''
-      let linkpwd = ''
+      let linkTxt = ''
+      let linkPwd = ''
       if (text && text.indexOf('密码') >= 0) text = text.replaceAll('密码', '提取码')
       if (text && text.indexOf('提取码') >= 0) {
         text = text.replace('提取码:', '提取码').replace('提取码：', '提取码').replace('提取码 ', '提取码').trim()
-        linkpwd = text.substr(text.indexOf('提取码') + '提取码'.length, 4)
+        linkPwd = text.substr(text.indexOf('提取码') + '提取码'.length, 4)
       }
 
       if (text && text.length == 11) {
-        linktxt = 'aliyundrive.com/s/' + text
+        linkTxt = 'aliyundrive.com/s/' + text
       }
 
       if (text && text.indexOf('aliyundrive.com/s/') >= 0) {
-        linktxt = 'aliyundrive.com/s/' + text.substr(text.indexOf('aliyundrive.com/s/') + 'aliyundrive.com/s/'.length, 11)
+        linkTxt = 'aliyundrive.com/s/' + text.substr(text.indexOf('aliyundrive.com/s/') + 'aliyundrive.com/s/'.length, 11)
       }
 
-      if (linktxt == '' && enmpty == false) linktxt = text
-      return { linktxt, linkpwd }
+      if (!linkTxt && enmpty == false) linkTxt = text
+      return {  linkTxt,  linkPwd }
     }
     
     const onPaste = (e: any) => {
       e.stopPropagation() 
       e.preventDefault() 
-      let text = getFromClipboard()
-      let link = FixFormate(text, true)
-      form.sharelink = link.linktxt
-      form.password = link.linkpwd
+      const text = getFromClipboard()
+      const link = FixFormate(text, true)
+      form.sharelink = link.linkTxt
+      form.password = link.linkPwd
     }
     const handleOpen = () => {
       setTimeout(() => {
-        const autofocus = document.getElementById('DaoRuShareInput')
-        if (autofocus) autofocus.focus()
+        document.getElementById('DaoRuShareInput')?.focus()
       }, 200)
 
-      let text = getFromClipboard()
-      let link = FixFormate(text, true)
-      form.sharelink = link.linktxt
-      form.password = link.linkpwd
+      const text = getFromClipboard()
+      const link = FixFormate(text, true)
+      form.sharelink = link.linkTxt
+      form.password = link.linkPwd
     }
 
     const handleClose = () => {
@@ -86,12 +85,12 @@ export default defineComponent({
         this.okLoading = true
         const share_id = this.form.sharelink.split(/\.com\/s\/([\w]+)/)[1]
         AliShare.ApiGetShareToken(share_id, this.form.password)
-          .then((sharetoken) => {
+          .then((share_token) => {
             this.okLoading = false
-            if (sharetoken == '' || sharetoken.startsWith('，')) {
-              message.error('解析链接出错' + sharetoken)
+            if (!share_token || share_token.startsWith('，')) {
+              message.error('解析链接出错' + share_token)
             } else {
-              modalShowShareLink(share_id, this.form.password, sharetoken, true, [])
+              modalShowShareLink(share_id, this.form.password, share_token, true, [])
             }
           })
           .catch((err: any) => {
@@ -108,7 +107,7 @@ export default defineComponent({
 </script>
 
 <template>
-  <a-modal :visible="visible" modal-class="modalclass" @cancel="handleHide" @before-open="handleOpen" @close="handleClose" :footer="false" :unmount-on-close="true" :mask-closable="false">
+  <a-modal :visible="visible" modal-class="modalclass" :footer="false" :unmount-on-close="true" :mask-closable="false" @cancel="handleHide" @before-open="handleOpen" @close="handleClose">
     <template #title>
       <span class="modaltitle">导入阿里云盘分享链接</span>
     </template>
@@ -123,9 +122,8 @@ export default defineComponent({
             { maxLength: 300, message: '分享链接太长(300)' },
             { match: /aliyundrive.com\/s\//, message: '必须是阿里云盘(aliyundrive.com/s/...)' },
             { match: /aliyundrive.com\/s\/[0-9a-zA-Z_]{11,}/, message: '格式错误：aliyundrive.com/s/umaDDMR7w4F' }
-          ]"
-        >
-          <a-input v-model.trim="form.sharelink" @paste.stop.prevent="onPaste" placeholder="例如：aliyundrive.com/s/umaDDMR7w4F" allow-clear :input-attrs="{ id: 'DaoRuShareInput', autofocus: 'autofocus' }" />
+          ]">
+          <a-input v-model.trim="form.sharelink" placeholder="例如：aliyundrive.com/s/umaDDMR7w4F" allow-clear :input-attrs="{ id: 'DaoRuShareInput', autofocus: 'autofocus' }" @paste.stop.prevent="onPaste" />
         </a-form-item>
         <a-form-item field="password" label="提取码：" :rules="[{ length: 4, message: '提取码必须是4个字符' }]">
           <a-input v-model.trim="form.password" placeholder="没有不填" allow-clear style="max-width: 100px" />

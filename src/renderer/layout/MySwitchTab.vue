@@ -10,7 +10,7 @@ export default defineComponent({
     const WRAPPER_PADDING = 4
     const { value } = toRefs(props)
     if (props.tabs && props.tabs.length > 0) {
-      let val = props.value || props.tabs[0].key
+      const val = props.value || props.tabs[0].key
       const id = 'mantine-' + props.name + '-label-' + val
       nextTick(() => {
         let label = document.getElementById(id)
@@ -25,7 +25,7 @@ export default defineComponent({
     }
 
     watch(value, (newvalue: any, oldvalue: any) => {
-      let val = newvalue
+      const val = newvalue
       const id = 'mantine-' + props.name + '-label-' + val
       nextTick(() => {
         let label = document.getElementById(id)
@@ -40,7 +40,7 @@ export default defineComponent({
     })
 
     const click = (val: any, event: MouseEvent) => {
-      let doc = (event.target as HTMLElement).parentElement
+      const doc = (event.target as HTMLElement).parentElement
       if (doc) {
         width.value = doc.offsetWidth
         translate.value = doc.offsetLeft - WRAPPER_PADDING
@@ -55,9 +55,9 @@ export default defineComponent({
 <template>
   <div class="mantine-root">
     <span class="mantine-SegmentedControl-active mantine-bgblock" :style="{ width: width + 'px', transform: 'translate(' + translate + 'px, 0px)' }"></span>
-    <div v-for="item in tabs" :class="'mantine-item' + (value == item.key ? ' mantine-item-active' : '')" @click="(e) => click(item.key, e)">
-      <input type="radio" class="mantine-input" :name="'mantine-' + name + '-' + item.key" :id="'mantine-' + name + '-' + item.key" :value="item.key" :checked="value == item.key" disabled />
-      <label :class="'mantine-label' + (value == item.key ? ' mantine-label-active' : '')" :id="'mantine-' + name + '-label-' + item.key" :for="'mantine-' + name + '-' + item.key" :title="item.alt">{{ item.title }}</label>
+    <div v-for="item in tabs" :key="name + '-' + item.key" :class="'mantine-item' + (value == item.key ? ' mantine-item-active' : '')" @click="(e) => click(item.key, e)">
+      <input :id="'mantine-' + name + '-' + item.key" type="radio" :name="'mantine-' + name + '-' + item.key" class="mantine-input" :value="item.key" :checked="value == item.key" disabled />
+      <label :id="'mantine-' + name + '-label-' + item.key" :class="'mantine-label' + (value == item.key ? ' mantine-label-active' : '')" :for="'mantine-' + name + '-' + item.key" :title="item.alt">{{ item.title }}</label>
     </div>
   </div>
 </template>

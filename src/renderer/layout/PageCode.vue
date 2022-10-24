@@ -24,7 +24,7 @@ export default defineComponent({
           message.info('文件较大，只显示了前 512KB 的内容')
         }
         let fext = pageCode.code_ext || 'plain'
-        let fsub = data.substring(0, Math.min(200, data.length))
+        const fsub = data.substring(0, Math.min(200, data.length))
         if (fext == 'plain' && fsub.includes('<?xml')) {
           fext = 'xml'
           lang.value = 'language-xml'
@@ -48,7 +48,7 @@ export default defineComponent({
     }
 
     onMounted(() => {
-      let name = appStore.pageCode?.file_name || '文档在线预览'
+      const name = appStore.pageCode?.file_name || '文档在线预览'
       setTimeout(() => {
         document.title = name
       }, 1000)
@@ -80,7 +80,7 @@ export default defineComponent({
       </div>
     </a-layout-header>
     <a-layout-content style="height: calc(100vh - 42px)">
-      <div class="doc-preview" id="doc-preview" style="width: 100%; height: 100%; overflow: auto">
+      <div id="doc-preview" class="doc-preview" style="width: 100%; height: 100%; overflow: auto">
         <div ref="codeBlock" class="fullwidthcode">
           <pre v-if="format" :class="'line-numbers ' + lang + ' format'">
             <code>{{codeString}}</code>

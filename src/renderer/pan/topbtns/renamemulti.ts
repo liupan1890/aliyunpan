@@ -6,9 +6,9 @@ export interface TreeNodeData {
   isLeaf: boolean
   children: TreeNodeData[]
   icon: any
-  isdir: boolean
+  isDir: boolean
   
-  ismatch: boolean
+  isMatch: boolean
 }
 
 export function NewRenameConfigData() {
@@ -29,9 +29,9 @@ export function NewRenameConfigData() {
 }
 
 
-export function RunAllNode(nodelist: TreeNodeData[], func: (node: TreeNodeData) => boolean) {
-  for (let i = 0, maxi = nodelist.length; i < maxi; i++) {
-    let node = nodelist[i]
+export function RunAllNode(nodeList: TreeNodeData[], func: (node: TreeNodeData) => boolean) {
+  for (let i = 0, maxi = nodeList.length; i < maxi; i++) {
+    const node = nodeList[i]
     if (!func(node)) return false 
 
     if (node.children && node.children.length > 0) {
@@ -43,29 +43,29 @@ export function RunAllNode(nodelist: TreeNodeData[], func: (node: TreeNodeData) 
 
 
 function Split(text: string, search: string) {
-  let textlow = text.toLowerCase()
+  const textLow = text.toLowerCase()
   search = search.toLowerCase()
-  let listlow = textlow.split(search)
-  let slen = search.length
+  const listLow = textLow.split(search)
+  const searchLen = search.length
   let pos = 0
-  let list: string[] = []
-  for (let i = 0, maxi = listlow.length; i < maxi; i++) {
-    let low = listlow[i]
-    if (low == '') {
-      list.push('')
-      pos = pos + slen
-    } else {
+  const list: string[] = []
+  for (let i = 0, maxi = listLow.length; i < maxi; i++) {
+    const low = listLow[i]
+    if (low) {
       list.push(text.substring(pos, pos + low.length))
-      pos = pos + slen + low.length
+      pos = pos + searchLen + low.length
+    } else {
+      list.push('')
+      pos = pos + searchLen
     }
   }
   return list
 }
 
 function Replace(text: string, search: string, newtext: string) {
-  let textlow = text.toLowerCase()
+  const textLow = text.toLowerCase()
   search = search.toLowerCase()
-  let index = textlow.indexOf(search)
+  const index = textLow.indexOf(search)
   if (index >= 0) {
     return text.substring(0, index) + newtext + text.substring(index + search.length)
   } else return text
@@ -75,14 +75,14 @@ function fixext(ext: string) {
   return ext ? '.' + ext : ''
 }
 
-function RunReplace(isdir: boolean, title: string, config: any) {
-  let search = config.search as string
+function RunReplace(isDir: boolean, title: string, config: any) {
+  const search = config.search as string
   if (!search) return [title, title]
 
   let name = title
   let ext = ''
-  let exti = name.lastIndexOf('.')
-  if (!isdir && exti >= 0) {
+  const exti = name.lastIndexOf('.')
+  if (!isDir && exti >= 0) {
     ext = name.substring(exti + 1)
     name = name.substring(0, exti)
   }
@@ -113,15 +113,15 @@ function RunReplace(isdir: boolean, title: string, config: any) {
     
     if (config.chkAll) {
       if (config.applyto == 'full') {
-        let slist = Split(title, search)
+        const slist = Split(title, search)
         return [slist.join(config.newword), slist.join('<s>' + config.newword + '</s>')]
       }
       if (config.applyto == 'name') {
-        let slist = Split(name, search)
+        const slist = Split(name, search)
         return [slist.join(config.newword) + fixext(ext), slist.join('<s>' + config.newword + '</s>') + fixext(ext)]
       }
       if (config.applyto == 'ext') {
-        let slist = Split(ext, search)
+        const slist = Split(ext, search)
         return [name + fixext(slist.join(config.newword)), name + fixext(slist.join('<s>' + config.newword + '</s>'))]
       }
     } else {
@@ -161,17 +161,17 @@ function RunReplace(isdir: boolean, title: string, config: any) {
   }
   return [title, title]
 }
-function RunDelete(isdir: boolean, title: string, config: any) {
+function RunDelete(isDir: boolean, title: string, config: any) {
   let name = title
   let ext = ''
-  let exti = name.lastIndexOf('.')
-  if (!isdir && exti >= 0) {
+  const exti = name.lastIndexOf('.')
+  if (!isDir && exti >= 0) {
     ext = name.substring(exti + 1)
     name = name.substring(0, exti)
   }
 
   if (config.type == 'search' && config.search) {
-    let search = config.search as string
+    const search = config.search as string
     if (config.chkReg) {
       
       let reg: RegExp
@@ -199,15 +199,15 @@ function RunDelete(isdir: boolean, title: string, config: any) {
       
       if (config.chkAll) {
         if (config.applyto == 'full') {
-          let slist = Split(title, search)
+          const slist = Split(title, search)
           return [slist.join(''), slist.join('<b>' + search + '</b>')]
         }
         if (config.applyto == 'name') {
-          let slist = Split(name, search)
+          const slist = Split(name, search)
           return [slist.join('') + fixext(ext), slist.join('<b>' + search + '</b>') + fixext(ext)]
         }
         if (config.applyto == 'ext') {
-          let slist = Split(ext, search)
+          const slist = Split(ext, search)
           return [name + fixext(slist.join('')), name + fixext(slist.join('<b>' + search + '</b>'))]
         }
       } else {
@@ -266,8 +266,8 @@ function RunDelete(isdir: boolean, title: string, config: any) {
 
     if (config.beginlen > 0 && config.endlen > 0) {
       
-      let del1 = title1.substring(0, config.beginlen)
-      let del2 = title1.substring(title1.length - config.endlen)
+      const del1 = title1.substring(0, config.beginlen)
+      const del2 = title1.substring(title1.length - config.endlen)
       let str = title1.substring(config.beginlen)
       str = str.substring(0, str.length - config.endlen)
 
@@ -275,15 +275,15 @@ function RunDelete(isdir: boolean, title: string, config: any) {
       title2 = '<b>' + del1 + '</b>' + str + '<b>' + del2 + '</b>'
     } else if (config.beginlen > 0) {
       
-      let del = title1.substring(0, config.beginlen)
-      let str = title1.substring(config.beginlen)
+      const del = title1.substring(0, config.beginlen)
+      const str = title1.substring(config.beginlen)
       title1 = str
       title2 = '<b>' + del + '</b>' + str
     } else if (config.endlen > 0) {
       
-      let str1 = title1.substring(0, title1.length - config.endlen)
-      let str2 = title1.substring(0, title1.length - config.endlen)
-      let del = title1.substring(title1.length - config.endlen)
+      const str1 = title1.substring(0, title1.length - config.endlen)
+      const str2 = title1.substring(0, title1.length - config.endlen)
+      const del = title1.substring(title1.length - config.endlen)
       title1 = str1
       title2 = str2 + '<b>' + del + '</b>'
     } else {
@@ -304,27 +304,27 @@ function RunDelete(isdir: boolean, title: string, config: any) {
 
   if (config.type == 'range' && config.beginword && config.endword) {
     if (config.applyto == 'full') {
-      let start = title.indexOf(config.beginword)
-      let end = title.indexOf(config.endword, start + 1)
+      const start = title.indexOf(config.beginword)
+      const end = title.indexOf(config.endword, start + 1)
       if (start >= 0 && end >= 0 && start < end - 1) {
-        let title1 = title.substring(0, start + 1) + title.substring(end)
-        let title2 = title.substring(0, start + 1) + '<b>' + title.substring(start + 1, end) + '</b>' + title.substring(end)
+        const title1 = title.substring(0, start + 1) + title.substring(end)
+        const title2 = title.substring(0, start + 1) + '<b>' + title.substring(start + 1, end) + '</b>' + title.substring(end)
         return [title1, title2]
       }
     } else if (config.applyto == 'name') {
-      let start = name.indexOf(config.beginword)
-      let end = name.indexOf(config.endword, start + 1)
+      const start = name.indexOf(config.beginword)
+      const end = name.indexOf(config.endword, start + 1)
       if (start >= 0 && end >= 0 && start < end - 1) {
-        let name1 = name.substring(0, start + 1) + name.substring(end)
-        let name2 = name.substring(0, start + 1) + '<b>' + name.substring(start + 1, end) + '</b>' + name.substring(end)
+        const name1 = name.substring(0, start + 1) + name.substring(end)
+        const name2 = name.substring(0, start + 1) + '<b>' + name.substring(start + 1, end) + '</b>' + name.substring(end)
         return [name1 + fixext(ext), name2 + fixext(ext)]
       }
     } else if (config.applyto == 'ext') {
-      let start = ext.indexOf(config.beginword)
-      let end = ext.indexOf(config.endword, start + 1)
+      const start = ext.indexOf(config.beginword)
+      const end = ext.indexOf(config.endword, start + 1)
       if (start >= 0 && end >= 0 && start < end - 1) {
-        let ext1 = ext.substring(0, start + 1) + ext.substring(end)
-        let ext2 = ext.substring(0, start + 1) + '<b>' + ext.substring(start + 1, end) + '</b>' + ext.substring(end)
+        const ext1 = ext.substring(0, start + 1) + ext.substring(end)
+        const ext2 = ext.substring(0, start + 1) + '<b>' + ext.substring(start + 1, end) + '</b>' + ext.substring(end)
         return [name + fixext(ext1), name + fixext(ext2)]
       }
     }
@@ -332,11 +332,11 @@ function RunDelete(isdir: boolean, title: string, config: any) {
 
   return [title, title]
 }
-function RunAdd(isdir: boolean, title: string, config: any) {
+function RunAdd(isDir: boolean, title: string, config: any) {
   let name = title
   let ext = ''
-  let exti = name.lastIndexOf('.')
-  if (!isdir && exti >= 0) {
+  const exti = name.lastIndexOf('.')
+  if (!isDir && exti >= 0) {
     ext = name.substring(exti + 1)
     name = name.substring(0, exti)
   }
@@ -352,12 +352,12 @@ function RunAdd(isdir: boolean, title: string, config: any) {
   }
 
   if (config.type == 'search' && config.search) {
-    let index = title1.indexOf(config.search)
+    const index = title1.indexOf(config.search)
     if (index >= 0) {
       let title2 = ''
-      let start = title1.substring(0, index)
-      let mid = title1.substring(index, index + config.search.length)
-      let end = title1.substring(index + config.search.length)
+      const start = title1.substring(0, index)
+      const mid = title1.substring(index, index + config.search.length)
+      const end = title1.substring(index + config.search.length)
 
       if (config.before && config.after) {
         title1 = start + config.before + mid + config.after + end
@@ -409,65 +409,65 @@ function RunAdd(isdir: boolean, title: string, config: any) {
 
   return [title, title]
 }
-function RunIndex(isdir: boolean, title: string, config: any, nodeindex: number) {
+function RunIndex(isDir: boolean, title: string, config: any, nodeIndex: number) {
   if (!config.format) return [title, title]
   let name = title
   let ext = ''
-  let exti = name.lastIndexOf('.')
-  if (!isdir && exti >= 0) {
+  const exti = name.lastIndexOf('.')
+  if (!isDir && exti >= 0) {
     ext = name.substring(exti)
     name = name.substring(0, exti)
   }
 
-  let bianhao = config.beginindex + config.minnum * nodeindex
-  let formate = config.format.replace('#', bianhao.toString().padStart(config.minlen, '0'))
+  const bianhao = config.beginindex + config.minnum * nodeIndex
+  const formate = config.format.replace('#', bianhao.toString().padStart(config.minlen, '0'))
   if (config.type == 'begin') {
-    let title1 = formate + name
-    let title2 = '<i>' + formate + '</i>' + name
+    const title1 = formate + name
+    const title2 = '<i>' + formate + '</i>' + name
     return [title1 + ext, title2 + ext]
   } else if (config.type == 'end') {
-    let title1 = name + formate
-    let title2 = name + '<i>' + formate + '</i>'
+    const title1 = name + formate
+    const title2 = name + '<i>' + formate + '</i>'
     return [title1 + ext, title2 + ext]
   }
 
   return [title, title]
 }
-function RunOthers(isdir: boolean, title: string, config: any, sj1Base: string) {
+function RunOthers(isDir: boolean, title: string, config: any, sj1Base: string) {
   let name = title
   let ext = ''
-  let exti = name.lastIndexOf('.')
-  if (!isdir && exti >= 0) {
+  const exti = name.lastIndexOf('.')
+  if (!isDir && exti >= 0) {
     ext = name.substring(exti)
     name = name.substring(0, exti)
   }
 
   if (config.nameformat == 'AA') {
-    let title1 = name.replace(/[a-zA-Z]+/g, (L) => L.toUpperCase())
-    let title2 = name.replace(/[a-zA-Z]+/g, (L) => (L == L.toUpperCase() ? L : '<s>' + L.toUpperCase() + '</s>'))
+    const title1 = name.replace(/[a-zA-Z]+/g, (L) => L.toUpperCase())
+    const title2 = name.replace(/[a-zA-Z]+/g, (L) => (L == L.toUpperCase() ? L : '<s>' + L.toUpperCase() + '</s>'))
 
     if (title1 + ext == title) return [title, title] 
     return [title1 + ext, title2 + ext]
   }
   if (config.nameformat == 'aa') {
-    let title1 = name.replace(/[a-zA-Z]+/g, (L) => L.toLowerCase())
-    let title2 = name.replace(/[a-zA-Z]+/g, (L) => (L == L.toLowerCase() ? L : '<s>' + L.toLowerCase() + '</s>'))
+    const title1 = name.replace(/[a-zA-Z]+/g, (L) => L.toLowerCase())
+    const title2 = name.replace(/[a-zA-Z]+/g, (L) => (L == L.toLowerCase() ? L : '<s>' + L.toLowerCase() + '</s>'))
 
     if (title1 + ext == title) return [title, title] 
     return [title1 + ext, title2 + ext]
   }
   if (config.nameformat == 'Aa') {
     name = name.toLowerCase()
-    let title1 = name.replace(/[a-z]+/, (L) => (L.length > 1 ? L.substring(0, 1).toUpperCase() + L.substring(1) : L.toUpperCase()))
-    let title2 = name.replace(/[a-z]+/, (L) => (L.length > 1 ? '<s>' + L.substring(0, 1).toUpperCase() + '</s>' + L.substring(1) : '<s>' + L.toUpperCase() + '</s>'))
+    const title1 = name.replace(/[a-z]+/, (L) => (L.length > 1 ? L.substring(0, 1).toUpperCase() + L.substring(1) : L.toUpperCase()))
+    const title2 = name.replace(/[a-z]+/, (L) => (L.length > 1 ? '<s>' + L.substring(0, 1).toUpperCase() + '</s>' + L.substring(1) : '<s>' + L.toUpperCase() + '</s>'))
 
     if (title1 + ext == title) return [title, title] 
     return [title1 + ext, title2 + ext]
   }
   if (config.nameformat == 'Aa Aa') {
     name = name.toLowerCase()
-    let title1 = name.replace(/[a-z]+/g, (L) => (L.length > 1 ? L.substring(0, 1).toUpperCase() + L.substring(1) : L.toUpperCase()))
-    let title2 = name.replace(/[a-z]+/g, (L) => (L.length > 1 ? '<s>' + L.substring(0, 1).toUpperCase() + '</s>' + L.substring(1) : '<s>' + L.toUpperCase() + '</s>'))
+    const title1 = name.replace(/[a-z]+/g, (L) => (L.length > 1 ? L.substring(0, 1).toUpperCase() + L.substring(1) : L.toUpperCase()))
+    const title2 = name.replace(/[a-z]+/g, (L) => (L.length > 1 ? '<s>' + L.substring(0, 1).toUpperCase() + '</s>' + L.substring(1) : '<s>' + L.toUpperCase() + '</s>'))
     if (title1 + ext == title) return [title, title] 
     return [title1 + ext, title2 + ext]
   }
@@ -488,13 +488,13 @@ function RunOthers(isdir: boolean, title: string, config: any, sj1Base: string) 
   }
 
   
-  let randomlen = config.randomlen
-  if (sj1Base && randomlen > 0) {
+  const randomLen = config.randomlen
+  if (sj1Base && randomLen > 0) {
     let ranname = ''
     let ran = Math.random().toString() 
     ran = ran + ran + ran + ran + ran 
     let pos = name.length
-    for (let i = 0; i < randomlen; i++) {
+    for (let i = 0; i < randomLen; i++) {
       pos = (pos ^ ran.charCodeAt(i)) % 300
       ranname += sj1Base[pos]
     }
@@ -503,81 +503,81 @@ function RunOthers(isdir: boolean, title: string, config: any, sj1Base: string) 
   return [title, title] 
 }
 
-export function RunReplaceName(renameconfig: any, TreeData: TreeNodeData[], checkedKeys: string[]) {
-  let show = renameconfig.show
-  let replace = renameconfig.replace
-  let checked = new Set(checkedKeys || [])
+export function RunReplaceName(renameConfig: any, treeData: TreeNodeData[], checkedKeys: string[]) {
+  const show = renameConfig.show
+  const replace = renameConfig.replace
+  const checked = new Set(checkedKeys || [])
   if (replace.enable) {
-    RunAllNode(TreeData, (node) => {
+    RunAllNode(treeData, (node) => {
       if (checked.has(node.key)) {
-        let title = RunReplace(node.isdir, node.rawtitle, replace)
+        const title = RunReplace(node.isDir, node.rawtitle, replace)
         node.newtitle = title[0]
         node.title = show ? title[0] : title[1]
-        node.ismatch = node.newtitle != node.rawtitle
+        node.isMatch = node.newtitle != node.rawtitle
       } else {
         node.newtitle = node.rawtitle
         node.title = node.rawtitle
-        node.ismatch = false
+        node.isMatch = false
       }
       return true
     })
     return
   }
-  let tdelete = renameconfig.delete
+  const tdelete = renameConfig.delete
   if (tdelete.enable) {
-    RunAllNode(TreeData, (node) => {
+    RunAllNode(treeData, (node) => {
       if (checked.has(node.key)) {
-        let title = RunDelete(node.isdir, node.rawtitle, tdelete)
+        const title = RunDelete(node.isDir, node.rawtitle, tdelete)
         node.newtitle = title[0]
         node.title = show ? title[0] : title[1]
-        node.ismatch = node.newtitle != node.rawtitle && node.newtitle != ''
+        node.isMatch = node.newtitle != node.rawtitle && node.newtitle != ''
       } else {
         node.newtitle = node.rawtitle
         node.title = node.rawtitle
-        node.ismatch = false
+        node.isMatch = false
       }
       return true
     })
     return
   }
-  let add = renameconfig.add
+  const add = renameConfig.add
   if (add.enable) {
-    RunAllNode(TreeData, (node) => {
+    RunAllNode(treeData, (node) => {
       if (checked.has(node.key)) {
-        let title = RunAdd(node.isdir, node.rawtitle, add)
+        const title = RunAdd(node.isDir, node.rawtitle, add)
         node.newtitle = title[0]
         node.title = show ? title[0] : title[1]
-        node.ismatch = node.newtitle != node.rawtitle
+        node.isMatch = node.newtitle != node.rawtitle
       } else {
         node.newtitle = node.rawtitle
         node.title = node.rawtitle
-        node.ismatch = false
+        node.isMatch = false
       }
       return true
     })
     return
   }
-  let index = renameconfig.index
+  const index = renameConfig.index
   if (index.enable) {
     let nodeindex = 0
-    let checkmap = new Set(checkedKeys || [])
-    RunAllNode(TreeData, (node) => {
+    // const checkmap = new Set(checkedKeys || [])
+    RunAllNode(treeData, (node) => {
       if (checked.has(node.key)) {
-        let title = RunIndex(node.isdir, node.rawtitle, index, nodeindex)
+        const title = RunIndex(node.isDir, node.rawtitle, index, nodeindex)
         node.newtitle = title[0]
         node.title = show ? title[0] : title[1]
-        node.ismatch = node.newtitle != node.rawtitle
+        node.isMatch = node.newtitle != node.rawtitle
         nodeindex++
       } else {
         node.newtitle = node.rawtitle
         node.title = node.rawtitle
-        node.ismatch = false
+        node.isMatch = false
       }
       return true
     })
     return
   }
-  let others = renameconfig.others
+  const others = renameConfig.others
   if (others.enable) {
     let sj1Base = '' 
     if (others.randomformat == '0-9') sj1Base = '01234567899876543210012345678998765432100123456789987654321001'
@@ -588,19 +588,18 @@ export function RunReplaceName(renameconfig: any, TreeData: TreeNodeData[], chec
     if (others.randomformat == '0-9A-Z') sj1Base = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789ABCDEFGHIJKLMNOP'
     if (others.randomformat == '0-9a-zA-Z') sj1Base = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz'
     if (sj1Base) sj1Base = sj1Base + sj1Base + sj1Base + sj1Base + sj1Base 
-    RunAllNode(TreeData, (node) => {
+    RunAllNode(treeData, (node) => {
       if (checked.has(node.key)) {
-        let title = RunOthers(node.isdir, node.rawtitle, others, sj1Base)
+        const title = RunOthers(node.isDir, node.rawtitle, others, sj1Base)
         node.newtitle = title[0]
         node.title = show ? title[0] : title[1]
-        node.ismatch = node.newtitle != node.rawtitle
+        node.isMatch = node.newtitle != node.rawtitle
       } else {
         node.newtitle = node.rawtitle
         node.title = node.rawtitle
-        node.ismatch = false
+        node.isMatch = false
       }
       return true
     })
-    return
   }
 }

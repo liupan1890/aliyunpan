@@ -22,15 +22,15 @@ interface TreeNodeData {
   isLeaf: boolean
   children: TreeNodeData[]
   icon: any
-  isdir: boolean
-  sizestr: string
+  isDir: boolean
+  sizeStr: string
 }
 
 export interface CheckNode {
   file_id: string
   name: string
   halfChecked: boolean
-  isdir: boolean
+  isDir: boolean
   children: CheckNode[]
 }
 
@@ -39,6 +39,9 @@ const foldericonfn = () => iconfolder
 const fileiconfn = (icon: string) => h('i', { class: 'iconfont ' + icon })
 
 export default defineComponent({
+  components: {
+    AntdTree
+  },
   props: {
     visible: {
       type: Boolean,
@@ -65,44 +68,42 @@ export default defineComponent({
       required: true
     }
   },
-  components: {
-    AntdTree
-  },
+
   setup(props) {
     const winStore = useWinStore()
-    const TreeHeight = computed(() => (winStore.height * 8) / 10 - 126)
+    const treeHeight = computed(() => (winStore.height * 8) / 10 - 126)
     const okLoading = ref(false)
     const share = ref<IAliShareAnonymous | undefined>(undefined)
     const expiration = computed(() => (share.value ? humanExpiration(share.value.shareinfo.expiration) : ''))
-    const sharetoken = ref('')
-    const file_list = new Set<string>()
-    const dir_list = new Set<string>()
+    const share_token = ref('')
+    const fileList = new Set<string>()
+    const dirList = new Set<string>()
     const isAlbum = ref(false)
 
     const handleOpen = () => {
-      file_list.clear()
-      dir_list.clear()
-      props.file_id_list.map((t) => file_list.add(t))
+      fileList.clear()
+      dirList.clear()
+      props.file_id_list.map((t) => fileList.add(t))
 
       AliShare.ApiGetShareAnonymous(props.share_id).then((info) => {
         share.value = info
         isAlbum.value = info.shareinfo.is_photo_collection
         if (props.withsave) ShareDAL.SaveOtherShare(props.share_pwd, info, true)
       })
-      TreeExpandedKeys.value = []
-      TreeSelectedKeys.value = []
+      treeExpandedKeys.value = []
+      treeSelectedKeys.value = []
       if (props.share_token) {
-        sharetoken.value = props.share_token
-        apiLoad('root').then((addlist) => {
-          TreeData.value = addlist
+        share_token.value = props.share_token
+        apiLoad('root').then((addList: TreeNodeData[]) => {
+          treeData.value = addList
         })
       } else {
         AliShare.ApiGetShareToken(props.share_id, props.share_pwd).then((token) => {
           if (token.startsWith('，')) message.error('加载分享链接失败' + token)
           else {
-            sharetoken.value = token
-            apiLoad('root').then((addlist) => {
-              TreeData.value = addlist
+            share_token.value = token
+            apiLoad('root').then((addList: TreeNodeData[]) => {
+              treeData.value = addList
             })
           }
         })
@@ -113,30 +114,30 @@ export default defineComponent({
       
       if (okLoading.value) okLoading.value = false
       share.value = undefined
-      sharetoken.value = ''
-      file_list.clear()
-      dir_list.clear()
-      TreeData.value = []
-      TreeExpandedKeys.value = []
-      TreeSelectedKeys.value = []
-      TreeCheckedKeys.value = []
+      share_token.value = ''
+      fileList.clear()
+      dirList.clear()
+      treeData.value = []
+      treeExpandedKeys.value = []
+      treeSelectedKeys.value = []
+      treeCheckedKeys.value = []
     }
 
     const treeref = ref()
-    const TreeData = ref<TreeNodeData[]>([])
-    const TreeExpandedKeys = ref<string[]>([])
-    const TreeSelectedKeys = ref<string[]>([])
-    const TreeCheckedKeys = ref<string[]>([])
+    const treeData = ref<TreeNodeData[]>([])
+    const treeExpandedKeys = ref<string[]>([])
+    const treeSelectedKeys = ref<string[]>([])
+    const treeCheckedKeys = ref<string[]>([])
 
     const onLoadData = (treeNode: EventDataNode) => {
       return new Promise<void>((resolve) => {
-        if (sharetoken.value == '' || treeNode.dataRef == undefined || treeNode.dataRef?.children?.length) {
+        if (share_token.value == '' || !treeNode.dataRef || treeNode.dataRef?.children?.length) {
           resolve()
           return
         }
-        apiLoad(treeNode.dataRef.key).then((addlist) => {
-          treeNode.dataRef!.children = addlist
-          if (TreeData.value) TreeData.value = TreeData.value.concat()
+        apiLoad(treeNode.dataRef.key).then((addList: TreeNodeData[]) => {
+          treeNode.dataRef!.children = addList
+          if (treeData.value) treeData.value = treeData.value.concat()
           resolve()
         })
       })
@@ -146,12 +147,12 @@ export default defineComponent({
       if (list.length < 4) {
         setTimeout(() => {
           for (let i = 0, maxi = list.length; i < maxi; i++) {
-            let item = list[i]
+            const item = list[i]
             if (item.isLeaf == false) {
-              apiLoad(item.key).then((addlist) => {
-                item.children = addlist
-                if (TreeData.value) TreeData.value = TreeData.value.concat()
-                if (TreeExpandedKeys.value) TreeExpandedKeys.value.push(item.key)
+              apiLoad(item.key).then((addList: TreeNodeData[]) => {
+                item.children = addList
+                if (treeData.value) treeData.value = treeData.value.concat()
+                if (treeExpandedKeys.value) treeExpandedKeys.value.push(item.key)
               })
             }
           }
@@ -160,42 +161,42 @@ export default defineComponent({
     }
 
     const apiLoad = (key: any) => {
-      return AliShare.ApiShareFileList(props.share_id, sharetoken.value, key as string)
+      return AliShare.ApiShareFileList(props.share_id, share_token.value, key as string)
         .then((resp) => {
-          const addlist: TreeNodeData[] = []
+          const addList: TreeNodeData[] = []
           if (resp.next_marker == '') {
             for (let i = 0, maxi = resp.items.length; i < maxi; i++) {
               const item = resp.items[i]
-              if (item.isdir) dir_list.add(item.file_id)
-              addlist.push({
+              if (item.isDir) dirList.add(item.file_id)
+              addList.push({
                 key: item.file_id,
                 title: item.name,
-                sizestr: item.sizestr,
+                sizeStr: item.sizeStr,
                 children: [],
-                isdir: item.isdir,
-                isLeaf: !item.isdir,
-                icon: item.isdir ? foldericonfn : () => fileiconfn(item.icon)
-              })
+                isDir: item.isDir,
+                isLeaf: !item.isDir,
+                icon: item.isDir ? foldericonfn : () => fileiconfn(item.icon)
+              } as TreeNodeData)
             }
-            autoExpand(addlist)
+            autoExpand(addList)
           } else {
             message.error('列出分享文件失败：' + resp.next_marker)
           }
-          return addlist
+          return addList
         })
         .catch(() => {
           return [] as TreeNodeData[]
         })
     }
 
-    return { okLoading, handleOpen, handleClose, TreeHeight, treeref, treeSelectToExpand, share, isAlbum, sharetoken, expiration, dayjs, TreeData, TreeExpandedKeys, TreeSelectedKeys, TreeCheckedKeys, onLoadData, file_list }
+    return { okLoading, handleOpen, handleClose, treeHeight, treeref, treeSelectToExpand, share, isAlbum, shareToken: share_token, expiration, dayjs, treeData, treeExpandedKeys, treeSelectedKeys, treeCheckedKeys, onLoadData, fileList: fileList }
   },
   methods: {
     handleHide() {
       modalCloseAll()
     },
 
-    handleOK(savetype: string) {
+    handleOK(saveType: string) {
       const checkedKeys = this.treeref.checkedKeys
       const checkedMap = new Map<string, boolean>()
       for (let i = 0, maxi = checkedKeys.length; i < maxi; i++) {
@@ -207,35 +208,35 @@ export default defineComponent({
         halfCheckedMap.set(halfCheckedKeys[i].toString(), true)
       }
 
-      const treeData = this.TreeData
-      let selectnodes: CheckNode[] = []
+      const treeData = this.treeData
+      let selectNodes: CheckNode[] = []
 
-      if (savetype == 'all') {
+      if (saveType == 'all') {
         for (let i = 0, maxi = treeData.length; i < maxi; i++) {
           const item = treeData[i]
-          selectnodes.push({ file_id: item.key.toString(), name: item.title!.toString(), isdir: item.isdir, halfChecked: false, children: [] })
+          selectNodes.push({ file_id: item.key.toString(), name: item.title!.toString(), isDir: item.isDir, halfChecked: false, children: [] } as CheckNode)
         }
-      } else if (savetype == 'file') {
-        selectnodes = getCheckNodeOnlyFile(treeData, checkedMap, halfCheckedMap)
+      } else if (saveType == 'file') {
+        selectNodes = getCheckNodeOnlyFile(treeData, checkedMap, halfCheckedMap)
       } else {
-        selectnodes = getCheckNode(treeData, checkedMap, halfCheckedMap)
+        selectNodes = getCheckNode(treeData, checkedMap, halfCheckedMap)
       }
 
-      let share_id = this.share_id
-      let share_token = this.sharetoken 
+      const share_id = this.share_id
+      const share_token = this.shareToken 
 
-      modalSelectPanDir('share', '', async function (user_id: string, drive_id: string, dir_id: string) {
-        if (!drive_id || !dir_id) return 
-        let result = await SaveLink(savetype, share_id, share_token, user_id, drive_id, dir_id, selectnodes)
+      modalSelectPanDir('share', '', async function (user_id: string, drive_id: string, dirID: string) {
+        if (!drive_id || !dirID) return 
+        const result = await SaveLink(saveType, share_id, share_token, user_id, drive_id, dirID, selectNodes)
 
-        if (result == '') message.success('保存文件成功,请稍后手动刷新保存到的文件夹')
-        else message.error('保存文件出错,' + result)
+        if (result) message.error('保存文件出错,' + result)
+        else message.success('保存文件成功,请稍后手动刷新保存到的文件夹')
 
-        PanDAL.aReLoadOneDirToRefreshTree(user_id, drive_id, dir_id) 
+        PanDAL.aReLoadOneDirToRefreshTree(user_id, drive_id, dirID) 
       })
     },
 
-    handleOKAlbum(savetype: string) {
+    handleOKAlbum(saveType: string) {
       message.error('暂不支持导入从相册分享的链接')
     }
   }
@@ -243,36 +244,36 @@ export default defineComponent({
 
 
 function getCheckNode(list: TreeNodeData[], checkedMap: Map<string, boolean>, halfCheckedMap: Map<string, boolean>) {
-  const selectnodes: CheckNode[] = []
+  const selectNodes: CheckNode[] = []
   for (let i = 0, maxi = list.length; i < maxi; i++) {
     const item = list[i]
     const key = list[i].key.toString()
     if (checkedMap.has(key)) {
       checkedMap.delete(key)
       
-      selectnodes.push({ file_id: key, name: item.title!.toString(), isdir: item.isdir, halfChecked: false, children: [] })
+      selectNodes.push({ file_id: key, name: item.title!.toString(), isDir: item.isDir, halfChecked: false, children: [] } as CheckNode)
     } else if (item.children && item.children.length > 0) {
       if (halfCheckedMap.has(key)) {
         halfCheckedMap.delete(key)
         
         const child = getCheckNode(item.children, checkedMap, halfCheckedMap)
-        selectnodes.push({ file_id: key, name: item.title!.toString(), isdir: item.isdir, halfChecked: true, children: child })
+        selectNodes.push({ file_id: key, name: item.title!.toString(), isDir: item.isDir, halfChecked: true, children: child } as CheckNode)
       }
     }
   }
-  return selectnodes
+  return selectNodes
 }
 
 
 function getCheckNodeOnlyFile(list: TreeNodeData[], checkedMap: Map<string, boolean>, halfCheckedMap: Map<string, boolean>) {
-  const selectnodes: CheckNode[] = []
+  const selectNodes: CheckNode[] = []
   for (let i = 0, maxi = list.length; i < maxi; i++) {
     const item = list[i]
     const key = list[i].key.toString()
     if (checkedMap.has(key)) {
       checkedMap.delete(key)
       
-      selectnodes.push({ file_id: key, name: item.title!.toString(), isdir: item.isdir, halfChecked: false, children: [] })
+      selectNodes.push({ file_id: key, name: item.title!.toString(), isDir: item.isDir, halfChecked: false, children: [] } as CheckNode)
     } else if (item.children && item.children.length > 0) {
       if (halfCheckedMap.has(key)) {
         halfCheckedMap.delete(key)
@@ -280,42 +281,42 @@ function getCheckNodeOnlyFile(list: TreeNodeData[], checkedMap: Map<string, bool
         const child = getCheckNodeOnlyFile(item.children, checkedMap, halfCheckedMap)
         for (let j = 0, maxj = child.length; j < maxj; j++) {
           
-          if (child[j].halfChecked == false) selectnodes.push(child[j])
+          if (child[j].halfChecked == false) selectNodes.push(child[j])
         }
       }
     }
   }
-  return selectnodes
+  return selectNodes
 }
 
 
-async function SaveLink(savetype: string, shareid: string, sharetoken: string, user_id: string, drive_id: string, parentid: string, nodes: CheckNode[]) {
+async function SaveLink(saveType: string, share_id: string, share_token: string, user_id: string, drive_id: string, parent_file_id: string, nodes: CheckNode[]) {
   let result = ''
   const selectKeys: string[] = []
   const halfNodes: CheckNode[] = []
   for (let i = 0, maxi = nodes.length; i < maxi; i++) {
     if (nodes[i].halfChecked == false) {
-      if (nodes[i].isdir && savetype == 'file') {
+      if (nodes[i].isDir && saveType == 'file') {
         
-        let filelist = await getNodeAllFiles(shareid, sharetoken, nodes[i].file_id)
-        selectKeys.push(...filelist)
+        const fileList = await getNodeAllFiles(share_id, share_token, nodes[i].file_id)
+        selectKeys.push(...fileList)
       } else {
         selectKeys.push(nodes[i].file_id)
       }
     } else halfNodes.push(nodes[i])
   }
   
-  const result1 = await AliShare.ApiSaveShareFilesBatch(shareid, sharetoken, user_id, drive_id, parentid, selectKeys)
-  if (result1 !== 'success' && result1 !== 'async') result += ';' + result1 + ' '
+  const save = await AliShare.ApiSaveShareFilesBatch(share_id, share_token, user_id, drive_id, parent_file_id, selectKeys)
+  if (save !== 'success' && save !== 'async') result += ';' + save + ' '
 
   
   for (let i = 0, maxi = halfNodes.length; i < maxi; i++) {
     const half = halfNodes[i]
     
-    const data = await AliFileCmd.ApiCreatNewForder(user_id, drive_id, parentid, half.name)
+    const data = await AliFileCmd.ApiCreatNewForder(user_id, drive_id, parent_file_id, half.name)
     if (data.file_id) {
       
-      const rchild = await SaveLink(savetype, shareid, sharetoken, user_id, drive_id, data.file_id, half.children)
+      const rchild = await SaveLink(saveType, share_id, share_token, user_id, drive_id, data.file_id, half.children)
       if (rchild) result += ';' + rchild + ' '
     } else result += ';创建' + half.name + '失败 ' + data.error
   }
@@ -323,26 +324,26 @@ async function SaveLink(savetype: string, shareid: string, sharetoken: string, u
   return result
 }
 
-async function getNodeAllFiles(shareid: string, sharetoken: string, file_id: string): Promise<string[]> {
-  let filelist: string[] = []
-  let resp = await AliShare.ApiShareFileList(shareid, sharetoken, file_id)
+async function getNodeAllFiles(share_id: string, share_token: string, file_id: string): Promise<string[]> {
+  const fileList: string[] = []
+  const resp = await AliShare.ApiShareFileList(share_id, share_token, file_id)
   if (resp.next_marker == '') {
     for (let i = 0, maxi = resp.items.length; i < maxi; i++) {
       const item = resp.items[i]
-      if (item.isdir) {
-        let temp = await getNodeAllFiles(shareid, sharetoken, item.file_id)
-        filelist.push(...temp)
-      } else filelist.push(item.file_id)
+      if (item.isDir) {
+        const temp = await getNodeAllFiles(share_id, share_token, item.file_id)
+        fileList.push(...temp)
+      } else fileList.push(item.file_id)
     }
   } else {
     message.error('列出分享文件失败：' + resp.next_marker)
   }
-  return filelist
+  return fileList
 }
 </script>
 
 <template>
-  <a-modal :visible="visible" modal-class="modalclass showsharemodal" @cancel="handleHide" @before-open="handleOpen" @close="handleClose" title-align="start" :footer="false" :unmount-on-close="true" :mask-closable="false">
+  <a-modal :visible="visible" modal-class="modalclass showsharemodal" title-align="start" :footer="false" :unmount-on-close="true" :mask-closable="false" @cancel="handleHide" @before-open="handleOpen" @close="handleClose">
     <template #title>
       <div class="modaltitle">
         <span class="sharetime">[{{ expiration }}]</span> <span class="sharetitle">{{ share?.shareinfo.share_name }}</span>
@@ -350,45 +351,44 @@ async function getNodeAllFiles(shareid: string, sharetoken: string, file_id: str
     </template>
     <div class="modalbody" style="width: 80vw; max-width: 860px; height: calc(80vh - 100px); padding-bottom: 16px">
       <AntdTree
+        ref="treeref"
+        v-model:expanded-keys="treeExpandedKeys"
+        v-model:selected-keys="treeSelectedKeys"
+        v-model:checked-keys="treeCheckedKeys"
+        :tree-data="treeData"
+        :load-data="onLoadData"
         :tabindex="-1"
         :focusable="false"
-        ref="treeref"
         class="sharetree"
         :checkable="withsave"
-        blockNode
+        block-node
         selectable
-        :autoExpandParent="false"
-        showIcon
-        :height="TreeHeight"
-        :style="{ height: TreeHeight + 'px' }"
-        :showLine="{ showLeafIcon: false }"
-        @select="treeSelectToExpand"
-        v-model:expandedKeys="TreeExpandedKeys"
-        v-model:selectedKeys="TreeSelectedKeys"
-        v-model:checkedKeys="TreeCheckedKeys"
-        :treeData="TreeData"
-        :loadData="onLoadData"
-      >
+        :auto-expand-parent="false"
+        show-icon
+        :height="treeHeight"
+        :style="{ height: treeHeight + 'px' }"
+        :show-line="{ showLeafIcon: false }"
+        @select="treeSelectToExpand">
         <template #switcherIcon>
           <i class="ant-tree-switcher-icon iconfont Arrow" />
         </template>
         <template #title="{ dataRef }">
-          <span :class="'sharetitleleft' + (file_list.has(dataRef.key) ? ' new' : '')">{{ dataRef.title }}</span>
-          <span class="sharetitleright">{{ dataRef.sizestr }}</span>
+          <span :class="'sharetitleleft' + (fileList.has(dataRef.key) ? ' new' : '')">{{ dataRef.title }}</span>
+          <span class="sharetitleright">{{ dataRef.sizeStr }}</span>
         </template>
       </AntdTree>
     </div>
     <div v-if="withsave && isAlbum == false" class="modalfoot">
       <div style="flex-grow: 1"></div>
       <a-button v-if="!okLoading" type="outline" size="small" tabindex="-1" @click="handleHide">取消</a-button>
-      <a-button type="outline" size="small" tabindex="-1" :loading="okLoading" @click="() => handleOK('file')" title="导入勾选的文件(把所有文件都保存到同一个文件夹里)">导入勾选(仅文件)</a-button>
-      <a-button type="primary" size="small" tabindex="-1" :loading="okLoading" @click="() => handleOK('folder')" title="按照分享链接内部的路径，导入勾选的文件和文件夹">导入勾选(按路径)</a-button>
-      <a-button type="primary" size="small" tabindex="-1" :loading="okLoading" @click="() => handleOK('all')" title="一键导入分享链接内全部文件和文件夹">一键导入全部</a-button>
+      <a-button type="outline" size="small" tabindex="-1" :loading="okLoading" title="导入勾选的文件(把所有文件都保存到同一个文件夹里)" @click="() => handleOK('file')">导入勾选(仅文件)</a-button>
+      <a-button type="primary" size="small" tabindex="-1" :loading="okLoading" title="按照分享链接内部的路径，导入勾选的文件和文件夹" @click="() => handleOK('folder')">导入勾选(按路径)</a-button>
+      <a-button type="primary" size="small" tabindex="-1" :loading="okLoading" title="一键导入分享链接内全部文件和文件夹" @click="() => handleOK('all')">一键导入全部</a-button>
     </div>
     <div v-if="withsave && isAlbum == true" class="modalfoot">
       <div style="flex-grow: 1"></div>
       <a-button v-if="!okLoading" type="outline" size="small" tabindex="-1" @click="handleHide">取消</a-button>
-      <a-button type="primary" size="small" tabindex="-1" :loading="okLoading" @click="() => handleOKAlbum('all')" title="一键导入分享链接内全部文件和文件夹">一键导入全部到相册</a-button>
+      <a-button type="primary" size="small" tabindex="-1" :loading="okLoading" title="一键导入分享链接内全部文件和文件夹" @click="() => handleOKAlbum('all')">一键导入全部到相册</a-button>
     </div>
   </a-modal>
 </template>

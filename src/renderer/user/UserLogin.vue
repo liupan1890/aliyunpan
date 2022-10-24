@@ -7,23 +7,23 @@ import message from '../utils/message'
 import DebugLog from '../utils/debuglog'
 
 function v(e: string) {
-  var t = atob(e),
-    r = t.length,
-    n = new Uint8Array(r)
+  const t = atob(e)
+  let r = t.length
+  const n = new Uint8Array(r)
   while (r--) n[r] = t.charCodeAt(r)
   return new Blob([n])
 }
 function w(e: string) {
-  return new Promise<string>(function (t, r) {
-    var n = v(e),
-      i = new FileReader()
-    ;(i.onloadend = function (e) {
-      t((e?.target?.result as string | undefined) || '')
-    }),
-      (i.onerror = function (e) {
-        return r(e)
-      }),
-      i.readAsText(n, 'gbk')
+  return new Promise<string>(function (resolve, reject) {
+    const n = v(e)
+    const i = new FileReader()
+    i.onloadend = function (e) {
+      resolve((e?.target?.result as string | undefined) || '')
+    }
+    i.onerror = function (e) {
+      return reject(e)
+    }
+    i.readAsText(n, 'gbk')
   })
 }
 
@@ -31,25 +31,25 @@ export default defineComponent({
   setup() {
     const handleOpen = () => {
       setTimeout(() => {
-        let webview = document.getElementById('loginiframe') as any
+        const webview = document.getElementById('loginiframe') as any
         if (!webview) {
           message.error('严重错误：无法打开登录弹窗，请退出小白羊后重新运行')
           return
         }
         webview.openDevTools({ mode: 'bottom', activate: false })
-        //webview.openDevTools({ mode: 'detach', activate: false })
+        // webview.openDevTools({ mode: 'detach', activate: false })
         webview.loadURL(Config.loginUrl, { httpReferrer: 'https://www.aliyundrive.com/' })
 
         webview.addEventListener('did-fail-load', () => {
           console.log('did-fail-load')
-          let loading = document.getElementById('loginframedivloading')
+          const loading = document.getElementById('loginframedivloading')
           if (loading) loading.parentNode!.removeChild(loading)
           document.getElementById('loginframediverror')!.style.display = ''
         })
         webview.addEventListener('console-message', (e: any) => {
           const msg = e.message || ''
-          //console.log('Guest page logged a message:', e.message)
-          let loading = document.getElementById('loginframedivloading')
+          // console.log('Guest page logged a message:', e.message)
+          const loading = document.getElementById('loginframedivloading')
           if (loading) loading.parentNode!.removeChild(loading)
           document.getElementById('loginframediverror')!.style.display = 'none'
           if (msg.indexOf('bizExt') > 0) loginbizExt(msg)
@@ -122,7 +122,7 @@ export default defineComponent({
 </script>
 
 <template>
-  <a-modal v-model:visible="useUser.userShowLogin" :mask-closable="false" unmountOnClose :footer="false" class="userloginmodal" @before-open="handleOpen">
+  <a-modal v-model:visible="useUser.userShowLogin" :mask-closable="false" unmount-on-close :footer="false" class="userloginmodal" @before-open="handleOpen">
     <template #title> 登录阿里云盘账号 </template>
     <div id="logindiv">
       <div class="logincontent">

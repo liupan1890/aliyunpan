@@ -16,10 +16,10 @@ export interface IVideoPreviewUrl {
   duration: number
   width: number
   height: number
-  url_FHD: string
-  url_HD: string
-  url_SD: string
-  url_LD: string
+  urlFHD: string
+  urlHD: string
+  urlSD: string
+  urlLD: string
   subtitles: {
     language: string
     url: string
@@ -60,6 +60,7 @@ export interface IUploadCreat {
 export interface IUploadInfo {
   token_type: string
   access_token: string
+  sha1: string
   israpid: boolean
   isexist: boolean
   part_info_list: {
@@ -68,7 +69,6 @@ export interface IUploadInfo {
     part_size: number
     isupload: boolean
   }[]
-  errormsg: string
 }
 
 export interface IAliBatchResult {
@@ -148,7 +148,7 @@ export interface IAliUserDriveDetails {
 export interface IAliUserDriveCapacity {
   type: string 
   size: number
-  sizestr: string
+  sizeStr: string
   expired: string 
   expiredstr: string 
   description: string 
@@ -163,7 +163,7 @@ export interface IStateUploadFile {
     
     localFilePath: string
     
-    parent_id: string
+    parent_file_id: string
     drive_id: string
 
     path: string
@@ -171,7 +171,7 @@ export interface IStateUploadFile {
     name: string
     
     size: number
-    sizestr: string
+    sizeStr: string
     icon: string
     isDir: boolean
     isMiaoChuan: boolean
@@ -193,8 +193,8 @@ export interface IStateUploadFile {
     IsDowning: boolean
     IsCompleted: boolean
     IsFailed: boolean
-    FailedCode: number
-    FailedMessage: string
+    failedCode: number
+    failedMessage: string
     
     AutoTry: number
     

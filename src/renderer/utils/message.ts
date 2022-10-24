@@ -10,7 +10,7 @@ function getCount(msg: string) {
 }
 export default class message {
   static info(msg: string, duration: number = 3, key: string = '') {
-    let count = getCount(key || msg)
+    const count = getCount(key || msg)
     return Message.info({
       id: key || msg,
       content: count > 1 ? () => h('div', { innerHTML: msg + '<span class="messagebadge"><span>' + count + '</span></span>' }) : msg,
@@ -19,8 +19,9 @@ export default class message {
       onClose: (id) => MessageMap.delete(key || msg)
     })
   }
+
   static error(msg: string, duration: number = 3, key: string = '') {
-    let count = getCount(key || msg)
+    const count = getCount(key || msg)
     return Message.error({
       id: key || msg,
       content: count > 1 ? () => h('div', { innerHTML: msg + '<span class="messagebadge"><span>' + count + '</span></span>' }) : msg,
@@ -31,7 +32,7 @@ export default class message {
   }
 
   static success(msg: string, duration: number = 3, key: string = '') {
-    let count = getCount(key || msg)
+    const count = getCount(key || msg)
     return Message.success({
       id: key || msg,
       content: count > 1 ? () => h('div', { innerHTML: msg + '<span class="messagebadge"><span>' + count + '</span></span>' }) : msg,
@@ -42,7 +43,7 @@ export default class message {
   }
 
   static warning(msg: string, duration: number = 3, key: string = '') {
-    let count = getCount(key || msg)
+    const count = getCount(key || msg)
     return Message.warning({
       id: key || msg,
       content: count > 1 ? () => h('div', { innerHTML: msg + '<span class="messagebadge"><span>' + count + '</span></span>' }) : msg,
@@ -53,7 +54,7 @@ export default class message {
   }
 
   static loading(msg: string, duration: number = 3, key: string = '') {
-    let count = 0 
+    const count = 0 
     return Message.loading({
       id: key || msg,
       content: count > 1 ? () => h('div', { innerHTML: msg + '<span class="messagebadge"><span>' + count + '</span></span>' }) : msg,

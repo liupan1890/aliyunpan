@@ -21,6 +21,8 @@ import CopyFileTreeModal from '../pan/topbtns/CopyFileTreeModal.vue'
 import ArchiveModal from '../pan/topbtns/ArchiveModal.vue'
 import ArchivePasswordModal from '../pan/topbtns/ArchivePasswordModal.vue'
 import AlphaModal from '../pan/topbtns/AlphaModal.vue'
+import UploadModal from '../pan/topbtns/UploadModal.vue'
+import DownloadModal from '../pan/topbtns/DownloadModal.vue'
 
 export default defineComponent({
   components: {
@@ -43,7 +45,9 @@ export default defineComponent({
     AlphaModal,
     CopyFileTreeModal,
     ArchiveModal,
-    ArchivePasswordModal
+    ArchivePasswordModal,
+    UploadModal,
+    DownloadModal
   },
   setup() {
     const modalStore = useModalStore()
@@ -55,54 +59,55 @@ export default defineComponent({
 <template>
   <AlphaModal />
 
-  <UserSpaceModal :visible="modalStore.modalname == 'userspace'" />
-  <CreatNewFileModal :visible="modalStore.modalname == 'creatfile'" />
-  <CreatNewDirModal :visible="modalStore.modalname == 'creatdir'" :dirtype="modalStore.modaldata.dirtype || ''" :parentdirid="modalStore.modaldata.parentdirid || ''" :callback="modalStore.modaldata.callback" />
-  <CreatNewShareLinkModal :visible="modalStore.modalname == 'creatshare'" :sharetype="modalStore.modaldata.sharetype || ''" :filelist="modalStore.modaldata.filelist || []" />
+  <UserSpaceModal :visible="modalStore.modalName == 'userspace'" />
+  <CreatNewFileModal :visible="modalStore.modalName == 'creatfile'" />
+  <CreatNewDirModal :visible="modalStore.modalName == 'creatdir'" :dirtype="modalStore.modalData.dirtype || ''" :parentdirid="modalStore.modalData.parentdirid || ''" :callback="modalStore.modalData.callback" />
+  <CreatNewShareLinkModal :visible="modalStore.modalName == 'creatshare'" :sharetype="modalStore.modalData.sharetype || ''" :filelist="modalStore.modalData.filelist || []" />
 
-  <DaoRuShareLinkModal :visible="modalStore.modalname == 'daorushare'" />
-  <DaoRuShareLinkMultiModal :visible="modalStore.modalname == 'daorusharemulti'" />
+  <DaoRuShareLinkModal :visible="modalStore.modalName == 'daorushare'" />
+  <DaoRuShareLinkMultiModal :visible="modalStore.modalName == 'daorusharemulti'" />
 
-  <RenameModal :visible="modalStore.modalname == 'rename'" :istree="modalStore.modaldata.istree || false" />
-  <RenameMultiModal :visible="modalStore.modalname == 'renamemulti'" :istree="modalStore.modaldata.istree || false" />
-  <ShuXingModal :visible="modalStore.modalname == 'shuxing'" :istree="modalStore.modaldata.istree || false" />
-  <ShuXingMultiModal :visible="modalStore.modalname == 'shuxingmulti'" :istree="modalStore.modaldata.istree || false" />
-  <SearchPanModal :visible="modalStore.modalname == 'searchpan'" />
+  <RenameModal :visible="modalStore.modalName == 'rename'" :istree="modalStore.modalData.istree || false" />
+  <RenameMultiModal :visible="modalStore.modalName == 'renamemulti'" :istree="modalStore.modalData.istree || false" />
+  <ShuXingModal :visible="modalStore.modalName == 'shuxing'" :istree="modalStore.modalData.istree || false" />
+  <ShuXingMultiModal :visible="modalStore.modalName == 'shuxingmulti'" :istree="modalStore.modalData.istree || false" />
+  <SearchPanModal :visible="modalStore.modalName == 'searchpan'" />
 
-  <DLNAPlayerModal :visible="modalStore.modalname == 'dlna'" />
-  <M3U8DownloadModal :visible="modalStore.modalname == 'm3u8download'" />
-  <CopyFileTreeModal :visible="modalStore.modalname == 'copyfiletree'" :filelist="modalStore.modaldata.filelist || []" />
+  <DLNAPlayerModal :visible="modalStore.modalName == 'dlna'" />
+  <M3U8DownloadModal :visible="modalStore.modalName == 'm3u8download'" />
+  <CopyFileTreeModal :visible="modalStore.modalName == 'copyfiletree'" :filelist="modalStore.modalData.filelist || []" />
   <ArchiveModal
-    :visible="modalStore.modalname == 'archive'"
-    :user_id="modalStore.modaldata.user_id || ''"
-    :drive_id="modalStore.modaldata.drive_id || ''"
-    :file_id="modalStore.modaldata.file_id || ''"
-    :file_name="modalStore.modaldata.file_name || ''"
-    :parent_file_id="modalStore.modaldata.parent_file_id || ''"
-    :password="modalStore.modaldata.password || ''"
-  />
+    :visible="modalStore.modalName == 'archive'"
+    :user_id="modalStore.modalData.user_id || ''"
+    :drive_id="modalStore.modalData.drive_id || ''"
+    :file_id="modalStore.modalData.file_id || ''"
+    :file_name="modalStore.modalData.file_name || ''"
+    :parent_file_id="modalStore.modalData.parent_file_id || ''"
+    :password="modalStore.modalData.password || ''" />
   <ArchivePasswordModal
-    :visible="modalStore.modalname == 'archivepassword'"
-    :user_id="modalStore.modaldata.user_id || ''"
-    :drive_id="modalStore.modaldata.drive_id || ''"
-    :file_id="modalStore.modaldata.file_id || ''"
-    :file_name="modalStore.modaldata.file_name || ''"
-    :parent_file_id="modalStore.modaldata.parent_file_id || ''"
-    :password="modalStore.modaldata.password || ''"
-    :domain_id="modalStore.modaldata.domain_id || ''"
-    :ext="modalStore.modaldata.ext || ''"
-  />
+    :visible="modalStore.modalName == 'archivepassword'"
+    :user_id="modalStore.modalData.user_id || ''"
+    :drive_id="modalStore.modalData.drive_id || ''"
+    :file_id="modalStore.modalData.file_id || ''"
+    :file_name="modalStore.modalData.file_name || ''"
+    :parent_file_id="modalStore.modalData.parent_file_id || ''"
+    :password="modalStore.modalData.password || ''"
+    :domain_id="modalStore.modalData.domain_id || ''"
+    :ext="modalStore.modalData.ext || ''" />
 
-  <EditShareLinkModal :visible="modalStore.modalname == 'editshare'" :sharelist="modalStore.modaldata.sharelist || []" />
+  <EditShareLinkModal :visible="modalStore.modalName == 'editshare'" :sharelist="modalStore.modalData.sharelist || []" />
   <ShowShareLinkModal
-    :visible="modalStore.modalname == 'showshare'"
-    :share_id="modalStore.modaldata.share_id || ''"
-    :share_pwd="modalStore.modaldata.share_pwd || ''"
-    :share_token="modalStore.modaldata.share_token || ''"
-    :withsave="modalStore.modaldata.withsave || false"
-    :file_id_list="modalStore.modaldata.file_id_list || []"
-  />
-  <SelectPanDirModal :visible="modalStore.modalname == 'selectpandir'" :selecttype="modalStore.modaldata.selecttype || ''" :selectid="modalStore.modaldata.selectid || ''" :callback="modalStore.modaldata.callback" />
+    :visible="modalStore.modalName == 'showshare'"
+    :share_id="modalStore.modalData.share_id || ''"
+    :share_pwd="modalStore.modalData.share_pwd || ''"
+    :share_token="modalStore.modalData.share_token || ''"
+    :withsave="modalStore.modalData.withsave || false"
+    :file_id_list="modalStore.modalData.file_id_list || []" />
+
+  <UploadModal :visible="modalStore.modalName == 'upload'" :file_id="modalStore.modalData.file_id || ''" :filelist="modalStore.modalData.filelist || []" />
+  <DownloadModal :visible="modalStore.modalName == 'download'" :istree="modalStore.modalData.istree || false" />
+
+  <SelectPanDirModal :visible="modalStore.modalName == 'selectpandir'" :selecttype="modalStore.modalData.selecttype || ''" :selectid="modalStore.modalData.selectid || ''" :callback="modalStore.modalData.callback" />
 </template>
 <style>
 .modalclass .arco-modal-body {

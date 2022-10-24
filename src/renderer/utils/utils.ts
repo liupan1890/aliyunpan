@@ -1,30 +1,30 @@
-export function ArrayCopyReverse(arr: any[]) {
-  let copy: any[] = []
+export function ArrayCopyReverse(arr: any[]): any[] {
+  const copy: any[] = []
   for (let i = arr.length - 1; i >= 0; i--) {
     copy.push(arr[i])
   }
   return copy
 }
-export function ArrayCopy(arr: any[]) {
-  let copy: any[] = []
+export function ArrayCopy(arr: any[]): any[] {
+  const copy: any[] = []
   for (let i = 0, maxi = arr.length; i < maxi; i++) {
     copy.push(arr[i])
   }
   return copy
 }
 
-export function MapKeyToArray<T>(map: Map<T, any>) {
-  let arr: T[] = []
-  let keys = map.keys()
+export function MapKeyToArray<T>(map: Map<T, any>): T[] {
+  const arr: T[] = []
+  const keys = map.keys()
   for (let i = 0, maxi = map.size; i < maxi; i++) {
     arr.push(keys.next().value)
   }
   return arr
 }
 
-export function MapValueToArray<T>(map: Map<any, T>) {
-  let arr: T[] = []
-  let keys = map.values()
+export function MapValueToArray<T>(map: Map<any, T>): T[] {
+  const arr: T[] = []
+  const keys = map.values()
   for (let i = 0, maxi = map.size; i < maxi; i++) {
     arr.push(keys.next().value)
   }
@@ -32,7 +32,7 @@ export function MapValueToArray<T>(map: Map<any, T>) {
 }
 
 export function ArrayToMap<T>(keyname: string, arr: T[]) {
-  let map = new Map<any, T>()
+  const map = new Map<any, T>()
   let item: any
   for (let i = 0, maxi = arr.length; i < maxi; i++) {
     item = arr[i]
@@ -41,8 +41,8 @@ export function ArrayToMap<T>(keyname: string, arr: T[]) {
   return map
 }
 
-export function ArrayKeyList(keyname: string, arr: any[]) {
-  const selectkeys: string[] = []
+export function ArrayKeyList<T>(keyname: string, arr: any[]): T[] {
+  const selectkeys: T[] = []
   for (let i = 0, maxi = arr.length; i < maxi; i++) {
     selectkeys.push(arr[i][keyname])
   }
@@ -81,8 +81,9 @@ export function UnGzipObject(input: Buffer): object {
 
 export function HanToPin(input: string): string {
   if (!input) return ''
-  let arr = pinyinlite(input, { keepUnrecognized: true })
-  let strarr = new Array<string>(arr.length * 2 + 1)
+  // eslint-disable-next-line no-undef
+  const arr = pinyinlite(input, { keepUnrecognized: true })
+  const strarr = new Array<string>(arr.length * 2 + 1)
   let l = false
   for (let p = 1, i = 0, maxi = arr.length; i < maxi; p += 2, i++) {
     strarr[p] = arr[i].join(' ')
@@ -99,14 +100,14 @@ export function HanToPin(input: string): string {
 }
 
 
-export function GetOssExpires(downurl: string) {
-  if (!downurl || downurl.includes('x-oss-expires=') == false) return 0
+export function GetOssExpires(downUrl: string) {
+  if (!downUrl || downUrl.includes('x-oss-expires=') == false) return 0
   try {
     
-    let expires = downurl.substring(downurl.indexOf('x-oss-expires=') + 'x-oss-expires='.length)
+    let expires = downUrl.substring(downUrl.indexOf('x-oss-expires=') + 'x-oss-expires='.length)
     expires = expires.substring(0, expires.indexOf('&'))
-    const lasttime = parseInt(expires) - Math.floor(Date.now() / 1000) 
-    return lasttime
+    const lastTime = parseInt(expires) - Math.floor(Date.now() / 1000) 
+    return lastTime
   } catch {
     return 0
   }

@@ -12,12 +12,12 @@ import DirLeftMenu from './menus/DirLeftMenu.vue'
 import { TreeNodeData } from '../store/treestore'
 import { dropMoveSelectedFile } from './topbtns/topbtn'
 import message from '../utils/message'
-import UploadDAL from '../down/uploaddal'
+import { modalUpload } from '../utils/modal'
 
 const treeref = ref()
 const winStore = useWinStore()
-const TreeHeight = computed(() => winStore.height - 42 - 56 - 24 - 4)
-const QuickHeight = computed(() => winStore.height - 42 - 56 - 24 - 4 - 280 - 28)
+const treeHeight = computed(() => winStore.height - 42 - 56 - 24 - 4)
+const quickHeight = computed(() => winStore.height - 42 - 56 - 24 - 4 - 280 - 28)
 const appStore = useAppStore()
 const pantreeStore = usePanTreeStore()
 const settingStore = useSettingStore()
@@ -36,7 +36,7 @@ keyboardStore.$subscribe((_m: any, state: KeyboardState) => {
   if (TestCtrl('9', state.KeyDownEvent, () => handleQuickSelect(9))) return
 })
 
-const switchvalues = [
+const switchValues = [
   { key: 'wangpan', title: '网盘文件', alt: '' },
   { key: 'kuaijie', title: '快捷方式', alt: '' }
 ]
@@ -44,9 +44,9 @@ const switchvalues = [
 const colorTreeData = ref<TreeNodeData[]>([])
 
 watchEffect(() => {
-  let list = settingStore.uiFileColorArray
-  let nodelist: TreeNodeData[] = []
-  nodelist.push({
+  const list = settingStore.uiFileColorArray
+  const nodeList: TreeNodeData[] = []
+  nodeList.push({
     __v_skip: true,
     key: 'video',
     title: '放映室',
@@ -54,36 +54,36 @@ watchEffect(() => {
     icon: fileiconfn('iconrss_video'),
     children: [],
     isLeaf: true
-  })
+  } as TreeNodeData)
   for (let i = 0; i < list.length; i++) {
-    nodelist.push({
+    nodeList.push({
       __v_skip: true,
       key: 'color' + list[i].key.replace('#', 'c') + ' ' + (list[i].title || list[i].key),
       title: list[i].title || list[i].key,
       namesearch: list[i].key.replace('#', 'c'),
       children: [],
       isLeaf: true
-    })
+    } as TreeNodeData)
   }
-  nodelist.push({
+  nodeList.push({
     __v_skip: true,
     key: 'colorc5b89b8 已看视频',
     title: '已看视频',
     namesearch: 'c5b89b8',
     children: [],
     isLeaf: true
-  })
-  Object.freeze(nodelist)
-  colorTreeData.value = nodelist
+  } as TreeNodeData)
+  Object.freeze(nodeList)
+  colorTreeData.value = nodeList
 })
 watchEffect(() => {
-  let scrollToDir = pantreeStore.scrollToDir
+  const scrollToDir = pantreeStore.scrollToDir
   if (scrollToDir) treeref.value.scrollTo({ key: scrollToDir, align: 'top', offset: 220 })
   pantreeStore.mSaveTreeScrollTo('')
 })
 
 const handleTreeRightClick = (e: { event: MouseEvent; node: any }) => {
-  let key = e.node.key as string
+  const key = e.node.key as string
   if (key.length < 40 || key.startsWith('search')) return
   PanDAL.aReLoadOneDirToShow('', key, true)
   onShowRightMenu('leftpanmenu', e.event.clientX, e.event.clientY)
@@ -114,17 +114,15 @@ const onRowItemDrop = (ev: any, movetodirid: string) => {
   ev.target.style.background = ''
 
   
-  const fileslist = ev.dataTransfer.files
-  if (fileslist && fileslist.length > 0) {
+  const filesList = ev.dataTransfer.files
+  if (filesList && filesList.length > 0) {
     const files: string[] = []
     
-    for (let i = 0, maxi = fileslist.length; i < maxi; i++) {
-      const path = fileslist[i].path
+    for (let i = 0, maxi = filesList.length; i < maxi; i++) {
+      const path = filesList[i].path
       files.push(path)
     }
-    message.warning('上传' + files[0])
-    const pantreeStore = usePanTreeStore()
-    UploadDAL.UploadLocalFiles(pantreeStore.user_id, pantreeStore.drive_id, pantreeStore.selectDir.file_id, files, true) 
+    modalUpload(movetodirid, files)
   } else {
     
     dropMoveSelectedFile(movetodirid)
@@ -132,17 +130,20 @@ const onRowItemDrop = (ev: any, movetodirid: string) => {
 }
 
 const onQuickDrop = (ev: any) => {
-  console.log('onQuickDrop', ev)
   ev.preventDefault() 
   ev.target.style.outline = 'none'
   ev.target.style.background = ''
 
-  let list: { key: string; title: string }[] = []
+  const list: { key: string; title: string }[] = []
   const selectedFile = usePanFileStore().GetSelected()
   for (let i = 0, maxi = selectedFile.length; i < maxi; i++) {
-    if (selectedFile[i].isdir) {
+    if (selectedFile[i].isDir) {
       list.push({ key: selectedFile[i].file_id, title: selectedFile[i].name })
     }
+  }
+  if (list.length == 0) {
+    message.error('没有选择任何文件夹！')
+    return
   }
   PanDAL.updateQuickFile(list)
 }
@@ -150,9 +151,9 @@ const handleQuickDelete = (key: string) => {
   PanDAL.deleteQuickFile(key)
 }
 const handleQuickSelect = (index: number) => {
-  let array = PanDAL.getQuickFileList()
+  const array = PanDAL.getQuickFileList()
   if (array.length >= index) {
-    let key = array[index - 1].key 
+    const key = array[index - 1].key 
     PanDAL.aReLoadOneDirToShow('', key, true)
   }
 }
@@ -163,34 +164,33 @@ const handleQuickSelect = (index: number) => {
     <div class="headswitch">
       <div class="bghr"></div>
       <div class="sw">
-        <MySwitchTab :name="'panleft'" :tabs="switchvalues" :value="appStore.GetAppTabMenu" @update:value="(val:string)=>appStore.toggleTabMenu('pan', val)" />
+        <MySwitchTab :name="'panleft'" :tabs="switchValues" :value="appStore.GetAppTabMenu" @update:value="(val:string)=>appStore.toggleTabMenu('pan', val)" />
       </div>
     </div>
     <div class="treeleft">
       <a-tabs type="text" :direction="'horizontal'" class="hidetabs" :justify="true" :active-key="appStore.GetAppTabMenu">
         <a-tab-pane key="wangpan" title="1">
           <AntdTree
+            ref="treeref"
             :tabindex="-1"
             :focusable="false"
-            ref="treeref"
             class="dirtree"
-            blockNode
+            block-node
             selectable
-            :autoExpandParent="false"
-            showIcon
-            :height="TreeHeight"
-            :style="{ height: TreeHeight + 'px' }"
-            :itemHeight="30"
-            :showLine="{ showLeafIcon: false }"
-            :openAnimation="{}"
+            :auto-expand-parent="false"
+            show-icon
+            :height="treeHeight"
+            :style="{ height: treeHeight + 'px' }"
+            :item-height="30"
+            :show-line="{ showLeafIcon: false }"
+            :open-animation="{}"
+            :expanded-keys="pantreeStore.treeExpandedKeys"
+            :selected-keys="pantreeStore.treeSelectedKeys"
+            :tree-data="pantreeStore.treeData"
             @select="(_:any[],e:any)=>pantreeStore.mTreeSelected(e.node.key)"
             @expand="(_:any[],e:any)=>pantreeStore.mTreeExpand(e.node.key)"
-            @rightClick="handleTreeRightClick"
-            @scroll="onHideRightMenuScroll"
-            :expandedKeys="pantreeStore.treeExpandedKeys"
-            :selectedKeys="pantreeStore.treeSelectedKeys"
-            :treeData="pantreeStore.treeData"
-          >
+            @right-click="handleTreeRightClick"
+            @scroll="onHideRightMenuScroll">
             <template #switcherIcon>
               <i class="ant-tree-switcher-icon iconfont Arrow" />
             </template>
@@ -208,17 +208,16 @@ const handleQuickSelect = (index: number) => {
             :tabindex="-1"
             :focusable="false"
             class="colortree"
-            blockNode
+            block-node
             selectable
-            :autoExpandParent="false"
-            showIcon
-            :itemHeight="30"
-            :showLine="{ showLeafIcon: false }"
-            :openAnimation="{}"
-            @select="(_:any[],e:any)=>pantreeStore.mTreeSelected(e.node.key)"
-            :selectedKeys="pantreeStore.treeSelectedKeys"
-            :treeData="colorTreeData"
-          >
+            :auto-expand-parent="false"
+            show-icon
+            :item-height="30"
+            :show-line="{ showLeafIcon: false }"
+            :open-animation="{}"
+            :selected-keys="pantreeStore.treeSelectedKeys"
+            :tree-data="colorTreeData"
+            @select="(_:any[],e:any)=>pantreeStore.mTreeSelected(e.node.key)">
             <template #icon="{ dataRef }">
               <i class="iconfont iconwbiaoqian" :class="dataRef.namesearch" />
             </template>
@@ -231,19 +230,18 @@ const handleQuickSelect = (index: number) => {
             :tabindex="-1"
             :focusable="false"
             class="quicktree"
-            blockNode
+            block-node
             selectable
-            :autoExpandParent="false"
-            showIcon
-            :height="QuickHeight"
-            :style="{ height: QuickHeight + 'px' }"
-            :itemHeight="30"
-            :showLine="{ showLeafIcon: false }"
-            :openAnimation="{}"
-            @select="(_:any[],e:any)=>pantreeStore.mTreeSelected(e.node.key)"
-            :selectedKeys="pantreeStore.treeSelectedKeys"
-            :treeData="pantreeStore.quickData"
-          >
+            :auto-expand-parent="false"
+            show-icon
+            :height="quickHeight"
+            :style="{ height: quickHeight + 'px' }"
+            :item-height="30"
+            :show-line="{ showLeafIcon: false }"
+            :open-animation="{}"
+            :selected-keys="pantreeStore.treeSelectedKeys"
+            :tree-data="pantreeStore.quickData"
+            @select="(_:any[],e:any)=>pantreeStore.mTreeSelected(e.node.key)">
             <template #icon>
               <i class="iconfont iconfile-folder" />
             </template>

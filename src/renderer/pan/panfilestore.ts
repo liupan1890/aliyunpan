@@ -9,8 +9,6 @@ import TreeStore from '../store/treestore'
 import { useFootStore } from '../store'
 
 type Item = IAliGetFileModel
-type State = PanFileState
-const KEY = 'file_id'
 
 export interface GridItem {
   file_id: string
@@ -43,7 +41,13 @@ export interface PanFileState {
   
   ListShowMode: string
   ListShowColumn: number
+
+  
+  scrollToFile: string
 }
+
+type State = PanFileState
+const KEY = 'file_id'
 
 const usePanFileStore = defineStore('panfile', {
   state: (): State => ({
@@ -62,7 +66,8 @@ const usePanFileStore = defineStore('panfile', {
     ListSelectKey: '',
     ListSearchKey: '',
     ListShowMode: 'list',
-    ListShowColumn: 1
+    ListShowColumn: 1,
+    scrollToFile: ''
   }),
 
   getters: {
@@ -89,8 +94,8 @@ const usePanFileStore = defineStore('panfile', {
     },
     
     IsListSelectedFavAll(state: State): boolean {
-      let list = state.ListDataShow
-      let len = list.length
+      const list = state.ListDataShow
+      const len = list.length
       let isAllFav = true
 
       for (let i = 0, maxi = len; i < maxi; i++) {
@@ -105,7 +110,7 @@ const usePanFileStore = defineStore('panfile', {
       return isAllFav
     },
     SelectDirType(state: State): string {
-      let file_id = state.DirID
+      const file_id = state.DirID
       if (file_id == 'recover') return 'recover'
       if (file_id == 'trash') return 'trash'
       if (file_id == 'favorite') return 'favorite'
@@ -135,13 +140,13 @@ const usePanFileStore = defineStore('panfile', {
 
   actions: {
     
-    mSaveDirFileLoading(drive_id: string, dir_id: string, dir_name: string) {
-      let order = TreeStore.GetDirOrder(drive_id, dir_id)
-      if (this.DirID != dir_id || this.DriveID != drive_id) {
+    mSaveDirFileLoading(drive_id: string, dirID: string, dirName: string) {
+      const order = TreeStore.GetDirOrder(drive_id, dirID)
+      if (this.DirID != dirID || this.DriveID != drive_id) {
         this.$patch({
           DriveID: drive_id,
-          DirID: dir_id,
-          DirName: dir_name,
+          DirID: dirID,
+          DirName: dirName,
           ListOrderKey: order,
           ListLoading: true,
           ListLoadingIndex: 0,
@@ -155,26 +160,26 @@ const usePanFileStore = defineStore('panfile', {
         })
       } else {
         
-        this.$patch({ DriveID: drive_id, DirID: dir_id, DirName: dir_name, ListOrderKey: order, ListLoading: true, ListLoadingIndex: 0, ListSearchKey: '', ListDataRaw: [], ListDataShow: [], ListDataGrid: [] })
+        this.$patch({ DriveID: drive_id, DirID: dirID, DirName: dirName, ListOrderKey: order, ListLoading: true, ListLoadingIndex: 0, ListSearchKey: '', ListDataRaw: [], ListDataShow: [], ListDataGrid: [] })
       }
       useFootStore().mSaveDirInfo('pan', '文件列表加载中...')
     },
     
-    mSaveDirFileLoadingPart(pageindex: number, partdir: IAliFileResp, itemsTotal: number = 0) {
-      if (pageindex != this.ListLoadingIndex || partdir.m_drive_id != this.DriveID || partdir.m_dir_id != this.DirID) {
+    mSaveDirFileLoadingPart(pageIndex: number, partDir: IAliFileResp, itemsTotal: number = 0) {
+      if (pageIndex != this.ListLoadingIndex || partDir.m_drive_id != this.DriveID || partDir.dirID != this.DirID) {
         
-        partdir.next_marker = 'cancel'
+        partDir.next_marker = 'cancel'
       } else {
         this.ListLoadingIndex++
-        this.ListDataRaw = this.ListDataRaw.concat(partdir.items)
+        this.ListDataRaw = this.ListDataRaw.concat(partDir.items)
         this.mRefreshListDataShow(true) 
 
-        if (itemsTotal > 0) useFootStore().mSaveDirInfo('pan', '文件列表加载中...　总共:' + itemsTotal)
+        if (itemsTotal > 0) useFootStore().mSaveDirInfo('pan', '文件列表加载中...　总:' + itemsTotal)
       }
     },
     
-    mSaveDirFileLoadingFinish(drive_id: string, dir_id: string, list: Item[], itemsTotal: number = 0) {
-      if (this.DirID && (drive_id != this.DriveID || dir_id != this.DirID)) return 
+    mSaveDirFileLoadingFinish(drive_id: string, dirID: string, list: Item[], itemsTotal: number = 0) {
+      if (this.DirID && (drive_id != this.DriveID || dirID != this.DirID)) return 
 
       if (list.length == 0) {
         
@@ -186,19 +191,20 @@ const usePanFileStore = defineStore('panfile', {
       this.mRefreshListDataShow(true) 
 
       
-      let paninfo = ''
-      if (itemsTotal == -1) paninfo = ''
-      else if (list.length == 0 && itemsTotal == 0) paninfo = '空文件夹'
+      let panInfo = ''
+      if (itemsTotal == -1) panInfo = ''
+      else if (list.length == 0 && itemsTotal == 0) panInfo = '空文件夹'
       else {
-        let dircount = 0
-        let filecount = 0
+        let dirCount = 0
+        let fileCount = 0
         list.map((t) => {
-          if (t.isdir) dircount++
-          else filecount++
+          if (t.isDir) dirCount++
+          else fileCount++
+          return true
         })
-        paninfo = '文件夹:' + dircount + '　文件:' + filecount + '　总共:' + itemsTotal
+        panInfo = '文件夹:' + dirCount + '　文件:' + fileCount + '　总:' + itemsTotal
       }
-      useFootStore().mSaveDirInfo('pan', paninfo)
+      useFootStore().mSaveDirInfo('pan', panInfo)
     },
     
     mSearchListData(value: string) {
@@ -224,54 +230,54 @@ const usePanFileStore = defineStore('panfile', {
     
     mRefreshListDataShow(refreshRaw: boolean) {
       if (!refreshRaw) {
-        let ListDataShow = this.ListDataShow.concat()
-        Object.freeze(ListDataShow)
-        let ListDataGrid = this.ListDataGrid.concat()
-        Object.freeze(ListDataGrid)
-        this.$patch({ ListDataShow: ListDataShow, ListDataGrid: ListDataGrid })
+        const listDataShow = this.ListDataShow.concat()
+        Object.freeze(listDataShow)
+        const listDataGrid = this.ListDataGrid.concat()
+        Object.freeze(listDataGrid)
+        this.$patch({ ListDataShow: listDataShow, ListDataGrid: listDataGrid })
         return
       }
-      let showlist: Item[] = []
+      let showList: Item[] = []
 
       if (this.ListSearchKey) {
         
-        let results = fuzzysort.go(this.ListSearchKey, this.ListDataRaw, {
+        const results = fuzzysort.go(this.ListSearchKey, this.ListDataRaw, {
           threshold: -200000,
           keys: ['name', 'namesearch'],
           scoreFn: (a) => Math.max(a[0] ? a[0].score : -200000, a[1] ? a[1].score : -200000)
         })
         for (let i = 0, maxi = results.length; i < maxi; i++) {
-          if (results[i].score > -200000) showlist.push(results[i].obj)
+          if (results[i].score > -200000) showList.push(results[i].obj)
         }
       } else {
         
-        showlist = this.ListDataRaw.concat() 
+        showList = this.ListDataRaw.concat() 
       }
 
-      Object.freeze(showlist)
+      Object.freeze(showList)
       
-      let gridlist: GridItem[] = []
-      let column = this.ListShowColumn
-      for (let i = 0, maxi = showlist.length; i < maxi; i += column) {
-        let grid: GridItem = {
-          file_id: showlist[i].file_id,
-          files: [showlist[i]]
+      const gridList: GridItem[] = []
+      const column = this.ListShowColumn
+      for (let i = 0, maxi = showList.length; i < maxi; i += column) {
+        const grid: GridItem = {
+          file_id: showList[i].file_id,
+          files: [showList[i]]
         }
         for (let j = 1; j < column && i + j < maxi; j++) {
-          grid.files.push(showlist[i + j])
+          grid.files.push(showList[i + j])
         }
-        gridlist.push(grid)
+        gridList.push(grid)
       }
-      Object.freeze(gridlist)
+      Object.freeze(gridList)
       
-      let oldSelected = this.ListSelected
-      let newSelected = new Set<string>()
+      const oldSelected = this.ListSelected
+      const newSelected = new Set<string>()
       let key = ''
-      for (let i = 0, maxi = showlist.length; i < maxi; i++) {
-        key = showlist[i][KEY]
+      for (let i = 0, maxi = showList.length; i < maxi; i++) {
+        key = showList[i][KEY]
         if (oldSelected.has(key)) newSelected.add(key) 
       }
-      this.$patch({ ListDataShow: showlist, ListDataGrid: gridlist, ListSelected: newSelected })
+      this.$patch({ ListDataShow: showList, ListDataGrid: gridList, ListSelected: newSelected })
     },
 
     
@@ -282,22 +288,22 @@ const usePanFileStore = defineStore('panfile', {
     
     mMouseSelect(key: string, Ctrl: boolean, Shift: boolean) {
       if (this.ListDataShow.length == 0) return
-      const data = MouseSelectOne(this.ListDataShow, KEY, this.ListSelected, this.ListFocusKey, this.ListSelectKey, key, Ctrl, Shift)
+      const data = MouseSelectOne(this.ListDataShow, KEY, this.ListSelected, this.ListFocusKey, this.ListSelectKey, key, Ctrl, Shift, '')
       this.$patch({ ListSelected: data.selectedNew, ListFocusKey: data.focusLast, ListSelectKey: data.selectedLast })
       this.mRefreshListDataShow(false) 
     },
     
     mKeyboardSelect(key: string, Ctrl: boolean, Shift: boolean) {
       if (this.ListDataShow.length == 0) return
-      const data = KeyboardSelectOne(this.ListDataShow, KEY, this.ListSelected, this.ListFocusKey, this.ListSelectKey, key, Ctrl, Shift)
+      const data = KeyboardSelectOne(this.ListDataShow, KEY, this.ListSelected, this.ListFocusKey, this.ListSelectKey, key, Ctrl, Shift, '')
       this.$patch({ ListSelected: data.selectedNew, ListFocusKey: data.focusLast, ListSelectKey: data.selectedLast })
       this.mRefreshListDataShow(false) 
     },
-    mRangSelect(lastkey: string, fileidlist: string[]) {
+    mRangSelect(lastkey: string, file_idList: string[]) {
       if (this.ListDataShow.length == 0) return
-      let selectedNew = new Set<string>(this.ListSelected)
-      for (let i = 0, maxi = fileidlist.length; i < maxi; i++) {
-        selectedNew.add(fileidlist[i])
+      const selectedNew = new Set<string>(this.ListSelected)
+      for (let i = 0, maxi = file_idList.length; i < maxi; i++) {
+        selectedNew.add(file_idList[i])
       }
       this.$patch({ ListSelected: selectedNew, ListFocusKey: lastkey, ListSelectKey: lastkey })
       this.mRefreshListDataShow(false) 
@@ -316,7 +322,7 @@ const usePanFileStore = defineStore('panfile', {
     },
     
     GetSelectedFirst(): Item | undefined {
-      let list = GetSelectedList(this.ListDataShow, KEY, this.ListSelected)
+      const list = GetSelectedList(this.ListDataShow, KEY, this.ListSelected)
       if (list.length > 0) return list[0]
       return undefined
     },
@@ -325,83 +331,86 @@ const usePanFileStore = defineStore('panfile', {
       this.mRefreshListDataShow(false) 
     },
     
-    mGetFocus() {
-      if (this.ListFocusKey == '' && this.ListDataShow.length > 0) return this.ListDataShow[0][KEY]
+    mGetFocus(): string {
+      if (!this.ListFocusKey && this.ListDataShow.length > 0) return this.ListDataShow[0][KEY]
       return this.ListFocusKey
     },
     
-    mGetFocusNext(position: string) {
-      return GetFocusNext(this.ListDataShow, KEY, this.ListFocusKey, position)
+    mGetFocusNext(position: string): string {
+      return GetFocusNext(this.ListDataShow, KEY, this.ListFocusKey, position, '')
     },
     
-    mDeleteFiles(dir_id: string, fileidlist: string[], needDelDir: boolean) {
-      if (this.DirID == dir_id || dir_id == 'any') {
-        let filemap = new Set(fileidlist)
-        let ListDataRaw = this.ListDataRaw
-        let NewDataList: Item[] = []
-        let diridlist: string[] = [] 
+    mDeleteFiles(dirID: string, file_idList: string[], needDelDir: boolean) {
+      if (this.DirID == dirID || dirID == 'any') {
+        const fileMap = new Set(file_idList)
+        const listDataRaw = this.ListDataRaw
+        const newDataList: Item[] = []
+        const diridList: string[] = [] 
         let deleteCount = 0
-        for (let i = 0, maxi = ListDataRaw.length; i < maxi; i++) {
-          let item = ListDataRaw[i]
-          if (filemap.has(item.file_id)) {
+        for (let i = 0, maxi = listDataRaw.length; i < maxi; i++) {
+          const item = listDataRaw[i]
+          if (fileMap.has(item.file_id)) {
             
             deleteCount++
-            if (item.isdir) diridlist.push(item.file_id)
+            if (item.isDir) diridList.push(item.file_id)
           } else {
-            NewDataList.push(item)
+            newDataList.push(item)
           }
         }
         if (deleteCount > 0) {
-          this.ListDataRaw = NewDataList
+          this.ListDataRaw = newDataList
           this.mRefreshListDataShow(true) 
         }
       }
       if (needDelDir) {
         
-        TreeStore.DeleteDirs(this.DriveID, fileidlist)
+        TreeStore.DeleteDirs(this.DriveID, file_idList)
         
         PanDAL.RefreshPanTreeAllNode(this.DriveID) 
       }
     },
-    mFavorFiles(isfavor: boolean, fileidlist: string[]) {
-      let ListDataRaw = this.ListDataRaw
+    mFavorFiles(isfavor: boolean, file_idList: string[]) {
+      const listDataRaw = this.ListDataRaw
       let isChange = false
-      let filemap = new Set(fileidlist)
-      for (let i = 0, maxi = ListDataRaw.length; i < maxi; i++) {
-        let item = ListDataRaw[i]
-        if (filemap.has(item.file_id)) {
+      const fileMap = new Set(file_idList)
+      for (let i = 0, maxi = listDataRaw.length; i < maxi; i++) {
+        const item = listDataRaw[i]
+        if (fileMap.has(item.file_id)) {
           item.starred = isfavor
           isChange = true
         }
       }
       if (isChange) this.mRefreshListDataShow(false) 
     },
-    mColorFiles(color: string, fileidlist: string[]) {
-      let ListDataRaw = this.ListDataRaw
+    mColorFiles(color: string, file_idList: string[]) {
+      const listDataRaw = this.ListDataRaw
       let isChange = false
-      let filemap = new Set(fileidlist)
-      for (let i = 0, maxi = ListDataRaw.length; i < maxi; i++) {
-        let item = ListDataRaw[i]
-        if (filemap.has(item.file_id)) {
+      const fileMap = new Set(file_idList)
+      for (let i = 0, maxi = listDataRaw.length; i < maxi; i++) {
+        const item = listDataRaw[i]
+        if (fileMap.has(item.file_id)) {
           item.description = color
           isChange = true
         }
       }
       if (isChange) this.mRefreshListDataShow(false) 
     },
-    mRenameFiles(filelist: { file_id: string; parent_file_id: string; name: string; isdir: boolean }[]) {
-      let ListDataRaw = this.ListDataRaw
+    mRenameFiles(fileList: { file_id: string; parent_file_id: string; name: string; isDir: boolean }[]) {
+      const listDataRaw = this.ListDataRaw
       let isChange = false
-      let filemap = ArrayToMap('file_id', filelist)
-      for (let i = 0, maxi = ListDataRaw.length; i < maxi; i++) {
-        let item = ListDataRaw[i]
-        let newfile = filemap.get(item.file_id)
-        if (newfile) {
-          item.name = newfile.name
+      const fileMap = ArrayToMap('file_id', fileList)
+      for (let i = 0, maxi = listDataRaw.length; i < maxi; i++) {
+        const item = listDataRaw[i]
+        const newFile = fileMap.get(item.file_id)
+        if (newFile) {
+          item.name = newFile.name
           isChange = true
         }
       }
       if (isChange) this.mRefreshListDataShow(false) 
+    },
+    mSaveFileScrollTo(file_id: string) {
+      this.scrollToFile = file_id
     }
   }
 })

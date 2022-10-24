@@ -7,7 +7,7 @@ import { throttle } from '../../utils/debounce'
 
 export default class FollowingDAL {
   
-  static async aReloadOtherFollowingList(user_id: string, force: boolean) {
+  static async aReloadOtherFollowingList(user_id: string, force: boolean): Promise<void> {
     if (!user_id) return
     const otherfollowingStore = useOtherFollowingStore()
     if (!force && otherfollowingStore.TuiJianLoaded) return 
@@ -20,11 +20,11 @@ export default class FollowingDAL {
 
     const map = new Map<string, IAliOtherFollowingModel[]>()
     for (let i = 0, maxi = classed.length; i < maxi; i++) {
-      let item = classed[i]
+      const item = classed[i]
       if (!item.class_name) continue
       if (map.has(item.class_name) == false) map.set(item.class_name, [])
-      let list = map.get(item.class_name)!
-      let add: IAliOtherFollowingModel = {
+      const list = map.get(item.class_name)!
+      const add: IAliOtherFollowingModel = {
         avatar: item.avatar || '',
         phone: '',
         is_following: false,
@@ -36,17 +36,18 @@ export default class FollowingDAL {
       list.push(add)
     }
 
-    let entries = map.entries()
+    const entries = map.entries()
     for (let i = 0, maxi = map.size; i < maxi; i++) {
-      let entry = entries.next().value
+      const entry = entries.next().value
       if (entry[1].length > 0) otherfollowingStore.aSaveOtherFollowingList(entry[0] + ' (' + entry[1].length + ')', 'orangered', entry[1])
     }
 
     otherfollowingStore.TuiJianLoading = false
     otherfollowingStore.TuiJianLoaded = true
   }
+
   
-  static async aReloadMyFollowing(user_id: string, force: boolean) {
+  static async aReloadMyFollowing(user_id: string, force: boolean): Promise<void> {
     if (!user_id) return
     const myfollowingStore = useMyFollowingStore()
     if (!force && myfollowingStore.ListDataRaw.length > 0) return 
@@ -56,29 +57,33 @@ export default class FollowingDAL {
     myfollowingStore.aLoadListData(resp.items)
     myfollowingStore.ListLoading = false
   }
+
   static onRFollowing = throttle((user_id: string) => {
     FollowingDAL.aReloadMyFollowing(user_id, true)
   }, 3000)
+
   
-  static async aSetFollowing(user_id: string, followingid: string, following: boolean) {
-    await AliFollowing.ApiSetFollowing(user_id, followingid, following, true)
-    useMyFollowingStore().mSetFollowing(followingid, following)
+  static async aSetFollowing(user_id: string, followingid: string, isFollowing: boolean): Promise<void> {
+    await AliFollowing.ApiSetFollowing(user_id, followingid, isFollowing, true)
+    useMyFollowingStore().mSetFollowing(followingid, isFollowing)
     FollowingDAL.onRFollowing(user_id) 
   }
+
   
-  static async aSetFollowingBatch(user_id: string, idlist: string[], following: boolean) {
+  static async aSetFollowingBatch(user_id: string, idList: string[], isFollowing: boolean): Promise<void> {
     let followingid = ''
-    for (let i = 0, maxi = idlist.length; i < maxi; i++) {
-      followingid = idlist[i]
-      message.info((following ? '' : '取消') + '订阅中( ' + i + ' / ' + maxi + ' )', 3, 'aSetFollowingBatch' + following)
-      await AliFollowing.ApiSetFollowing(user_id, followingid, following, false)
-      useMyFollowingStore().mSetFollowing(followingid, following)
+    for (let i = 0, maxi = idList.length; i < maxi; i++) {
+      followingid = idList[i]
+      message.info((isFollowing ? '' : '取消') + '订阅中( ' + i + ' / ' + maxi + ' )', 3, 'aSetFollowingBatch' + isFollowing)
+      await AliFollowing.ApiSetFollowing(user_id, followingid, isFollowing, false)
+      useMyFollowingStore().mSetFollowing(followingid, isFollowing)
     }
-    message.success((following ? '订阅' : '取消订阅') + ' 成功', 3, 'aSetFollowingBatch' + following)
+    message.success((isFollowing ? '订阅' : '取消订阅') + ' 成功', 3, 'aSetFollowingBatch' + isFollowing)
   }
+
   
-  static aSetFollowingText(user_id: string, text: string, following: boolean) {
-    let idlist: string[] = []
+  static aSetFollowingText(user_id: string, text: string, isFollowing: boolean): Promise<boolean> {
+    const idList: string[] = []
 
     
     
@@ -94,15 +99,15 @@ export default class FollowingDAL {
       if (id.indexOf('?') > 0) id = id.substring(0, id.indexOf('?'))
       if (id.indexOf('&') > 0) id = id.substring(0, id.indexOf('&'))
       id = id.trim()
-      if (id.length == 32 && /^[A-Za-z0-9]+$/.test(id) && idlist.includes(id) == false) idlist.push(id)
+      if (id.length == 32 && /^[A-Za-z0-9]+$/.test(id) && idList.includes(id) == false) idList.push(id)
       text = text.substring(index + 'aliyundrive.com/u/'.length)
       index = text.indexOf('aliyundrive.com/u/')
     }
 
-    if (idlist.length == 0) {
+    if (idList.length == 0) {
       message.error('解析订阅链接失败，格式错误')
       return Promise.resolve(false) 
     }
-    return FollowingDAL.aSetFollowingBatch(user_id, idlist, following).then(() => true)
+    return FollowingDAL.aSetFollowingBatch(user_id, idList, isFollowing).then(() => true)
   }
 }
